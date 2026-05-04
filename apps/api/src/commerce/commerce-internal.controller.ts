@@ -1,0 +1,114 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { SkipThrottle } from '@nestjs/throttler';
+import type { Express } from 'express';
+import { CommerceService } from './commerce.service';
+import { InternalApiGuard } from './internal-api.guard';
+
+@Controller('internal/commerce')
+@UseGuards(InternalApiGuard)
+@SkipThrottle()
+export class CommerceInternalController {
+  constructor(private readonly commerce: CommerceService) {}
+
+  @Get('state')
+  getState() {
+    return this.commerce.getState();
+  }
+
+  @Patch('products/:id')
+  patchProduct(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      ativo?: boolean;
+      admin_pausado?: boolean;
+      preco_venda_publico?: number;
+      executor_fee_planejada?: number;
+      platform_fee_planejada?: number;
+    },
+  ) {
+    return this.commerce.patchProduct(id, body);
+  }
+
+  /** Imagem da vitrine (WebP, máx. 1 MB) → Cloudflare R2 + atualização da peça. */
+  @Post('products/:id/image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 1024 * 1024 },
+    }),
+  )
+  uploadProductImage(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 })],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.commerce.uploadProductImage(id, file.buffer, file.mimetype);
+  }
+
+  @Post('execution-requests')
+  createExecutionRequest(
+    @Body()
+    body: {
+      compositeProductId: string;
+      executorEmail: string;
+      executorNome: string;
+    },
+  ) {
+    return this.commerce.createPendingExecutionRequest(body);
+  }
+
+  @Post('execution-requests/:id/approve')
+  approveRequest(@Param('id') id: string) {
+    return this.commerce.approveExecutionRequest(id);
+  }
+
+  @Post('execution-requests/:id/reject')
+  rejectRequest(@Param('id') id: string, @Body() body: { rejection_reason?: string }) {
+    return this.commerce.rejectExecutionRequest(id, body.rejection_reason ?? '');
+  }
+
+  @Post('assignments')
+  createAssignment(
+    @Body()
+    body: {
+      compositeProductId: string;
+      executorEmail: string;
+      executorNome: string;
+      cidade_origem: string;
+      cep_origem: string;
+    },
+  ) {
+    return this.commerce.createDirectAssignment(body);
+  }
+
+  @Post('assignments/:id/archive')
+  archiveAssignment(@Param('id') id: string) {
+    return this.commerce.archiveAssignment(id);
+  }
+
+  @Post('assignments/:id/publish')
+  publishAssignment(
+    @Param('id') id: string,
+    @Body() body: { available_quantity: number },
+  ) {
+    return this.commerce.publishAssignment(id, body);
+  }
+}

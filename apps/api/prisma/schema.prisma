@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CompositeProduct {
+  id                     String  @id
+  slug                   String  @unique
+  nome                   String
+  sku                    String
+  descricaoCurta         String  @map("descricao_curta")
+  linhas                 Json
+  executorFeePlanejada   Float   @map("executor_fee_planejada")
+  platformFeePlanejada   Float   @map("platform_fee_planejada")
+  precoVendaPublico      Float   @map("preco_venda_publico")
+  ativo                  Boolean
+  adminPausado           Boolean @map("admin_pausado")
+  imagemUrl              String  @map("imagem_url")
+}
+
+model ExecutionRequest {
+  id                 String    @id
+  compositeProductId String    @map("composite_product_id")
+  executorEmail      String    @map("executor_email")
+  executorNome         String    @map("executor_nome")
+  status             String
+  reviewedAt         DateTime? @map("reviewed_at")
+  rejectionReason    String?   @map("rejection_reason")
+
+  @@index([compositeProductId])
+}
+
+model ProductionAssignment {
+  id                  String  @id
+  compositeProductId  String  @map("composite_product_id")
+  executorEmail       String  @map("executor_email")
+  executorNome          String  @map("executor_nome")
+  cidadeOrigem        String  @map("cidade_origem")
+  cepOrigem           String  @map("cep_origem")
+  availableQuantity   Int     @map("available_quantity")
+  unitsProduced       Int     @map("units_produced")
+  status              String
+  assignmentSource    String  @map("assignment_source")
+  executionRequestId  String? @map("execution_request_id")
+
+  @@index([compositeProductId])
+}
+
+enum PlatformRole {
+  ADMIN
+  SUPPLIER
+  EXECUTOR
+  CUSTOMER
+}
+
+enum PlatformAccountStatus {
+  PENDING_ADMIN_REVIEW
+  ACTIVE
+  REJECTED
+}
+
+model PlatformAccount {
+  id                       String                 @id @default(cuid())
+  email                    String                 @unique
+  passwordHash             String                 @map("password_hash")
+  name                     String
+  role                     PlatformRole
+  status                   PlatformAccountStatus  @default(PENDING_ADMIN_REVIEW)
+  stripeAccountId          String?                @map("stripe_account_id")
+  stripeOnboardingComplete Boolean                @default(false) @map("stripe_onboarding_complete")
+  reviewedAt               DateTime?              @map("reviewed_at")
+  reviewedByEmail          String?                @map("reviewed_by_email")
+  rejectionReason          String?                @map("rejection_reason")
+  createdAt                DateTime               @default(now()) @map("created_at")
+
+  supplierProfile SupplierProfile?
+  executorProfile ExecutorProfile?
+  supplyItems     SupplyItem[]
+}
+
+model SupplierProfile {
+  id                String          @id @default(cuid())
+  accountId         String          @unique @map("account_id")
+  businessName      String          @map("business_name")
+  cep               String
+  phone             String
+  addressLine1      String          @map("address_line1")
+  addressComplement String?         @map("address_complement")
+  city              String
+  stateUf           String          @map("state_uf")
+  account           PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model ExecutorProfile {
+  id                String          @id @default(cuid())
+  accountId         String          @unique @map("account_id")
+  displayName       String          @map("display_name")
+  cep               String
+  phone             String
+  addressLine1      String          @map("address_line1")
+  addressComplement String?         @map("address_complement")
+  city              String
+  stateUf           String          @map("state_uf")
+  account           PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model SupplyItem {
+  id                  String          @id
+  supplierAccountId   String          @map("supplier_account_id")
+  nome                String
+  skuInterno          String          @map("sku_interno")
+  unidade             String
+  custoFornecedor     Float           @map("custo_fornecedor")
+  freteAteExecutor    Float           @map("frete_ate_executor")
+  ativo               Boolean         @default(true)
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  supplier            PlatformAccount @relation(fields: [supplierAccountId], references: [id], onDelete: Cascade)
+
+  @@index([supplierAccountId])
+}

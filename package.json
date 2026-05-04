@@ -1,0 +1,22 @@
+{
+  "name": "agregador-de-servicos",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w api",
+    "dev:web": "npm run dev -w web",
+    "build:api": "npm run build -w api",
+    "build:web": "npm run build -w web",
+    "db:migrate": "npm run prisma:deploy -w api",
+    "db:seed": "npm run prisma:seed -w api",
+    "compose:up": "docker compose up -d --build",
+    "compose:down": "docker compose down",
+    "lint:api": "npm run lint -w api",
+    "lint:web": "npm run lint -w web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

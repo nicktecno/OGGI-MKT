@@ -1,0 +1,6 @@
+{
+  "computeEndpointId": "ep-wandering-bread-anvz5ofv",
+  "poolerHost": "ep-wandering-bread-anvz5ofv-pooler.c-6.us-east-1.aws.neon.tech",
+  "database": "neondb",
+  "note": "Credenciais só em apps/api/.env (gitignore). Roda a API com npm run dev:api; Docker local usa Postgres próprio — para Neon, corre a API no host ou altera docker-compose."
+}
