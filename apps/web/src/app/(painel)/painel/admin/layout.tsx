@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { commerceUsesDatabase } from "@/lib/demo-runtime";
+import { AdminSectionFallback } from "./admin-section-fallback";
 
 export const metadata: Metadata = {
   title: "Administração",
@@ -19,7 +21,7 @@ export default function AdminPainelLayout({ children }: { children: React.ReactN
           está fazendo cada modelo. {persistenceCopy}
         </p>
       </div>
-      {children}
+      <Suspense fallback={<AdminSectionFallback />}>{children}</Suspense>
     </div>
   );
 }

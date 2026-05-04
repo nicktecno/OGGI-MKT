@@ -2,11 +2,11 @@
 
 import { LottieLoadingBoundary } from "@/components/ui/lottie-loading-boundary";
 
-/** Transições entre rotas `/painel/...` enquanto a página assíncrona prepara o HTML. */
-export default function PainelRoutesLoading() {
+/** Fallback enquanto as páginas assíncronas do admin carregam (Suspense no layout). */
+export function AdminSectionFallback() {
   return (
     <div
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-4 px-4 py-12"
+      className="flex min-h-[40vh] flex-col items-center justify-center gap-4 px-4 py-8"
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -14,7 +14,7 @@ export default function PainelRoutesLoading() {
       <div className="flex h-[200px] w-full max-w-[320px] items-center justify-center">
         <LottieLoadingBoundary height={180} className="shrink-0" />
       </div>
-      <p className="text-sm text-muted-foreground">Carregando…</p>
+      <p className="text-sm text-muted-foreground">Carregando administração…</p>
     </div>
   );
 }
