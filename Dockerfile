@@ -13,8 +13,9 @@ RUN npx prisma generate
 
 COPY apps/api/tsconfig*.json apps/api/nest-cli.json ./
 COPY apps/api/src ./src/
-RUN npm run build
+COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh && npm run build
 
 EXPOSE 4000
 ENV NODE_ENV=production
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
+CMD ["./docker-entrypoint.sh"]

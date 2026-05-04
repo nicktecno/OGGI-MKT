@@ -22,7 +22,7 @@
 
 1. **New** → **Web Service** → ligar o repositório GitHub.
 2. **Runtime**: Docker. **Root Directory**: vazio (raiz do repo) — existe um `Dockerfile` na raiz que compila `apps/api`. Alternativa: Root Directory `apps/api` e Dockerfile `Dockerfile` (o ficheiro dentro de `apps/api`).
-3. Preencher **Environment** com as variáveis da secção abaixo; no Vercel, `COMMERCE_API_URL` = URL pública `https://….onrender.com` (ou domínio próprio).
+3. Preencher **Environment** com as variáveis da secção abaixo. **`DATABASE_URL` tem de ser a connection string do Neon** (nunca `localhost` — no Render não há Postgres na própria máquina do serviço). No Vercel, `COMMERCE_API_URL` = URL pública `https://….onrender.com` (ou domínio próprio).
 
 ## Variáveis de ambiente (visão)
 
