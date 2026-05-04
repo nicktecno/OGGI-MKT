@@ -15,13 +15,19 @@
 | Peça | Serviço | Papel |
 |------|---------|--------|
 | **Frontend** | **Vercel** ([vercel.com](https://vercel.com)) | Next.js (app router), build e CDN; tier **Hobby** gratuito para projeto pessoal/small. |
-| **Backend API** | **Koyeb** ([koyeb.com](https://www.koyeb.com)) | NestJS em **container** ou build nativo; tier gratuito com limites de vCPU/RAM e scale-to-zero (cold start aceitável no MVP). |
-| **Banco** | **Neon** | Postgres; região próxima ao runtime Koyeb (ex. `aws-eu-central-1` / `us-east-1`) para reduzir latência. |
+| **Backend API** | **Render** ([render.com](https://render.com)) | NestJS via **Web Service** + **Dockerfile** em `apps/api`; tier gratuito com limites de RAM/CPU e **spin-down** após inatividade (cold start aceitável no MVP). |
+| **Banco** | **Neon** | Postgres; região próxima à região do serviço Render (ex. Frankfurt / Oregon) para reduzir latência. |
+
+### Render (API): monorepo + Docker
+
+1. **New** → **Web Service** → ligar o repositório GitHub.
+2. **Runtime**: Docker. **Root Directory**: vazio (raiz do repo) — existe um `Dockerfile` na raiz que compila `apps/api`. Alternativa: Root Directory `apps/api` e Dockerfile `Dockerfile` (o ficheiro dentro de `apps/api`).
+3. Preencher **Environment** com as variáveis da secção abaixo; no Vercel, `COMMERCE_API_URL` = URL pública `https://….onrender.com` (ou domínio próprio).
 
 ## Variáveis de ambiente (visão)
 
 - **Vercel (Next `apps/web`)**: `COMMERCE_API_URL` — URL **HTTPS** pública da API (só servidor Next; chamadas a `/public/*` e rotas internas usam esse base URL). `INTERNAL_API_SECRET` — igual ao valor na API (chamadas server-side com header `x-internal-secret` para `/internal/*`). `AUTH_SECRET` — ≥32 caracteres, **igual** ao `AUTH_SECRET` da API (JWT / alinhamento de auth). Chaves públicas Stripe (`NEXT_PUBLIC_*`) quando existirem.
-- **Koyeb / runtime da API (`apps/api`)**: `DATABASE_URL` (Neon), `INTERNAL_API_SECRET`, `AUTH_SECRET`, `FRONTEND_URL` (origens do front, vírgula se várias), `PORT`, `STRIPE_SECRET_KEY`, `MELHOR_ENVIO_*`, `WEBHOOK_SECRET` Stripe, webhooks Melhor Envio em `https://<api>/webhooks/...`.
+- **Render / runtime da API (`apps/api`)**: `DATABASE_URL` (Neon), `INTERNAL_API_SECRET`, `AUTH_SECRET`, `FRONTEND_URL` (origens do front, vírgula se várias), `PORT` (Render injeta; o Nest já escuta `process.env.PORT`), `STRIPE_SECRET_KEY`, `MELHOR_ENVIO_*`, `WEBHOOK_SECRET` Stripe, webhooks Melhor Envio em `https://<api>/webhooks/...`.
 - **Neon**: sem app rodando na Neon — só credenciais na API.
 
 Build de container da API: contexto do build = pasta `apps/api` (ver `Dockerfile` em `apps/api`). Localmente, `docker compose` na raiz do monorepo sobe Postgres + API com as mesmas variáveis de integração que o front usa em `.env.local`.
@@ -29,7 +35,7 @@ Build de container da API: contexto do build = pasta `apps/api` (ver `Dockerfile
 ## CORS e domínios
 
 - Permitir origem do front Vercel (`*.vercel.app` e domínio customizado) nas rotas REST do Nest.
-- Webhooks (Stripe, Melhor Envio) devem usar URL **HTTPS** estável do Koyeb (custom domain opcional no free tier conforme plano).
+- Webhooks (Stripe, Melhor Envio) devem usar URL **HTTPS** estável do Render (`*.onrender.com` ou domínio customizado no plano).
 
 ## Throttle (rate limiting) nas chamadas
 
@@ -40,8 +46,8 @@ Build de container da API: contexto do build = pasta `apps/api` (ver `Dockerfile
 
 ## Limitações do tier gratuito (planejar)
 
-- **Cold start** (Koyeb scale-to-zero): primeiro request após idle pode demorar.
-- **Limites** de build minutes (Vercel), horas de compute (Koyeb), armazenamento/conexões (Neon) — monitorar dashboards.
+- **Cold start** (Render free: serviço “dorme” após inatividade): primeiro pedido após idle pode demorar.
+- **Limites** de build minutes (Vercel), horas de compute (Render), armazenamento/conexões (Neon) — monitorar dashboards.
 - **Backups**: Neon free tem retenção limitada; export periódico (`pg_dump`) para S3 ou local em produção futura.
 
 ## Próximo passo técnico

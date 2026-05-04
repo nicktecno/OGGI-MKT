@@ -4,7 +4,7 @@ Monorepo do marketplace (Next.js + shadcn + NestJS + PostgreSQL).
 
 ## Documentação de negócio e arquitetura
 
-Ver pasta [docs/](docs/) — modelo de domínio, Stripe, Melhor Envio, auth (cookies, sem `localStorage`), infra (Neon, Vercel, Koyeb), throttling.
+Ver pasta [docs/](docs/) — modelo de domínio, Stripe, Melhor Envio, auth (cookies, sem `localStorage`), infra (Neon, Vercel, Render), throttling.
 
 ## Estrutura
 
@@ -39,7 +39,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/agregador" npm run d
 
 Sem Docker: só Postgres com `docker compose up -d postgres` e `npm run dev:api` no host com `apps/api/.env`.
 
-Em produção o banco costuma ser **Neon**; a API em **Koyeb** (ou similar) usa `DATABASE_URL` do Neon.
+Em produção o banco costuma ser **Neon**; a API em **Render** (ou similar) usa `DATABASE_URL` do Neon.
 
 ## Variáveis de ambiente (alinhamento Web ↔ API)
 
@@ -48,7 +48,7 @@ Em produção o banco costuma ser **Neon**; a API em **Koyeb** (ou similar) usa 
 | **Web** (Vercel / `.env.local`) | `COMMERCE_API_URL` | `http://localhost:4000` | `https://…` da API pública |
 | **Web** | `INTERNAL_API_SECRET` | igual à API | igual à API (segredo longo) |
 | **Web** | `AUTH_SECRET` | ≥32 chars (recomendado) | ≥32 chars, **igual** ao da API |
-| **API** (Koyeb / `.env`) | `DATABASE_URL` | Postgres local / Docker | Neon |
+| **API** (Render / `.env`) | `DATABASE_URL` | Postgres local / Docker | Neon |
 | **API** | `INTERNAL_API_SECRET` | igual ao web | igual ao web |
 | **API** | `AUTH_SECRET` | igual ao web | igual ao web |
 | **API** | `FRONTEND_URL` | `http://localhost:3000` | Origens do Next, vírgula se várias |
@@ -95,7 +95,7 @@ Código em `apps/web/src/app/(public)/` e `apps/web/src/app/(painel)/` (route gr
 ## Deploy (resumo)
 
 - **Web**: Vercel → projeto em `apps/web`; definir `COMMERCE_API_URL`, `INTERNAL_API_SECRET`, `AUTH_SECRET` (iguais à API).
-- **API**: Koyeb (ou outro) → **Dockerfile** em `apps/api` (build na raiz do contexto `apps/api`); `PORT` injetado pela plataforma; `DATABASE_URL` (Neon), `FRONTEND_URL` com URL(s) do Vercel, `INTERNAL_API_SECRET` e `AUTH_SECRET` iguais ao web.
+- **API**: Render (Web Service + Docker) → **`Dockerfile` na raiz do repo** (contexto monorepo) ou Root Directory `apps/api` + `Dockerfile` local; `PORT` injetado pela plataforma; `DATABASE_URL` (Neon), `FRONTEND_URL` com URL(s) do Vercel, `INTERNAL_API_SECRET` e `AUTH_SECRET` iguais ao web.
 - **DB**: Neon → `DATABASE_URL` na API.
 
 Detalhes: [docs/infrastructure.md](docs/infrastructure.md).
