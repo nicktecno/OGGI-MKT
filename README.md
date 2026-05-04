@@ -4,7 +4,7 @@ Monorepo do marketplace (Next.js + shadcn + NestJS + PostgreSQL).
 
 ## Documentação de negócio e arquitetura
 
-Ver pasta [docs/](docs/) — modelo de domínio, Stripe, Melhor Envio, auth (cookies, sem `localStorage`), infra (Neon, Vercel, Render), throttling.
+Ver pasta [docs/](docs/) — modelo de domínio, Stripe, Melhor Envio, auth (cookies, sem `localStorage`), infra (Neon, Vercel, Render), throttling. **Guia em linguagem simples** (conceito e passos para utilizadores): [docs/guia-do-usuario.md](docs/guia-do-usuario.md).
 
 ## Estrutura
 
