@@ -1,32 +1,37 @@
 "use client";
 
-import Lottie from "lottie-react";
-import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import rawAnimation from "@/assets/lottie/sewing-tools.json";
+
+/** Vídeo servido de `public/loading/sewing-tools.webm` (evita problemas do Lottie no App Router). */
+const LOADING_VIDEO_SRC = "/loading/sewing-tools.webm";
 
 type LottieLoadingProps = {
   className?: string;
-  /** Altura do player em px (largura proporcional ao JSON 1920×1080). */
+  /** Altura em px; largura limitada proporcionalmente. */
   height?: number;
+  /** Mantido por compatibilidade com chamadas antigas; o vídeo repete em loop. */
   loop?: boolean;
 };
 
 export function LottieLoading({ className, height = 96, loop = true }: LottieLoadingProps) {
-  const animationData = useMemo(() => structuredClone(rawAnimation) as object, []);
-  const width = Math.round(height * (1920 / 1080));
+  const aspect = 16 / 9;
+  const width = Math.round(height * aspect);
 
   return (
     <div
       className={cn("inline-flex items-center justify-center overflow-hidden", className)}
-      style={{ minHeight: height, minWidth: Math.min(width, 320) }}
+      style={{ minHeight: height, minWidth: Math.min(width, 320), maxWidth: "min(100vw, 320px)" }}
     >
-      <Lottie
-        animationData={animationData}
-        loop={loop}
-        renderer="svg"
-        className="pointer-events-none [&_svg]:h-full [&_svg]:w-auto [&_svg]:max-w-[min(100vw,320px)]"
+      <video
+        src={LOADING_VIDEO_SRC}
+        className="pointer-events-none block h-full max-h-full w-full object-contain"
         style={{ height, width: "auto", maxWidth: "min(100vw, 320px)" }}
+        autoPlay
+        muted
+        loop={loop}
+        playsInline
+        preload="metadata"
+        aria-hidden
       />
     </div>
   );

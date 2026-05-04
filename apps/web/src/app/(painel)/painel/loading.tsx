@@ -1,6 +1,6 @@
 "use client";
 
-import { LottieLoadingBoundary } from "@/components/ui/lottie-loading-boundary";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 /** Transições entre rotas `/painel/...` enquanto a página assíncrona prepara o HTML. */
 export default function PainelRoutesLoading() {
@@ -12,7 +12,7 @@ export default function PainelRoutesLoading() {
       aria-busy="true"
     >
       <div className="flex h-[200px] w-full max-w-[320px] items-center justify-center">
-        <LottieLoadingBoundary height={180} className="shrink-0" />
+        <LottieLoading height={180} className="shrink-0" />
       </div>
       <p className="text-sm text-muted-foreground">Carregando…</p>
     </div>
