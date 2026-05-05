@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommerceModule } from './commerce/commerce.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthController } from './health/health.controller';
+import { MelhorEnvioModule } from './melhor-envio/melhor-envio.module';
 import { PlatformModule } from './platform/platform.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SupplyModule } from './supply/supply.module';
@@ -21,6 +22,7 @@ import { SupplyModule } from './supply/supply.module';
     PlatformModule,
     SupplyModule,
     CommerceModule,
+    MelhorEnvioModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,

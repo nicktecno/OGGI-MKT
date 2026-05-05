@@ -64,6 +64,20 @@ A documentação descreve **ambiente Sandbox** separado da produção (útil par
 - O **frete médio** usado na **composição de preço** no painel admin (desconto do “preço final” exibido) é **estratégia de precificação**, independente da cotação real no checkout.
 - O **frete pago pelo cliente** na área pública é o resultado da **integração Melhor Envio**. O **total pago** deve usar o **frete cotado** no checkout; eventual **valor a mais** em relação ao embutido no preço de vitrine **fica para a plataforma**, sem permitir **déficit** de frete frente à operação (totais sempre atualizados antes do pagamento).
 
+## Rotas já expostas na API (Nest)
+
+Cadastre no painel **Área Dev** da Melhor Envio (mesmo host que `MELHOR_ENVIO_API_BASE`):
+
+| Campo / uso | URL típica (substitui pelo host público HTTPS da API) |
+|-------------|--------------------------------------------------------|
+| **URL de redirecionamento após autorização** | `https://<api>/oauth/melhor-envio/callback` |
+| **Webhook** (Novo Webhook no app) | `https://<api>/webhooks/melhor-envio` |
+| **Iniciar OAuth no browser** (opcional) | `GET https://<api>/integrations/melhor-envio/start` |
+
+Variáveis: `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET`, `MELHOR_ENVIO_REDIRECT_URI` (idêntica à do painel), `MELHOR_ENVIO_API_BASE` (`https://melhorenvio.com.br` ou sandbox), `MELHOR_ENVIO_USER_AGENT` (app + e-mail). Ver `apps/api/.env.example`.
+
+Após autorizar, o utilizador volta para `FRONTEND_URL` → `/painel/admin?me_oauth=ok` ou `me_oauth_error=…`. Os tokens são registados em log no servidor até existir persistência em BD.
+
 ## Documentação oficial
 
 - [Introdução à API](https://docs.melhorenvio.com.br/reference/introducao-api-melhor-envio)
