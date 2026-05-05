@@ -10,6 +10,7 @@ import { ImageUploadField } from "@/components/upload/image-upload-field";
 import { IMAGE_UPLOAD_LIMITS } from "@/lib/image-upload-limits";
 import {
   compositeInsumosTotal,
+  mergeSupplyCatalog,
   resolveCompositeLines,
   type DemoCompositeProduct,
   type DemoSupplyItem,
@@ -21,6 +22,7 @@ import { cn, formatBrl } from "@/lib/utils";
 import {
   approveExecutionRequest,
   archiveProductionAssignment,
+  createCompositeProductAction,
   createDirectAssignment,
   rejectExecutionRequest,
   setProductActive,
@@ -76,6 +78,178 @@ function pacoteDefaults(p: DemoCompositeProduct) {
   };
 }
 
+function AdminNovaPecaCard({
+  supplies,
+  pending,
+  run,
+}: {
+  supplies: DemoSupplyItem[];
+  pending: boolean;
+  run: (fn: () => Promise<void>) => void;
+}) {
+  const [nome, setNome] = useState("");
+  const [slug, setSlug] = useState("");
+  const [sku, setSku] = useState("");
+  const [desc, setDesc] = useState("");
+  const [lines, setLines] = useState<Array<{ supplyItemId: string; quantidade: string }>>(() =>
+    supplies[0] ? [{ supplyItemId: supplies[0].id, quantidade: "1" }] : [{ supplyItemId: "", quantidade: "1" }],
+  );
+
+  useEffect(() => {
+    if (supplies.length === 0) return;
+    setLines((prev) => {
+      if (prev.length !== 1) return prev;
+      if (prev[0].supplyItemId) return prev;
+      return [{ supplyItemId: supplies[0].id, quantidade: prev[0].quantidade || "1" }];
+    });
+  }, [supplies]);
+
+  if (supplies.length === 0) {
+    return (
+      <Card className="border-amber-500/35 bg-amber-500/[0.06]">
+        <CardHeader>
+          <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            Ainda não há insumos no catálogo. Aprove cadastros de fornecedores em{" "}
+            <strong className="text-foreground">Cadastros</strong> para poder montar uma peça aqui.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-border/80">
+      <CardHeader className="border-b border-border/50 bg-muted/10">
+        <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
+        <CardDescription className="text-base leading-relaxed">
+          Crie o desenho do produto: insumos e quantidades. Depois defina preço, pacote e foto nos cartões
+          abaixo; para vincular costureiras use <strong className="text-foreground">Quem faz o quê</strong>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <form
+          className="space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const linhasParsed = lines
+              .filter((l) => l.supplyItemId.trim())
+              .map((l) => ({
+                supply_item_id: l.supplyItemId.trim(),
+                quantidade: Number(l.quantidade.replace(",", ".")),
+              }));
+            if (!nome.trim() || !sku.trim() || !desc.trim() || linhasParsed.length === 0) return;
+            if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) return;
+            run(async () => {
+              await createCompositeProductAction({
+                nome: nome.trim(),
+                slug: slug.trim() || undefined,
+                sku: sku.trim(),
+                descricao_curta: desc.trim(),
+                linhas: linhasParsed,
+              });
+              setNome("");
+              setSlug("");
+              setSku("");
+              setDesc("");
+              setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
+            });
+          }}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="nova-nome">Nome da peça</Label>
+              <Input id="nova-nome" value={nome} onChange={(e) => setNome(e.target.value)} disabled={pending} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nova-sku">SKU</Label>
+              <Input id="nova-sku" value={sku} onChange={(e) => setSku(e.target.value)} disabled={pending} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nova-slug">Slug na URL (opcional)</Label>
+              <Input
+                id="nova-slug"
+                placeholder="gerado a partir do nome se vazio"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                disabled={pending}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="nova-desc">Descrição curta (vitrine)</Label>
+              <textarea
+                id="nova-desc"
+                className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                disabled={pending}
+              />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Label>Insumos e quantidades</Label>
+            {lines.map((line, idx) => (
+              <div key={idx} className="flex flex-wrap items-end gap-2">
+                <select
+                  className="h-10 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                  value={line.supplyItemId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, supplyItemId: v } : x)));
+                  }}
+                  disabled={pending}
+                >
+                  <option value="">Escolha o insumo…</option>
+                  {supplies.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome} ({s.sku_interno})
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  className="w-28"
+                  inputMode="decimal"
+                  value={line.quantidade}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, quantidade: v } : x)));
+                  }}
+                  disabled={pending}
+                />
+                {lines.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={pending}
+                    onClick={() => setLines((prev) => prev.filter((_, i) => i !== idx))}
+                  >
+                    Remover
+                  </Button>
+                ) : null}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={pending}
+              onClick={() =>
+                setLines((prev) => [...prev, { supplyItemId: supplies[0]?.id ?? "", quantidade: "1" }])
+              }
+            >
+              Adicionar insumo
+            </Button>
+          </div>
+          <Button type="submit" disabled={pending}>
+            Criar modelo
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 function SectionIntro({ title, children }: { title: string; children: ReactNode }) {
   return (
     <header className="mb-6 max-w-2xl space-y-2 border-b border-border/60 pb-5">
@@ -99,6 +273,8 @@ export function AdminPecasPanel({
   pending: boolean;
   run: (fn: () => Promise<void>) => void;
 }) {
+  const supplyCatalog = mergeSupplyCatalog(supplyCatalogExtra ?? []);
+
   return (
     <div className="space-y-8">
       <SectionIntro title="Peças e preços">
@@ -111,9 +287,11 @@ export function AdminPecasPanel({
         </p>
       </SectionIntro>
 
+      <AdminNovaPecaCard supplies={supplyCatalog} pending={pending} run={run} />
+
       <div className="grid gap-8 xl:grid-cols-2">
         {products.map((product) => {
-          const lines = resolveCompositeLines(product, supplyCatalogExtra ?? []);
+          const lines = resolveCompositeLines(product, supplyCatalog);
           const insumoTotal = compositeInsumosTotal(product);
           return (
             <Card key={product.id} className="overflow-hidden border-border/80 shadow-none">

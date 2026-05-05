@@ -28,6 +28,24 @@ export class CommerceInternalController {
     return this.commerce.getState();
   }
 
+  /** Cria produto composto (montagem com insumos). */
+  @Post('products')
+  createProduct(
+    @Body()
+    body: {
+      nome: string;
+      slug?: string;
+      sku: string;
+      descricao_curta: string;
+      linhas: { supply_item_id: string; quantidade: number }[];
+      preco_venda_publico?: number;
+      executor_fee_planejada?: number;
+      platform_fee_planejada?: number;
+    },
+  ) {
+    return this.commerce.createCompositeProduct(body);
+  }
+
   @Patch('products/:id')
   patchProduct(
     @Param('id') id: string,

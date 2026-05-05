@@ -29,6 +29,8 @@ export type DemoCommerceDelta = {
   executionRequests?: DemoExecutionRequest[];
   assignments?: DemoProductionAssignment[];
   productPatch?: Record<string, DemoProductPatch>;
+  /** Peças criadas no modo demo (cookie), além do seed. */
+  addedProducts?: DemoCompositeProduct[];
 };
 
 export type DemoCommerceState = {
@@ -65,7 +67,8 @@ export async function writeCommerceDelta(next: DemoCommerceDelta): Promise<void>
 
 export function mergeProducts(delta: DemoCommerceDelta): DemoCompositeProduct[] {
   const patch = delta.productPatch ?? {};
-  return DEMO_COMPOSITE_PRODUCTS.map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
+  const base = DEMO_COMPOSITE_PRODUCTS.map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
+  return [...base, ...(delta.addedProducts ?? [])];
 }
 
 export async function getCommerceStateFromCookies(): Promise<DemoCommerceState> {

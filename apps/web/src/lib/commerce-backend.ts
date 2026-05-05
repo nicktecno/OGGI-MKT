@@ -1,5 +1,11 @@
 import type { DemoCommerceState } from "./commerce-cookies";
-import type { DemoExecutionRequest, DemoProductionAssignment } from "./demo-seed";
+import type {
+  DemoCompositeLine,
+  DemoCompositeProduct,
+  DemoExecutionRequest,
+  DemoProductionAssignment,
+} from "./demo-seed";
+import { getSupplyItemById } from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
 import { serverApiConfigured, serverApiUrl } from "./server-api-url";
 
@@ -417,4 +423,111 @@ export async function persistProductMarketplaceImage(
   const data = (await res.json()) as { url?: string };
   if (!data.url?.trim()) throw new Error("Resposta da API sem URL da imagem.");
   return data.url.trim();
+}
+
+function slugifyNomeWeb(nome: string): string {
+  const s = nome
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+  return s || `peca-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export async function persistCreateCompositeProduct(input: {
+  nome: string;
+  slug?: string;
+  sku: string;
+  descricao_curta: string;
+  linhas: { supply_item_id: string; quantidade: number }[];
+  preco_venda_publico?: number;
+  executor_fee_planejada?: number;
+  platform_fee_planejada?: number;
+}): Promise<{ id: string; slug: string }> {
+  const nome = input.nome.trim();
+  const sku = input.sku.trim();
+  const desc = input.descricao_curta.trim();
+  if (nome.length < 2) throw new Error("Nome muito curto.");
+  if (!sku) throw new Error("SKU é obrigatório.");
+  if (desc.length < 4) throw new Error("Descrição muito curta.");
+  if (!input.linhas?.length) throw new Error("Inclua pelo menos um insumo.");
+
+  if (commerceUsesDatabase()) {
+    const res = await internalFetch("/internal/commerce/products", {
+      method: "POST",
+      body: JSON.stringify({
+        nome,
+        slug: input.slug?.trim() || undefined,
+        sku,
+        descricao_curta: desc,
+        linhas: input.linhas.map((l) => ({
+          supply_item_id: l.supply_item_id,
+          quantidade: l.quantidade,
+        })),
+        preco_venda_publico: input.preco_venda_publico ?? 0,
+        executor_fee_planejada: input.executor_fee_planejada ?? 0,
+        platform_fee_planejada: input.platform_fee_planejada ?? 0,
+      }),
+    });
+    if (!res.ok) throw new Error(await readApiError(res));
+    return (await res.json()) as { id: string; slug: string };
+  }
+
+  const state = await getCommerceStateFromCookies();
+  let baseSlug = input.slug?.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!baseSlug) baseSlug = slugifyNomeWeb(nome);
+  const allSlugs = new Set(state.products.map((p) => p.slug));
+  let slug = baseSlug;
+  let n = 0;
+  while (allSlugs.has(slug)) {
+    n += 1;
+    slug = `${baseSlug}-${n}`;
+  }
+
+  const linhas: DemoCompositeLine[] = [];
+  for (const row of input.linhas) {
+    const item = getSupplyItemById(row.supply_item_id.trim());
+    if (!item) {
+      throw new Error(
+        `Insumo não encontrado no modo demo: ${row.supply_item_id}. Use a API com catálogo real ou escolha um insumo do seed.`,
+      );
+    }
+    const q = row.quantidade;
+    if (!Number.isFinite(q) || q <= 0) throw new Error("Quantidade inválida numa linha.");
+    linhas.push({
+      supplyItemId: item.id,
+      quantidade: q,
+      snapshot_custo_unitario: item.custo_fornecedor,
+    });
+  }
+
+  const id = `cp-${crypto.randomUUID().slice(0, 12)}`;
+  const product: DemoCompositeProduct = {
+    id,
+    slug,
+    nome,
+    sku,
+    descricao_curta: desc,
+    linhas,
+    executor_fee_planejada: input.executor_fee_planejada ?? 0,
+    platform_fee_planejada: input.platform_fee_planejada ?? 0,
+    preco_venda_publico: input.preco_venda_publico ?? 0,
+    ativo: true,
+    admin_pausado: false,
+    imagem_url:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88",
+    pacote_altura_cm: 22,
+    pacote_largura_cm: 18,
+    pacote_comprimento_cm: 8,
+    pacote_peso_kg: 0.55,
+  };
+
+  await updateCommerceDelta((d) => ({
+    ...d,
+    addedProducts: [...(d.addedProducts ?? []), product],
+  }));
+  return { id, slug };
 }

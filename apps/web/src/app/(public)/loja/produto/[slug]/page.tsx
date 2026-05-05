@@ -25,7 +25,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug, DEMO_COMPOSITE_PRODUCTS);
+  const commerce = await getDemoCommerceState();
+  const product = getProductBySlug(slug, commerce.products);
   if (!product) return { title: "Produto" };
   return {
     title: product.nome,

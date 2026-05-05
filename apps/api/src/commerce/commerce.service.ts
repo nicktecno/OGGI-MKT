@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import type { CompositeProduct, ExecutionRequest, ProductionAssignment } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -160,6 +161,102 @@ export class CommerceService {
       data: { imagemUrl: url },
     });
     return { url };
+  }
+
+  async createCompositeProduct(body: {
+    nome: string;
+    slug?: string;
+    sku: string;
+    descricao_curta: string;
+    linhas: { supply_item_id: string; quantidade: number }[];
+    preco_venda_publico?: number;
+    executor_fee_planejada?: number;
+    platform_fee_planejada?: number;
+  }): Promise<{ id: string; slug: string }> {
+    const nome = body.nome.trim();
+    const sku = body.sku.trim();
+    const desc = body.descricao_curta.trim();
+    if (nome.length < 2) throw new BadRequestException('Nome muito curto.');
+    if (!sku) throw new BadRequestException('SKU é obrigatório.');
+    if (desc.length < 4) throw new BadRequestException('Descrição muito curta.');
+    if (!body.linhas?.length) {
+      throw new BadRequestException('Inclua pelo menos um insumo na montagem.');
+    }
+
+    let baseSlug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!baseSlug) {
+      baseSlug = this.slugifyNome(nome);
+    }
+
+    let slug = baseSlug;
+    let suffix = 0;
+    while ((await this.prisma.compositeProduct.count({ where: { slug } })) > 0) {
+      suffix += 1;
+      slug = `${baseSlug}-${suffix}`;
+    }
+
+    const linhasPayload: Array<{
+      supplyItemId: string;
+      quantidade: number;
+      snapshot_custo_unitario: number;
+    }> = [];
+
+    for (const row of body.linhas) {
+      const sid = row.supply_item_id?.trim();
+      if (!sid) throw new BadRequestException('Cada linha precisa de um insumo.');
+      const item = await this.prisma.supplyItem.findFirst({
+        where: { id: sid, ativo: true },
+      });
+      if (!item) {
+        throw new NotFoundException(`Insumo não encontrado ou inativo: ${sid}`);
+      }
+      const q = row.quantidade;
+      if (!Number.isFinite(q) || q <= 0) {
+        throw new BadRequestException('Quantidade por linha deve ser maior que zero.');
+      }
+      linhasPayload.push({
+        supplyItemId: item.id,
+        quantidade: q,
+        snapshot_custo_unitario: item.custoFornecedor,
+      });
+    }
+
+    const id = `cp-${randomUUID().slice(0, 12)}`;
+    await this.prisma.compositeProduct.create({
+      data: {
+        id,
+        slug,
+        nome,
+        sku,
+        descricaoCurta: desc,
+        linhas: linhasPayload as unknown as Prisma.InputJsonValue,
+        executorFeePlanejada: body.executor_fee_planejada ?? 0,
+        platformFeePlanejada: body.platform_fee_planejada ?? 0,
+        precoVendaPublico: body.preco_venda_publico ?? 0,
+        ativo: true,
+        adminPausado: false,
+        imagemUrl:
+          'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
+        pacoteAlturaCm: 22,
+        pacoteLarguraCm: 18,
+        pacoteComprimentoCm: 8,
+        pacotePesoKg: 0.55,
+      },
+    });
+
+    return { id, slug };
+  }
+
+  private slugifyNome(nome: string): string {
+    const s = nome
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 72);
+    return s || `peca-${randomUUID().slice(0, 8)}`;
   }
 
   async createPendingExecutionRequest(input: {

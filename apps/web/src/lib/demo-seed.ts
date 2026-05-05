@@ -261,6 +261,14 @@ export function getSupplyItemById(id: string): DemoSupplyItem | undefined {
   return DEMO_SUPPLY_ITEMS.find((s) => s.id === id);
 }
 
+/** Catálogo demo + insumos vindos da API (admin monta peça). */
+export function mergeSupplyCatalog(extra: DemoSupplyItem[]): DemoSupplyItem[] {
+  const map = new Map<string, DemoSupplyItem>();
+  for (const s of DEMO_SUPPLY_ITEMS) map.set(s.id, s);
+  for (const s of extra) map.set(s.id, s);
+  return Array.from(map.values());
+}
+
 export function getCompositeProductById(
   id: string,
   products: DemoCompositeProduct[] = DEMO_COMPOSITE_PRODUCTS,

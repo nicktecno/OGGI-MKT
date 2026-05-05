@@ -7,6 +7,7 @@ import {
   persistApproveExecutionRequest,
   persistArchiveAssignment,
   persistCompositeProductPricing,
+  persistCreateCompositeProduct,
   persistCreateDirectAssignment,
   persistProductMarketplaceImage,
   persistRejectExecutionRequest,
@@ -29,6 +30,25 @@ function revalidateStorefront() {
   for (const p of DEMO_COMPOSITE_PRODUCTS) {
     revalidatePath(`/loja/produto/${p.slug}`);
   }
+}
+
+export async function createCompositeProductAction(input: {
+  nome: string;
+  slug?: string;
+  sku: string;
+  descricao_curta: string;
+  linhas: { supply_item_id: string; quantidade: number }[];
+  preco_venda_publico?: number;
+  executor_fee_planejada?: number;
+  platform_fee_planejada?: number;
+}) {
+  await requireAdmin();
+  const result = await persistCreateCompositeProduct(input);
+  revalidatePath(`/loja/produto/${result.slug}`);
+  revalidatePath("/loja");
+  revalidatePath("/painel/admin", "layout");
+  revalidatePath("/painel/executor");
+  return result;
 }
 
 export async function setProductAdminPaused(productId: string, adminPausado: boolean) {
