@@ -258,7 +258,7 @@ function AdminNovaPecaCard({
       <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
-          Crie o desenho do produto: insumos, quantidades e tamanhos (P a XG) que a peça pode ter.
+          Crie o desenho do produto: insumos, quantidades e tamanhos (P a XG ou tamanho único) que a peça pode ter.
           {marketplaceImagesEnabled
             ? " Pode já enviar até 5 fotos (a 1.ª é a capa da vitrine; as outras entram na galeria da ficha). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
             : " Depois ajuste preço e pacote nos cartões (fotos após configurar API e R2); para vincular costureiras use "}
@@ -280,7 +280,7 @@ function AdminNovaPecaCard({
             if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) return;
             const variacoes_tamanho = sortTamanhosSelecionados(tamanhosSelecionados);
             if (variacoes_tamanho.length === 0) {
-              setTamanhosError("Marque pelo menos um tamanho (P, M, G, GG ou XG).");
+              setTamanhosError("Marque pelo menos um tamanho (P, M, G, GG, XG ou Único).");
               return;
             }
             setTamanhosError(null);
@@ -350,7 +350,8 @@ function AdminNovaPecaCard({
             <div className="space-y-2 sm:col-span-2">
               <p className="text-sm font-medium leading-snug">Tamanhos disponíveis</p>
               <p className="text-xs text-muted-foreground">
-                Indique em que variações de tamanho esta peça pode ser oferecida (vitrine e ficha do produto).
+                Indique em que variações esta peça pode ser oferecida — letras (P a XG) ou tamanho único (vitrine e
+                ficha do produto).
               </p>
               <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {ROUPA_TAMANHOS.map((t) => (

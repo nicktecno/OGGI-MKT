@@ -20,8 +20,9 @@ export type CommerceStateDto = {
   productionAssignments: Record<string, unknown>[];
 };
 
-const ROUPA_TAMANHOS = ['P', 'M', 'G', 'GG', 'XG'] as const;
-const ROUPA_SET = new Set<string>(ROUPA_TAMANHOS);
+const ROUPA_LETTERS = ['P', 'M', 'G', 'GG', 'XG'] as const;
+const ROUPA_TAMANHOS = [...ROUPA_LETTERS, 'Único'] as const;
+const ROUPA_LETTER_SET = new Set<string>(ROUPA_LETTERS);
 
 @Injectable()
 export class CommerceService {
@@ -41,16 +42,25 @@ export class CommerceService {
     const seen = new Set<string>();
     for (const x of raw) {
       if (typeof x !== 'string') continue;
-      const t = x.trim().toUpperCase();
-      if (!ROUPA_SET.has(t)) {
+      const t = x.trim();
+      const de = t
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      if (de === 'unico') {
+        seen.add('Único');
+        continue;
+      }
+      const up = t.toUpperCase();
+      if (!ROUPA_LETTER_SET.has(up)) {
         throw new BadRequestException(
           `Tamanho inválido: "${x}". Use apenas: ${[...ROUPA_TAMANHOS].join(', ')}.`,
         );
       }
-      seen.add(t);
+      seen.add(up);
     }
     if (seen.size === 0) {
-      throw new BadRequestException('Escolha pelo menos um tamanho (P, M, G, GG ou XG).');
+      throw new BadRequestException('Escolha pelo menos um tamanho (P, M, G, GG, XG ou Único).');
     }
     return [...ROUPA_TAMANHOS].filter((t) => seen.has(t));
   }
@@ -60,8 +70,17 @@ export class CommerceService {
     const seen = new Set<string>();
     for (const x of value) {
       if (typeof x !== 'string') continue;
-      const t = x.trim().toUpperCase();
-      if (ROUPA_SET.has(t)) seen.add(t);
+      const t = x.trim();
+      const de = t
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      if (de === 'unico') {
+        seen.add('Único');
+        continue;
+      }
+      const up = t.toUpperCase();
+      if (ROUPA_LETTER_SET.has(up)) seen.add(up);
     }
     return [...ROUPA_TAMANHOS].filter((t) => seen.has(t));
   }

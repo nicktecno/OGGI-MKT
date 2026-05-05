@@ -46,7 +46,7 @@ export type DemoCompositeProduct = {
   imagem_url: string;
   /** URLs extra (galeria na página do produto); a capa é `imagem_url`. */
   galeria_imagens?: string[];
-  /** Tamanhos de roupa oferecidos (P, M, G, GG, XG). */
+  /** Tamanhos oferecidos (P, M, G, GG, XG, Único). */
   variacoes_tamanho?: string[];
   /** Pacote peça pronta → cliente (costureira posta). */
   pacote_altura_cm: number;
@@ -236,7 +236,7 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     imagem_url:
       "https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88",
     galeria_imagens: [],
-    variacoes_tamanho: ["P", "M", "G"],
+    variacoes_tamanho: ["Único"],
   },
 ];
 

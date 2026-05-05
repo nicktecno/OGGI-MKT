@@ -587,7 +587,7 @@ export async function persistCreateCompositeProduct(input: {
   if (!input.linhas?.length) throw new Error("Inclua pelo menos um insumo.");
   const variacoes_tamanho = normalizeVariacoesTamanho(input.variacoes_tamanho);
   if (variacoes_tamanho.length === 0) {
-    throw new Error("Escolha pelo menos um tamanho (P, M, G, GG ou XG).");
+    throw new Error("Escolha pelo menos um tamanho (P, M, G, GG, XG ou Único).");
   }
 
   if (commerceUsesDatabase()) {

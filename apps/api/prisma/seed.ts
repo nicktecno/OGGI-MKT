@@ -201,7 +201,7 @@ async function main() {
       imagemUrl:
         'https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88',
       galeriaImagens: [] as unknown as Prisma.InputJsonValue,
-      variacoesTamanho: ['P', 'M', 'G'] as unknown as Prisma.InputJsonValue,
+      variacoesTamanho: ['Único'] as unknown as Prisma.InputJsonValue,
     },
   });
 

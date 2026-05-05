@@ -1,16 +1,23 @@
 /** Tamanhos de roupa disponíveis na criação da peça (ordem de exibição). */
-export const ROUPA_TAMANHOS = ["P", "M", "G", "GG", "XG"] as const;
+export const ROUPA_TAMANHOS = ["P", "M", "G", "GG", "XG", "Único"] as const;
 export type RoupaTamanho = (typeof ROUPA_TAMANHOS)[number];
 
-const ALLOWED = new Set<string>(ROUPA_TAMANHOS);
+const LETTERS = new Set(["P", "M", "G", "GG", "XG"]);
+
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
 function canonicalSize(raw: string): RoupaTamanho | null {
-  const t = raw.trim().toUpperCase();
-  if (ALLOWED.has(t)) return t as RoupaTamanho;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (stripAccents(trimmed).toLowerCase() === "unico") return "Único";
+  const up = trimmed.toUpperCase();
+  if (LETTERS.has(up)) return up as RoupaTamanho;
   return null;
 }
 
-/** Filtra valores inválidos, remove duplicados e mantém a ordem P → XG. */
+/** Filtra valores inválidos, remove duplicados e mantém a ordem P → XG → Único. */
 export function normalizeVariacoesTamanho(input: unknown): RoupaTamanho[] {
   if (!Array.isArray(input)) return [];
   const seen = new Set<string>();
