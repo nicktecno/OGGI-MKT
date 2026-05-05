@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { HeaderCartLink } from "@/components/loja/header-cart-link";
 import { HeaderStoreSearchFallback } from "@/components/loja/header-store-search-fallback";
@@ -26,6 +27,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SiteJsonLd />
       <header className="sticky top-0 z-40 border-b border-foreground/[0.07] bg-background/65 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/50">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" />
         <div className="relative mx-auto flex min-h-[4rem] max-w-7xl flex-col gap-3 px-5 py-3 sm:min-h-[4.25rem] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:px-8 lg:px-12">

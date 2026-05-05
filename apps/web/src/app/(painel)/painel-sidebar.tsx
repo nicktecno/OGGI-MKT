@@ -22,7 +22,7 @@ function SidebarTabRail({ "aria-label": ariaLabel, children }: { "aria-label": s
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/50 bg-muted/35 p-1",
+        "rounded-lg border border-border/50 bg-muted/35 p-1",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] dark:bg-muted/25 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
       )}
     >
@@ -35,20 +35,10 @@ function SidebarTabRail({ "aria-label": ariaLabel, children }: { "aria-label": s
 
 function sidebarTabClass(active: boolean) {
   return cn(
-    "group relative flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-[0.8125rem] font-medium leading-snug transition-all duration-150 sm:text-sm",
+    "group flex w-full min-w-0 items-center justify-between gap-2 rounded-md border-l-[3px] py-2.5 pl-2.5 pr-3 text-left text-[0.8125rem] font-medium leading-snug transition-colors duration-150 sm:text-sm",
     active
-      ? "bg-background text-foreground shadow-sm ring-1 ring-foreground/[0.07]"
-      : "text-muted-foreground hover:bg-background/55 hover:text-foreground",
-  );
-}
-
-function TabAccent({ active }: { active: boolean }) {
-  if (!active) return null;
-  return (
-    <span
-      className="absolute left-0 top-1/2 h-[58%] w-[3px] -translate-y-1/2 rounded-full bg-primary"
-      aria-hidden
-    />
+      ? "border-l-primary bg-background text-foreground shadow-sm ring-1 ring-foreground/[0.06]"
+      : "border-l-transparent text-muted-foreground hover:border-l-transparent hover:bg-background/55 hover:text-foreground",
   );
 }
 
@@ -93,9 +83,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
             const active = pathname === item.href;
             const badge = "badge" in item ? item.badge : 0;
             return (
-              <Link key={item.href} href={item.href} className={cn(sidebarTabClass(active), "pl-3.5")}>
-                <TabAccent active={active} />
-                <span className="min-w-0 flex-1 pl-1">{item.label}</span>
+              <Link key={item.href} href={item.href} className={sidebarTabClass(active)}>
+                <span className="min-w-0 flex-1">{item.label}</span>
                 {badge > 0 ? (
                   <span
                     className={cn(
@@ -112,9 +101,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
             );
           })}
           <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-          <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
-            <TabAccent active={lojaActive} />
-            <span className="pl-1">Loja pública</span>
+          <Link href="/loja" className={sidebarTabClass(lojaActive)}>
+            <span className="min-w-0 flex-1">Loja pública</span>
           </Link>
         </SidebarTabRail>
       </div>
@@ -132,22 +120,18 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
 
     return (
       <SidebarTabRail aria-label="Menu do fornecedor">
-        <Link href={painelHome} className={cn(sidebarTabClass(overviewActive), "pl-3.5")}>
-          <TabAccent active={overviewActive} />
-          <span className="pl-1">Visão geral</span>
+        <Link href={painelHome} className={sidebarTabClass(overviewActive)}>
+          <span className="min-w-0 flex-1">Visão geral</span>
         </Link>
-        <Link href={`${painelHome}?aba=insumos`} className={cn(sidebarTabClass(insumosActive), "pl-3.5")}>
-          <TabAccent active={insumosActive} />
-          <span className="pl-1">Meus insumos</span>
+        <Link href={`${painelHome}?aba=insumos`} className={sidebarTabClass(insumosActive)}>
+          <span className="min-w-0 flex-1">Meus insumos</span>
         </Link>
-        <Link href={`${painelHome}?aba=entregas`} className={cn(sidebarTabClass(entregasActive), "pl-3.5")}>
-          <TabAccent active={entregasActive} />
-          <span className="pl-1">Entregas aos executores</span>
+        <Link href={`${painelHome}?aba=entregas`} className={sidebarTabClass(entregasActive)}>
+          <span className="min-w-0 flex-1">Entregas aos executores</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-        <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
-          <TabAccent active={lojaActive} />
-          <span className="pl-1">Loja pública</span>
+        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
+          <span className="min-w-0 flex-1">Loja pública</span>
         </Link>
       </SidebarTabRail>
     );
@@ -159,14 +143,12 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
 
   return (
     <SidebarTabRail aria-label="Menu do painel">
-      <Link href={painelHome} className={cn(sidebarTabClass(overviewActive), "pl-3.5")}>
-        <TabAccent active={overviewActive} />
-        <span className="pl-1">Visão geral</span>
+      <Link href={painelHome} className={sidebarTabClass(overviewActive)}>
+        <span className="min-w-0 flex-1">Visão geral</span>
       </Link>
       <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-      <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
-        <TabAccent active={lojaActive} />
-        <span className="pl-1">Loja pública</span>
+      <Link href="/loja" className={sidebarTabClass(lojaActive)}>
+        <span className="min-w-0 flex-1">Loja pública</span>
       </Link>
     </SidebarTabRail>
   );

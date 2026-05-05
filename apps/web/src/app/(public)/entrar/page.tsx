@@ -7,7 +7,7 @@ import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: `Acesso à conta ${SITE_NAME}.`,
+  description: `Entre na sua conta ${SITE_NAME} para acompanhar pedidos, painel de fornecedor ou executor e dados da loja.`,
 };
 
 type PageProps = {

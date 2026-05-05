@@ -7,7 +7,7 @@ import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Criar conta",
-  description: `Cadastro de fornecedor ou executor — ${SITE_NAME}.`,
+  description: `Cadastre-se como fornecedor de insumos ou executor (costureira) na ${SITE_NAME} e integre a vitrine de moda artesanal.`,
 };
 
 export default function RegistrarPage() {

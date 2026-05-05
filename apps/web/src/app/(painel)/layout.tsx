@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -6,6 +7,10 @@ import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
 import { PainelAsideLoadingFallback } from "./painel-aside-loading-fallback";
 import { PainelSidebarWithNavCounts } from "./painel-sidebar-data";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+};
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();

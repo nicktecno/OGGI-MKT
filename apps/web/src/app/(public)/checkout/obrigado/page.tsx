@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Pagamento",
   description: `Confirmação de pagamento — ${SITE_NAME}`,
+  robots: { index: false, follow: false },
 };
 
 type Props = {

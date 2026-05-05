@@ -1,14 +1,40 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FeaturedProductsSection } from "@/components/loja/featured-products-section";
 import { buttonVariants } from "@/components/ui/button";
 import { searchCatalogRowsFromData } from "@/lib/demo-seed";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
+import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: SEO_HOME_TITLE_SEGMENT,
+  description: SEO_HOME_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `${SEO_HOME_TITLE_SEGMENT} | ${SITE_NAME}`,
+    description: SEO_HOME_DESCRIPTION,
+    url: "/",
+    images: [
+      {
+        url: MARKETING_IMAGES.homeHero,
+        width: 2400,
+        height: 1600,
+        alt: `${SITE_NAME} — hero moda artesanal`,
+      },
+    ],
+  },
+  twitter: {
+    title: `${SEO_HOME_TITLE_SEGMENT} | ${SITE_NAME}`,
+    description: SEO_HOME_DESCRIPTION,
+    images: [MARKETING_IMAGES.homeHero],
+  },
+};
 
 const editorial = [
   {

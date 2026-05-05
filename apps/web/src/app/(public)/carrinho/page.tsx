@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Carrinho",
   description: `Carrinho — ${SITE_NAME}`,
+  robots: { index: false, follow: false },
 };
 
 export default function CarrinhoPage() {

@@ -12,9 +12,32 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const LOJA_META_DESC =
+  "Explore a loja Moda Store: vestuário e acessórios artesanais com curadoria, preços transparentes e envio pelas costureiras. Encontre a sua peça.";
+
 export const metadata: Metadata = {
-  title: "Loja",
-  description: `${SITE_NAME} — peças artesanais escolhidas com carinho.`,
+  title: "Loja — moda artesanal à venda",
+  description: LOJA_META_DESC,
+  alternates: { canonical: "/loja" },
+  openGraph: {
+    title: `Loja — moda artesanal à venda | ${SITE_NAME}`,
+    description: LOJA_META_DESC,
+    url: "/loja",
+    images: [
+      {
+        url: MARKETING_IMAGES.lojaBanner,
+        width: 2000,
+        height: 1333,
+        alt: `Vitrine da loja ${SITE_NAME}`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Loja | ${SITE_NAME}`,
+    description: LOJA_META_DESC,
+    images: [MARKETING_IMAGES.lojaBanner],
+  },
 };
 
 type LojaPageProps = {

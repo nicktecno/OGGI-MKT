@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { ProductJsonLd } from "@/components/seo/product-json-ld";
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import {
   productImageSlides,
 } from "@/lib/demo-seed";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { clipForSerp, toAbsoluteUrl } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
 import { formatBrl } from "@/lib/utils";
 
@@ -32,10 +34,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const commerce = await getDemoCommerceState();
   const product = getProductBySlug(slug, commerce.products);
-  if (!product) return { title: "Produto" };
+  if (!product) return { title: "Produto", robots: { index: false, follow: false } };
+  const listing = getListingForProduct(product.id, commerce.productionAssignments);
+  if (!listing) {
+    return { title: "Produto", robots: { index: false, follow: false } };
+  }
+  const galleryUrls = productImageSlides(product);
+  const desc = clipForSerp(product.descricao_curta || product.nome);
+  const path = `/loja/produto/${product.slug}`;
+  const ogImages = galleryUrls.map((u) => ({
+    url: toAbsoluteUrl(u),
+    alt: product.nome,
+  }));
   return {
     title: product.nome,
-    description: product.descricao_curta,
+    description: desc,
+    alternates: { canonical: path },
+    openGraph: {
+      title: `${product.nome} | ${SITE_NAME}`,
+      description: desc,
+      url: path,
+      type: "website",
+      images: ogImages.length ? ogImages : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.nome,
+      description: desc,
+      images: galleryUrls[0] ? [toAbsoluteUrl(galleryUrls[0])] : undefined,
+    },
   };
 }
 
@@ -52,6 +79,7 @@ export default async function ProdutoLojaPage({ params }: Props) {
 
   return (
     <main className="pb-20">
+      <ProductJsonLd product={product} listing={listing} imageUrls={galleryUrls} />
       <div className="border-b border-border bg-muted/15">
         <div className="mx-auto max-w-6xl px-6 py-6">
           <nav className="text-sm text-muted-foreground">
