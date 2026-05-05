@@ -579,7 +579,8 @@ export async function persistCreateCompositeProduct(
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
   },
-  cover?: { blob: Blob; filename: string; mimeType: string },
+  /** Capa opcional: enviar o `File` da Server Action diretamente no `FormData` (evita reconstruir `File` no Node). */
+  coverFile?: File | null,
 ): Promise<{ id: string; slug: string }> {
   const nome = input.nome.trim();
   const sku = input.sku.trim();
@@ -609,11 +610,10 @@ export async function persistCreateCompositeProduct(
       platform_fee_planejada: input.platform_fee_planejada ?? 0,
     };
 
-    if (cover && cover.blob.size > 0) {
+    if (coverFile && coverFile.size > 0) {
       const fd = new FormData();
       fd.append("payload", JSON.stringify(payload));
-      const file = new File([cover.blob], cover.filename, { type: cover.mimeType });
-      fd.append("cover", file);
+      fd.append("cover", coverFile);
       const res = await internalFetch("/internal/commerce/products/with-cover", {
         method: "POST",
         body: fd,

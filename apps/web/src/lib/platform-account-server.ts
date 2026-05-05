@@ -35,27 +35,35 @@ export async function fetchPlatformMe(): Promise<PlatformMe | null> {
   if (!commerceUsesDatabase()) return null;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const res = await fetch(`${serverApiUrl()}/accounts/me`, {
-    headers: { authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as PlatformMe;
+  try {
+    const res = await fetch(`${serverApiUrl()}/accounts/me`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as PlatformMe;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchSupplyItemsForSession(): Promise<import("./demo-seed").DemoSupplyItem[] | null> {
   if (!commerceUsesDatabase()) return null;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const res = await fetch(`${serverApiUrl()}/supply-items`, {
-    headers: { authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (res.status === 401 || res.status === 403) {
-    return [];
+  try {
+    const res = await fetch(`${serverApiUrl()}/supply-items`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (res.status === 401 || res.status === 403) {
+      return [];
+    }
+    if (!res.ok) return null;
+    return (await res.json()) as import("./demo-seed").DemoSupplyItem[];
+  } catch {
+    return null;
   }
-  if (!res.ok) return null;
-  return (await res.json()) as import("./demo-seed").DemoSupplyItem[];
 }
 
 export type SupplierFulfillmentLineDto = {
@@ -94,11 +102,15 @@ export async function fetchSupplierFulfillmentForSession(): Promise<SupplierFulf
   if (!commerceUsesDatabase()) return null;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const res = await fetch(`${serverApiUrl()}/supply-items/fulfillment-lines`, {
-    headers: { authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (res.status === 401 || res.status === 403) return [];
-  if (!res.ok) return null;
-  return (await res.json()) as SupplierFulfillmentLineDto[];
+  try {
+    const res = await fetch(`${serverApiUrl()}/supply-items/fulfillment-lines`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (res.status === 401 || res.status === 403) return [];
+    if (!res.ok) return null;
+    return (await res.json()) as SupplierFulfillmentLineDto[];
+  } catch {
+    return null;
+  }
 }

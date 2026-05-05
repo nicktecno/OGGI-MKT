@@ -240,6 +240,7 @@ function AdminNovaPecaCard({
   );
   const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>(() => ["P", "M", "G"]);
   const [tamanhosError, setTamanhosError] = useState<string | null>(null);
+  const [novaPecaFormError, setNovaPecaFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (supplies.length === 0) return;
@@ -281,14 +282,33 @@ function AdminNovaPecaCard({
           className="space-y-5"
           onSubmit={(e) => {
             e.preventDefault();
+            setNovaPecaFormError(null);
             const linhasParsed = lines
               .filter((l) => l.supplyItemId.trim())
               .map((l) => ({
                 supply_item_id: l.supplyItemId.trim(),
                 quantidade: Number(l.quantidade.replace(",", ".")),
               }));
-            if (!nome.trim() || !sku.trim() || !desc.trim() || linhasParsed.length === 0) return;
-            if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) return;
+            if (!nome.trim()) {
+              setNovaPecaFormError("Indique o nome da peça.");
+              return;
+            }
+            if (!sku.trim()) {
+              setNovaPecaFormError("Indique o SKU.");
+              return;
+            }
+            if (!desc.trim()) {
+              setNovaPecaFormError("A descrição curta é obrigatória — é o texto que aparece na vitrine e na ficha.");
+              return;
+            }
+            if (linhasParsed.length === 0) {
+              setNovaPecaFormError("Inclua pelo menos uma linha de insumo com quantidade.");
+              return;
+            }
+            if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) {
+              setNovaPecaFormError("Confira as quantidades por insumo: use números maiores que zero.");
+              return;
+            }
             const variacoes_tamanho = sortTamanhosSelecionados(tamanhosSelecionados);
             if (variacoes_tamanho.length === 0) {
               setTamanhosError("Marque pelo menos um tamanho (P, M, G, GG, XG ou Único).");
@@ -329,17 +349,39 @@ function AdminNovaPecaCard({
               setNovaImagemFieldKey((k) => k + 1);
               setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
               setTamanhosSelecionados(["P", "M", "G"]);
+              setNovaPecaFormError(null);
             }, novaScope);
           }}
         >
+          {novaPecaFormError ? (
+            <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+              {novaPecaFormError}
+            </p>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="nova-nome">Nome da peça</Label>
-              <Input id="nova-nome" value={nome} onChange={(e) => setNome(e.target.value)} disabled={pending} />
+              <Input
+                id="nova-nome"
+                value={nome}
+                onChange={(e) => {
+                  setNovaPecaFormError(null);
+                  setNome(e.target.value);
+                }}
+                disabled={pending}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="nova-sku">SKU</Label>
-              <Input id="nova-sku" value={sku} onChange={(e) => setSku(e.target.value)} disabled={pending} />
+              <Input
+                id="nova-sku"
+                value={sku}
+                onChange={(e) => {
+                  setNovaPecaFormError(null);
+                  setSku(e.target.value);
+                }}
+                disabled={pending}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="nova-slug">Slug na URL (opcional)</Label>
@@ -347,7 +389,10 @@ function AdminNovaPecaCard({
                 id="nova-slug"
                 placeholder="gerado a partir do nome se vazio"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => {
+                  setNovaPecaFormError(null);
+                  setSlug(e.target.value);
+                }}
                 disabled={pending}
               />
             </div>
@@ -357,7 +402,10 @@ function AdminNovaPecaCard({
                 id="nova-desc"
                 className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={desc}
-                onChange={(e) => setDesc(e.target.value)}
+                onChange={(e) => {
+                  setNovaPecaFormError(null);
+                  setDesc(e.target.value);
+                }}
                 disabled={pending}
               />
             </div>
@@ -379,6 +427,7 @@ function AdminNovaPecaCard({
                       checked={tamanhosSelecionados.includes(t)}
                       onChange={() => {
                         setTamanhosError(null);
+                        setNovaPecaFormError(null);
                         setTamanhosSelecionados((prev) => {
                           if (prev.includes(t)) return prev.filter((x) => x !== t);
                           return sortTamanhosSelecionados([...prev, t]);

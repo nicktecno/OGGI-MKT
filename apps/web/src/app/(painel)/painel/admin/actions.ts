@@ -57,11 +57,10 @@ export async function createCompositeProductAction(
   coverFile?: File,
 ) {
   await requireAdmin();
-  const cover =
-    coverFile && coverFile.size > 0
-      ? { blob: coverFile, filename: coverFile.name, mimeType: coverFile.type || "image/webp" }
-      : undefined;
-  const result = await persistCreateCompositeProduct(input, cover);
+  const result = await persistCreateCompositeProduct(
+    input,
+    coverFile && coverFile.size > 0 ? coverFile : undefined,
+  );
   revalidatePath(`/loja/produto/${result.slug}`);
   revalidatePath("/loja");
   revalidatePath("/painel/admin", "layout");

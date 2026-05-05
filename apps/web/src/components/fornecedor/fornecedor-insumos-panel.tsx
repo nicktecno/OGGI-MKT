@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -423,8 +422,15 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
               <tr key={row.id} className="bg-card hover:bg-muted/20">
                 <td className="px-3 py-2 w-14">
                   {row.imagem_url ? (
-                    <div className="relative h-10 w-10 overflow-hidden rounded border border-border bg-muted">
-                      <Image src={row.imagem_url} alt="" fill className="object-cover" sizes="40px" unoptimized />
+                    <div className="h-10 w-10 overflow-hidden rounded border border-border bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- URLs R2/domínio variável; evita remotePatterns em build */}
+                      <img
+                        src={row.imagem_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                   ) : (
                     <div className="h-10 w-10 rounded border border-dashed border-border bg-muted/40" />

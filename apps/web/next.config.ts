@@ -19,6 +19,16 @@ if (r2Base) {
 }
 
 const nextConfig: NextConfig = {
+  /**
+   * O limite das Server Actions tem de ficar em `experimental.serverActions` — é daí que o
+   * bundle app-page lê `bodySizeLimit` (um `serverActions` ao nível raiz é ignorado).
+   * Capa ~1 MB + multipart ultrapassa o defeito de 1 MB e falha o POST.
+   */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "3mb",
+    },
+  },
   outputFileTracingRoot: path.join(__dirname, "../.."),
   /** Muitos browsers pedem `/favicon.ico` por defeito; servimos o mesmo ícone PNG. */
   async redirects() {
