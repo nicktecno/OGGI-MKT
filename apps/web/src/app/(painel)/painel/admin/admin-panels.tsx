@@ -178,7 +178,11 @@ function AdminNovaPecaCard({
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
   const [desc, setDesc] = useState("");
-  const [coverPrep, setCoverPrep] = useState<{ blob: Blob; filename: string } | null>(null);
+  const [coverPrep, setCoverPrep] = useState<{
+    blob: Blob;
+    filename: string;
+    mimeType: "image/webp" | "image/jpeg";
+  } | null>(null);
   const [coverFieldKey, setCoverFieldKey] = useState(0);
   const [lines, setLines] = useState<Array<{ supplyItemId: string; quantidade: string }>>(() =>
     supplies[0] ? [{ supplyItemId: supplies[0].id, quantidade: "1" }] : [{ supplyItemId: "", quantidade: "1" }],
@@ -242,7 +246,7 @@ function AdminNovaPecaCard({
                 linhas: linhasParsed,
               });
               if (marketplaceImagesEnabled && prep) {
-                const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
                 const fd = new FormData();
                 fd.append("file", f);
                 await uploadMarketplaceProductImage(result.id, fd, result.slug);
@@ -293,7 +297,9 @@ function AdminNovaPecaCard({
               label="Foto da vitrine (opcional)"
               description={`Enviada após criar a peça · WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · Cloudflare R2.`}
               disabled={pending}
-              onPrepared={(p) => setCoverPrep({ blob: p.blob, filename: p.filename })}
+              onPrepared={(p) =>
+                setCoverPrep({ blob: p.blob, filename: p.filename, mimeType: p.mimeType })
+              }
               onCleared={() => setCoverPrep(null)}
             />
           ) : null}
@@ -495,11 +501,11 @@ export function AdminPecasPanel({
                     {marketplaceImagesEnabled ? (
                       <ImageUploadField
                         label="Substituir imagem da vitrine"
-                        description={`JPEG, PNG ou WebP · comprimimos para WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · envio para Cloudflare R2 via API.`}
+                        description={`JPEG, PNG ou WebP · comprimimos no navegador (WebP ou JPEG) até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · envio para Cloudflare R2 via API.`}
                         disabled={pending}
                         onPrepared={(prep) => {
                           run(async () => {
-                            const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                            const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
                             const fd = new FormData();
                             fd.append("file", f);
                             await uploadMarketplaceProductImage(product.id, fd, product.slug);
@@ -552,11 +558,11 @@ export function AdminPecasPanel({
                     <div className="mt-4">
                       <ImageUploadField
                         label="Adicionar foto à galeria"
-                        description={`WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · máx. 8 fotos extra.`}
+                        description={`WebP ou JPEG até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · máx. 8 fotos extra.`}
                         disabled={pending}
                         onPrepared={(prep) => {
                           run(async () => {
-                            const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                            const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
                             const fd = new FormData();
                             fd.append("file", f);
                             await uploadMarketplaceProductGalleryImage(product.id, product.slug, fd);

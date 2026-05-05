@@ -16,7 +16,7 @@ export function FornecedorImageUploadDemo() {
       <CardHeader>
         <CardTitle className="font-serif text-xl">Foto do insumo</CardTitle>
         <CardDescription>
-          Compressão automática no navegador para WebP até 1 MB antes de qualquer envio à API / Cloudflare R2.
+          Compressão automática no navegador (WebP ou JPEG) até 1 MB antes de qualquer envio à API / Cloudflare R2.
         </CardDescription>
       </CardHeader>
       <CardContent>

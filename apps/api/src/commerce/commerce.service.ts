@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import type { CompositeProduct, ExecutionRequest, ProductionAssignment } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { marketplaceUploadContentType } from '../storage/marketplace-upload-mime';
 import { R2StorageService } from '../storage/r2-storage.service';
 import { SupplierFulfillmentService } from '../supply/supplier-fulfillment.service';
 
@@ -132,7 +133,7 @@ export class CommerceService {
     });
   }
 
-  /** Envia WebP (≤ 1 MB) para Cloudflare R2 e grava `imagemUrl` na peça. */
+  /** Envia WebP ou JPEG (≤ 1 MB) para Cloudflare R2 e grava `imagemUrl` na peça. */
   async uploadProductImage(
     productId: string,
     buffer: Buffer,
@@ -144,17 +145,14 @@ export class CommerceService {
     if (buffer.length > 1024 * 1024) {
       throw new BadRequestException('A imagem não pode ultrapassar 1 MB.');
     }
-    const mime = mimeType.toLowerCase().split(';')[0]?.trim() ?? '';
-    if (mime !== 'image/webp') {
-      throw new BadRequestException('Envie apenas WebP (o painel comprime automaticamente antes do envio).');
-    }
+    const contentType = marketplaceUploadContentType(mimeType);
     const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
     if (count === 0) throw new NotFoundException('Peça não encontrada.');
     const key = this.r2.marketplaceProductImageKey(productId);
     const url = await this.r2.putPublicObject({
       key,
       body: buffer,
-      contentType: 'image/webp',
+      contentType,
     });
     await this.prisma.compositeProduct.update({
       where: { id: productId },
@@ -490,7 +488,7 @@ export class CommerceService {
     return [];
   }
 
-  /** Fotos extra (galeria) — até 8 URLs além da capa `imagemUrl`. */
+  /** Fotos extra (galeria, WebP ou JPEG) — até 8 URLs além da capa `imagemUrl`. */
   async uploadProductGalleryImage(
     productId: string,
     buffer: Buffer,
@@ -503,10 +501,7 @@ export class CommerceService {
     if (buffer.length > 1024 * 1024) {
       throw new BadRequestException('A imagem não pode ultrapassar 1 MB.');
     }
-    const mime = mimeType.toLowerCase().split(';')[0]?.trim() ?? '';
-    if (mime !== 'image/webp') {
-      throw new BadRequestException('Envie apenas WebP (o painel comprime automaticamente antes do envio).');
-    }
+    const contentType = marketplaceUploadContentType(mimeType);
     const p = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
     if (!p) throw new NotFoundException('Peça não encontrada.');
     const current = this.parseProductGallery(p.galeriaImagens);
@@ -517,7 +512,7 @@ export class CommerceService {
     const url = await this.r2.putPublicObject({
       key,
       body: buffer,
-      contentType: 'image/webp',
+      contentType,
     });
     const next = [...current, url];
     await this.prisma.compositeProduct.update({

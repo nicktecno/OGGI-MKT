@@ -8,6 +8,7 @@ import {
 import { SupplyQuantityKind } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import type { PlatformJwtUser } from '../auth/platform-jwt.guard';
+import { marketplaceUploadContentType } from '../storage/marketplace-upload-mime';
 import { R2StorageService } from '../storage/r2-storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateSupplyItemDto } from './dto/create-supply-item.dto';
@@ -156,10 +157,7 @@ export class SupplyService {
     if (buffer.length > 1024 * 1024) {
       throw new BadRequestException('A imagem não pode ultrapassar 1 MB.');
     }
-    const mime = mimeType.toLowerCase().split(';')[0]?.trim() ?? '';
-    if (mime !== 'image/webp') {
-      throw new BadRequestException('Envie apenas WebP.');
-    }
+    const contentType = marketplaceUploadContentType(mimeType);
     const row = await this.prisma.supplyItem.findFirst({
       where: { id: supplyItemId, supplierAccountId: user.sub },
     });
@@ -168,7 +166,7 @@ export class SupplyService {
     const url = await this.r2.putPublicObject({
       key,
       body: buffer,
-      contentType: 'image/webp',
+      contentType,
     });
     await this.prisma.supplyItem.update({
       where: { id: supplyItemId },

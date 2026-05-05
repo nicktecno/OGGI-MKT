@@ -6,11 +6,15 @@ import {
   type ImageUploadValidationResult,
 } from "./image-upload-limits";
 
+export type CompressImageMime = "image/webp" | "image/jpeg";
+
 export type CompressImageResult =
   | {
       ok: true;
       blob: Blob;
       filename: string;
+      /** MIME do blob (WebP ou JPEG, conforme suporte do browser). */
+      mimeType: CompressImageMime;
       originalWidth: number;
       originalHeight: number;
       outputWidth: number;
@@ -31,39 +35,27 @@ function baseNameWithoutExt(name: string): string {
   return i >= 0 ? name.slice(0, i) : name;
 }
 
-/**
- * Redimensiona (se precisar) e exporta WebP com qualidade ajustada para ficar abaixo do teto de bytes.
- */
-export async function compressImageForUpload(file: File): Promise<CompressImageResult> {
-  const pre = validateImageFileBeforeProcess(file);
-  if (!pre.ok) return { ok: false, validation: pre };
-
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file, {
-      imageOrientation: "from-image",
-    });
-  } catch {
-    return {
-      ok: false,
-      validation: {
-        ok: false,
-        code: "DECODE",
-        message: "Não foi possível ler a imagem. Tente outro arquivo.",
-      },
-    };
-  }
-
-  try {
-    return await encodeWithBitmap(bitmap, file);
-  } finally {
-    bitmap.close();
-  }
+/** `canvas.toBlob('image/webp')` devolve `null` em browsers sem codificador WebP (ex.: Safari antigo). */
+async function canEncodeWebpOnCanvas(): Promise<boolean> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return false;
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(0, 0, 16, 16);
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((b) => resolve(b), "image/webp", 0.85);
+  });
+  return blob !== null && blob.size > 0;
 }
 
-async function encodeWithBitmap(
+const ENCODE_FAIL = "Falha ao gerar imagem comprimida.";
+
+async function encodePipeline(
   bitmap: ImageBitmap,
   file: File,
+  outputMime: CompressImageMime,
 ): Promise<CompressImageResult> {
   const {
     maxDecodedEdgePx,
@@ -100,7 +92,7 @@ async function encodeWithBitmap(
       canvas.height = h;
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(bitmap, 0, 0, w, h);
-      canvas.toBlob((b) => resolve(b), "image/webp", quality);
+      canvas.toBlob((b) => resolve(b), outputMime, quality);
     });
 
   let outW = ow;
@@ -136,7 +128,7 @@ async function encodeWithBitmap(
   }
 
   if (!blob || blob.size === 0) {
-    return { ok: false, error: "Falha ao gerar imagem comprimida." };
+    return { ok: false, error: ENCODE_FAIL };
   }
   if (blob.size > maxOutputFileBytes) {
     return {
@@ -150,12 +142,14 @@ async function encodeWithBitmap(
     ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp"
       ? baseNameWithoutExt(file.name)
       : "imagem";
-  const filename = `${base || "imagem"}.webp`;
+  const suffix = outputMime === "image/webp" ? "webp" : "jpg";
+  const filename = `${base || "imagem"}.${suffix}`;
 
   return {
     ok: true,
     blob,
     filename,
+    mimeType: outputMime,
     originalWidth: ow,
     originalHeight: oh,
     outputWidth: outW,
@@ -163,4 +157,48 @@ async function encodeWithBitmap(
     originalSizeBytes: file.size,
     outputSizeBytes: blob.size,
   };
+}
+
+/**
+ * Redimensiona (se precisar) e exporta WebP com qualidade ajustada para ficar abaixo do teto de bytes.
+ * Em browsers sem `toBlob` WebP, usa JPEG (a API aceita ambos).
+ */
+export async function compressImageForUpload(file: File): Promise<CompressImageResult> {
+  const pre = validateImageFileBeforeProcess(file);
+  if (!pre.ok) return { ok: false, validation: pre };
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, {
+      imageOrientation: "from-image",
+    });
+  } catch {
+    return {
+      ok: false,
+      validation: {
+        ok: false,
+        code: "DECODE",
+        message: "Não foi possível ler a imagem. Tente outro arquivo.",
+      },
+    };
+  }
+
+  try {
+    const webpOk = await canEncodeWebpOnCanvas();
+    const primary: CompressImageMime = webpOk ? "image/webp" : "image/jpeg";
+    let result = await encodePipeline(bitmap, file, primary);
+
+    if (
+      !result.ok &&
+      "error" in result &&
+      result.error === ENCODE_FAIL &&
+      primary === "image/webp"
+    ) {
+      result = await encodePipeline(bitmap, file, "image/jpeg");
+    }
+
+    return result;
+  } finally {
+    bitmap.close();
+  }
 }

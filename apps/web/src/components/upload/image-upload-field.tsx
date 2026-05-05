@@ -3,7 +3,7 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { compressImageForUpload } from "@/lib/compress-image-client";
+import { compressImageForUpload, type CompressImageMime } from "@/lib/compress-image-client";
 import {
   acceptAttributeForImageInput,
   IMAGE_UPLOAD_LIMITS,
@@ -20,6 +20,7 @@ export type ImageUploadFieldProps = {
   onPrepared?: (payload: {
     blob: Blob;
     filename: string;
+    mimeType: CompressImageMime;
     originalSizeBytes: number;
     outputSizeBytes: number;
     outputWidth: number;
@@ -37,7 +38,7 @@ function formatBytes(n: number): string {
 
 export function ImageUploadField({
   label = "Imagem",
-  description = `JPEG, PNG ou WebP · até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOriginalFileBytes / (1024 * 1024))} MB · comprimimos para WebP (~máx. ${formatBytes(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes)}).`,
+  description = `JPEG, PNG ou WebP · até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOriginalFileBytes / (1024 * 1024))} MB · comprimimos no navegador (WebP ou JPEG · ~máx. ${formatBytes(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes)}).`,
   className,
   disabled = false,
   onPrepared,
@@ -87,6 +88,7 @@ export function ImageUploadField({
         onPrepared?.({
           blob: result.blob,
           filename: result.filename,
+          mimeType: result.mimeType,
           originalSizeBytes: result.originalSizeBytes,
           outputSizeBytes: result.outputSizeBytes,
           outputWidth: result.outputWidth,
@@ -131,7 +133,7 @@ export function ImageUploadField({
       {previewUrl ? (
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Pré-visualização (WebP)
+            Pré-visualização
           </p>
           {/* blob: URLs não passam pelo otimizador Next */}
           {/* eslint-disable-next-line @next/next/no-img-element */}

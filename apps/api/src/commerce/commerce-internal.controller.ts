@@ -66,7 +66,7 @@ export class CommerceInternalController {
     return this.commerce.patchProduct(id, body);
   }
 
-  /** Imagem da vitrine (WebP, máx. 1 MB) → Cloudflare R2 + atualização da peça. */
+  /** Imagem da vitrine (WebP ou JPEG, máx. 1 MB) → Cloudflare R2 + atualização da peça. */
   @Post('products/:id/image')
   @UseInterceptors(
     FileInterceptor('file', {

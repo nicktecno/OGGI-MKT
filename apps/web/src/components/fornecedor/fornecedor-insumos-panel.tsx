@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ImageUploadField } from "@/components/upload/image-upload-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { CompressImageMime } from "@/lib/compress-image-client";
 import type { DemoSupplyItem } from "@/lib/demo-seed";
 import { insumoCostTotal } from "@/lib/demo-seed";
 import { formatBrl } from "@/lib/utils";
@@ -58,6 +59,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
   const [pacPeso, setPacPeso] = useState("0.4");
   const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
   const [pendingImageName, setPendingImageName] = useState<string | null>(null);
+  const [pendingImageMime, setPendingImageMime] = useState<CompressImageMime | null>(null);
 
   function resetForm() {
     setNome("");
@@ -73,6 +75,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setPacPeso(d.peso);
     setPendingImageBlob(null);
     setPendingImageName(null);
+    setPendingImageMime(null);
     setEditingId(null);
   }
 
@@ -119,7 +122,9 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
       });
       if (pendingImageBlob && created?.id) {
         const fd = new FormData();
-        fd.append("file", pendingImageBlob, pendingImageName ?? "insumo.webp");
+        const name = pendingImageName ?? "insumo.webp";
+        const type = pendingImageMime ?? "image/webp";
+        fd.append("file", new File([pendingImageBlob], name, { type }));
         await uploadSupplyItemImageAction(created.id, fd);
       }
       resetForm();
@@ -173,7 +178,9 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
       });
       if (pendingImageBlob) {
         const fd = new FormData();
-        fd.append("file", pendingImageBlob, pendingImageName ?? "insumo.webp");
+        const name = pendingImageName ?? "insumo.webp";
+        const type = pendingImageMime ?? "image/webp";
+        fd.append("file", new File([pendingImageBlob], name, { type }));
         await uploadSupplyItemImageAction(row.id, fd);
       }
       resetForm();
@@ -200,6 +207,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setPacPeso(d.peso);
     setPendingImageBlob(null);
     setPendingImageName(null);
+    setPendingImageMime(null);
   }
 
   const kindLabel = quantidadeKind === "METRO" ? "Metros" : "Peças";
@@ -330,10 +338,11 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
             <div className="sm:col-span-2">
               <ImageUploadField
                 label="Foto do insumo (opcional)"
-                description="WebP após compressão no navegador · máx. 1 MB · requer R2 configurado na API."
-                onPrepared={({ blob, filename }) => {
+                description="WebP ou JPEG após compressão no navegador · máx. 1 MB · requer R2 configurado na API."
+                onPrepared={({ blob, filename, mimeType }) => {
                   setPendingImageBlob(blob);
                   setPendingImageName(filename);
+                  setPendingImageMime(mimeType);
                 }}
               />
             </div>
