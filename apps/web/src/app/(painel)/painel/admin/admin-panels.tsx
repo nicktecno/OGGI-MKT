@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { IMAGE_UPLOAD_LIMITS } from "@/lib/image-upload-limits";
 import { formatVariacoesTamanhosLabel, ROUPA_TAMANHOS } from "@/lib/product-sizes";
 import {
   compositeInsumosTotal,
+  compositePrecoFromLinhasAndFees,
+  compositePrecoLojaPlanejado,
   mergeSupplyCatalog,
   resolveCompositeLines,
   type DemoCompositeProduct,
@@ -211,6 +213,132 @@ function NovaPecaImagemPrepRow({
       <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={disabled} onClick={onRemove}>
         Remover
       </Button>
+    </div>
+  );
+}
+
+function InsumoThumb({ url, className }: { url?: string | null; className?: string }) {
+  const base = "h-9 w-9 shrink-0 rounded-md border border-border bg-muted/40 object-cover";
+  if (url?.trim()) {
+    return (
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element -- URLs R2 ou fornecedor */}
+        <img src={url.trim()} alt="" className={cn(base, className)} />
+      </>
+    );
+  }
+  return (
+    <div
+      className={cn(base, "flex items-center justify-center text-[10px] font-medium text-muted-foreground", className)}
+      title="Sem foto"
+    >
+      —
+    </div>
+  );
+}
+
+function InsumoPicker({
+  supplies,
+  value,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  supplies: DemoSupplyItem[];
+  value: string;
+  onChange: (id: string) => void;
+  disabled: boolean;
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const selected = value ? supplies.find((s) => s.id === value) : undefined;
+
+  return (
+    <div ref={ref} className="relative min-w-[220px] flex-1">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-left text-sm shadow-sm",
+          "transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          disabled && "pointer-events-none opacity-60",
+        )}
+      >
+        {selected ? (
+          <>
+            <InsumoThumb url={selected.imagem_url} />
+            <span className="min-w-0 flex-1 truncate font-medium text-foreground">{selected.nome}</span>
+            <span className="hidden max-w-[5.5rem] shrink-0 truncate text-xs text-muted-foreground sm:inline">
+              {selected.sku_interno}
+            </span>
+          </>
+        ) : (
+          <span className="flex-1 text-muted-foreground">Escolha o insumo…</span>
+        )}
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      {open ? (
+        <ul
+          role="listbox"
+          className="absolute z-[60] mt-1 max-h-64 w-full min-w-[min(100%,320px)] overflow-auto rounded-md border border-border bg-popover py-1 text-sm shadow-lg"
+        >
+          <li className="px-1">
+            <button
+              type="button"
+              role="option"
+              aria-selected={!value}
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-muted-foreground hover:bg-muted/80"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+            >
+              <span className="pl-1">Limpar seleção</span>
+            </button>
+          </li>
+          {supplies.map((s) => (
+            <li key={s.id} className="px-1">
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === s.id}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
+                  value === s.id && "bg-accent/15",
+                )}
+                onClick={() => {
+                  onChange(s.id);
+                  setOpen(false);
+                }}
+              >
+                <InsumoThumb url={s.imagem_url} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-foreground">{s.nome}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{s.sku_interno}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -511,22 +639,15 @@ function AdminNovaPecaCard({
             <Label>Insumos e quantidades</Label>
             {lines.map((line, idx) => (
               <div key={idx} className="flex flex-wrap items-end gap-2">
-                <select
-                  className="h-10 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                <InsumoPicker
+                  supplies={supplies}
                   value={line.supplyItemId}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, supplyItemId: v } : x)));
-                  }}
+                  onChange={(v) =>
+                    setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, supplyItemId: v } : x)))
+                  }
                   disabled={pending}
-                >
-                  <option value="">Escolha o insumo…</option>
-                  {supplies.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nome} ({s.sku_interno})
-                    </option>
-                  ))}
-                </select>
+                  ariaLabel={`Insumo na linha ${idx + 1}`}
+                />
                 <Input
                   className="w-28"
                   inputMode="decimal"
@@ -643,7 +764,7 @@ function AdminPecaProductCard({
             ) : null}
           </p>
           <p className="text-sm font-medium tabular-nums text-foreground">
-            Preço na loja: {formatBrl(product.preco_venda_publico)}
+            Preço na loja: {formatBrl(compositePrecoLojaPlanejado(product))}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
@@ -1198,7 +1319,6 @@ function PricingForm({
 }) {
   const scope = `pricing-${product.id}`;
   const saving = adminActionLoading(pending, pendingScope, scope);
-  const [preco, setPreco] = useState(String(product.preco_venda_publico));
   const [execFee, setExecFee] = useState(String(product.executor_fee_planejada));
   const [platFee, setPlatFee] = useState(String(product.platform_fee_planejada));
   const pd0 = pacoteDefaults(product);
@@ -1208,7 +1328,6 @@ function PricingForm({
   const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
 
   useEffect(() => {
-    setPreco(String(product.preco_venda_publico));
     setExecFee(String(product.executor_fee_planejada));
     setPlatFee(String(product.platform_fee_planejada));
     const pd = pacoteDefaults(product);
@@ -1217,6 +1336,14 @@ function PricingForm({
     setPacComp(String(pd.pacote_comprimento_cm));
     setPacPeso(String(pd.pacote_peso_kg));
   }, [product]);
+
+  const execParsed = Number(execFee.replace(",", "."));
+  const platParsed = Number(platFee.replace(",", "."));
+  const materiaisRef = compositeInsumosTotal(product);
+  const precoLojaCalculado =
+    Number.isFinite(execParsed) && Number.isFinite(platParsed)
+      ? compositePrecoFromLinhasAndFees(product.linhas, execParsed, platParsed)
+      : null;
 
   return (
     <form
@@ -1227,7 +1354,6 @@ function PricingForm({
           () =>
             updateCompositeProductPricing({
               productId: product.id,
-              preco_venda_publico: Number(preco.replace(",", ".")),
               executor_fee_planejada: Number(execFee.replace(",", ".")),
               platform_fee_planejada: Number(platFee.replace(",", ".")),
               pacote_altura_cm: Number(pacAlt.replace(",", ".")),
@@ -1240,16 +1366,14 @@ function PricingForm({
       }}
     >
       <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`preco-${product.id}`} className="font-medium leading-snug">
-            Preço na loja (R$)
-          </Label>
-          <Input
-            id={`preco-${product.id}`}
-            value={preco}
-            onChange={(e) => setPreco(e.target.value)}
-            disabled={pending}
-          />
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preço na loja (R$)</p>
+          <p className="text-lg font-semibold tabular-nums text-foreground">
+            {precoLojaCalculado !== null ? formatBrl(precoLojaCalculado) : "—"}
+          </p>
+          <p className="text-[0.7rem] leading-snug text-muted-foreground">
+            Materiais ({formatBrl(materiaisRef)}) + costureira + margem loja
+          </p>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`exec-${product.id}`} className="font-medium leading-snug">
@@ -1337,10 +1461,15 @@ function PricingForm({
           Guardar valores
         </Button>
         <p className="text-sm text-muted-foreground">
-          Soma dos materiais (referência):{" "}
-          <span className="font-medium tabular-nums text-foreground">
-            {formatBrl(compositeInsumosTotal(product))}
-          </span>
+          Materiais na montagem:{" "}
+          <span className="font-medium tabular-nums text-foreground">{formatBrl(materiaisRef)}</span>
+          {precoLojaCalculado !== null ? (
+            <>
+              {" "}
+              · Preço ao cliente:{" "}
+              <span className="font-medium tabular-nums text-foreground">{formatBrl(precoLojaCalculado)}</span>
+            </>
+          ) : null}
         </p>
       </div>
     </form>

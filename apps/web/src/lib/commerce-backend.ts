@@ -8,6 +8,7 @@ import type {
 import {
   DEMO_ASSIGNMENTS_INITIAL,
   DEMO_EXECUTION_REQUESTS_INITIAL,
+  compositePrecoFromLinhasAndFees,
   getSupplyItemById,
 } from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
@@ -112,7 +113,6 @@ export async function persistSetProductActive(productId: string, ativo: boolean)
 
 export async function persistCompositeProductPricing(input: {
   productId: string;
-  preco_venda_publico: number;
   executor_fee_planejada: number;
   platform_fee_planejada: number;
   pacote_altura_cm: number;
@@ -126,7 +126,6 @@ export async function persistCompositeProductPricing(input: {
       {
         method: "PATCH",
         body: JSON.stringify({
-          preco_venda_publico: input.preco_venda_publico,
           executor_fee_planejada: input.executor_fee_planejada,
           platform_fee_planejada: input.platform_fee_planejada,
           pacote_altura_cm: input.pacote_altura_cm,
@@ -139,13 +138,21 @@ export async function persistCompositeProductPricing(input: {
     if (!res.ok) throw new Error(await readApiError(res));
     return;
   }
+  const state = await getCommerceStateFromCookies();
+  const product = state.products.find((p) => p.id === input.productId);
+  if (!product) throw new Error("Peça não encontrada.");
+  const preco_venda_publico = compositePrecoFromLinhasAndFees(
+    product.linhas,
+    input.executor_fee_planejada,
+    input.platform_fee_planejada,
+  );
   await updateCommerceDelta((d) => ({
     ...d,
     productPatch: {
       ...d.productPatch,
       [input.productId]: {
         ...d.productPatch?.[input.productId],
-        preco_venda_publico: input.preco_venda_publico,
+        preco_venda_publico,
         executor_fee_planejada: input.executor_fee_planejada,
         platform_fee_planejada: input.platform_fee_planejada,
         pacote_altura_cm: input.pacote_altura_cm,
@@ -575,7 +582,6 @@ export async function persistCreateCompositeProduct(
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    preco_venda_publico?: number;
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
   },
@@ -605,7 +611,6 @@ export async function persistCreateCompositeProduct(
         quantidade: l.quantidade,
       })),
       variacoes_tamanho,
-      preco_venda_publico: input.preco_venda_publico ?? 0,
       executor_fee_planejada: input.executor_fee_planejada ?? 0,
       platform_fee_planejada: input.platform_fee_planejada ?? 0,
     };
@@ -668,7 +673,11 @@ export async function persistCreateCompositeProduct(
     linhas,
     executor_fee_planejada: input.executor_fee_planejada ?? 0,
     platform_fee_planejada: input.platform_fee_planejada ?? 0,
-    preco_venda_publico: input.preco_venda_publico ?? 0,
+    preco_venda_publico: compositePrecoFromLinhasAndFees(
+      linhas,
+      input.executor_fee_planejada ?? 0,
+      input.platform_fee_planejada ?? 0,
+    ),
     ativo: true,
     admin_pausado: false,
     imagem_url:

@@ -18,6 +18,7 @@ import {
   fetchSupplierFulfillmentForSession,
   fetchSupplyItemsForSession,
 } from "@/lib/platform-account-server";
+import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -28,9 +29,10 @@ type PageProps = {
   searchParams: Promise<{ aba?: string }>;
 };
 
-function fornecedorSection(aba: string | undefined): "overview" | "insumos" | "entregas" {
+function fornecedorSection(aba: string | undefined): "overview" | "dados" | "insumos" | "entregas" {
   if (aba === "entregas") return "entregas";
   if (aba === "insumos") return "insumos";
+  if (aba === "dados") return "dados";
   return "overview";
 }
 
@@ -59,19 +61,38 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
     ? apiList
     : DEMO_SUPPLY_ITEMS.filter((i) => i.supplierEmail === email);
   const apiMode = Boolean(useApiSupplies);
+  const painelBase = dashboardPathForRole("SUPPLIER");
+
+  const intro =
+    section === "dados" ? (
+      <>
+        Razão social, morada, contactos e Stripe ficam nesta aba, à parte dos insumos e das entregas.
+      </>
+    ) : section === "insumos" ? (
+      <>
+        Cadastre insumos (foto, tipo metro/peça, quantidade) para o admin montar as peças. Os dados da
+        empresa e pagamentos estão na aba <strong>Dados da empresa</strong>.
+      </>
+    ) : section === "entregas" ? (
+      <>
+        Quando uma combinação usar os seus insumos, veja o destino do envio ao executor; com o Melhor Envio
+        ligado, a etiqueta fica disponível aqui.
+      </>
+    ) : (
+      <>
+        Escolha no menu à esquerda: dados da empresa e Stripe, insumos para as peças, ou entregas aos
+        executores.
+      </>
+    );
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Fornecedor</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Cadastre insumos (foto, tipo metro/peça, quantidade) para o admin montar as peças. Quando uma
-          combinação for atribuída a uma costureira, a aba <strong>Entregas aos executores</strong> mostra o
-          destino e, com o Melhor Envio ligado, a etiqueta de envio.
-        </p>
+        <p className="mt-2 max-w-2xl text-muted-foreground">{intro}</p>
       </div>
 
-      {me?.supplierProfile ? (
+      {section === "dados" ? (
         <Card className="max-w-4xl border-border">
           <CardHeader>
             <CardTitle className="font-serif text-xl">Cadastro e pagamentos</CardTitle>
@@ -80,61 +101,72 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <FornecedorProfileForm initial={me.supplierProfile} />
-            <div className="border-t border-border pt-4">
-              <p className="mb-2 text-sm font-medium text-foreground">Stripe Connect</p>
-              <StripeConnectButton
-                onboardingComplete={me.stripeOnboardingComplete}
-                hasStripeAccount={me.hasStripeAccount}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card className="max-w-4xl border-border">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">
-            {section === "insumos"
-              ? "Meus insumos"
-              : section === "entregas"
-                ? "Entregas aos executores"
-                : "Área de trabalho"}
-          </CardTitle>
-          <CardDescription>
-            {section === "overview" ? (
+            {me?.supplierProfile ? (
               <>
-                Conta <span className="text-foreground">{email}</span>
-                {apiMode ? " · dados em API + banco" : " · modo demonstração"}.
-              </>
-            ) : section === "insumos" ? (
-              <>
-                {meusInsumos.length} insumo(s) cadastrado(s) para{" "}
-                <span className="text-foreground">{email}</span>
-                {apiMode ? " (API + banco)" : " (demonstração)"}.
+                <FornecedorProfileForm initial={me.supplierProfile} />
+                <div className="border-t border-border pt-4">
+                  <p className="mb-2 text-sm font-medium text-foreground">Stripe Connect</p>
+                  <StripeConnectButton
+                    onboardingComplete={me.stripeOnboardingComplete}
+                    hasStripeAccount={me.hasStripeAccount}
+                  />
+                </div>
               </>
             ) : (
-              <>
-                Envios ligados às suas matérias-primas para executores.{" "}
-                <span className="text-foreground">{fulfillmentLines.length}</span> linha(s) listada(s).
-              </>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {apiOn
+                  ? "O perfil de fornecedor ainda não está disponível para edição. Assim que a conta estiver ativa na plataforma, os campos aparecem aqui."
+                  : "No modo demonstração, ligue a API e inicie sessão com um fornecedor aprovado para ver e editar o cadastro completo."}
+              </p>
             )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Suspense
-            fallback={<PageLoadingFallback className="py-10" indicatorHeight={80} />}
-          >
-            <FornecedorWorkspace
-              section={section}
-              apiMode={apiMode}
-              meusInsumos={meusInsumos}
-              fulfillmentLines={fulfillmentLines}
-              email={email}
-            />
-          </Suspense>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="max-w-4xl border-border">
+          <CardHeader>
+            <CardTitle className="font-serif text-xl">
+              {section === "insumos"
+                ? "Meus insumos"
+                : section === "entregas"
+                  ? "Entregas aos executores"
+                  : "Área de trabalho"}
+            </CardTitle>
+            <CardDescription>
+              {section === "overview" ? (
+                <>
+                  Conta <span className="text-foreground">{email}</span>
+                  {apiMode ? " · dados em API + banco" : " · modo demonstração"}.
+                </>
+              ) : section === "insumos" ? (
+                <>
+                  {meusInsumos.length} insumo(s) cadastrado(s) para{" "}
+                  <span className="text-foreground">{email}</span>
+                  {apiMode ? " (API + banco)" : " (demonstração)"}.
+                </>
+              ) : (
+                <>
+                  Envios ligados às suas matérias-primas para executores.{" "}
+                  <span className="text-foreground">{fulfillmentLines.length}</span> linha(s) listada(s).
+                </>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Suspense
+              fallback={<PageLoadingFallback className="py-10" indicatorHeight={80} />}
+            >
+              <FornecedorWorkspace
+                section={section}
+                painelBase={painelBase}
+                apiMode={apiMode}
+                meusInsumos={meusInsumos}
+                fulfillmentLines={fulfillmentLines}
+                email={email}
+              />
+            </Suspense>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

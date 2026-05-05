@@ -11,6 +11,8 @@ export type FornecedorSection = "overview" | "insumos" | "entregas";
 
 type Props = {
   section: FornecedorSection;
+  /** Base do painel (ex. `/painel/fornecedor`) para links `?aba=`. */
+  painelBase: string;
   apiMode: boolean;
   meusInsumos: DemoSupplyItem[];
   fulfillmentLines: SupplierFulfillmentLineDto[];
@@ -45,6 +47,7 @@ function SectionLinkCard({
 
 export function FornecedorWorkspace({
   section,
+  painelBase,
   apiMode,
   meusInsumos,
   fulfillmentLines,
@@ -56,15 +59,21 @@ export function FornecedorWorkspace({
         <p className="text-sm leading-relaxed text-muted-foreground">
           Use o menu à esquerda ou escolha abaixo o que quer gerir. Cada secção abre no seu próprio contexto.
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SectionLinkCard
-            href="/painel/fornecedor?aba=insumos"
+            href={`${painelBase}?aba=dados`}
+            title="Dados da empresa"
+            description="Razão social, morada, contactos e ligação Stripe para receber pagamentos."
+            meta="Cadastro e pagamentos"
+          />
+          <SectionLinkCard
+            href={`${painelBase}?aba=insumos`}
             title="Meus insumos"
             description="Cadastrar e editar materiais, fotos, pacotes e custos que o admin usa nas peças."
             meta={`${meusInsumos.length} item(ns) · ${apiMode ? "API" : "demonstração"}`}
           />
           <SectionLinkCard
-            href="/painel/fornecedor?aba=entregas"
+            href={`${painelBase}?aba=entregas`}
             title="Entregas aos executores"
             description="Envios ao executor quando uma combinação usar os seus insumos — pacote e etiqueta quando o Melhor Envio estiver ligado."
             meta={`${fulfillmentLines.length} linha(ns) de entrega`}

@@ -83,7 +83,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
             const active = pathname === item.href;
             const badge = "badge" in item ? item.badge : 0;
             return (
-              <Link key={item.href} href={item.href} className={sidebarTabClass(active)}>
+              <Link key={item.href} href={item.href} prefetch className={sidebarTabClass(active)}>
                 <span className="min-w-0 flex-1">{item.label}</span>
                 {badge > 0 ? (
                   <span
@@ -113,20 +113,25 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     const aba = searchParams.get("aba");
     const onFornecedor =
       pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
-    const overviewActive = onFornecedor && aba !== "insumos" && aba !== "entregas";
+    const overviewActive =
+      onFornecedor && aba !== "insumos" && aba !== "entregas" && aba !== "dados";
+    const dadosActive = aba === "dados";
     const insumosActive = aba === "insumos";
     const entregasActive = aba === "entregas";
     const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
     return (
       <SidebarTabRail aria-label="Menu do fornecedor">
-        <Link href={painelHome} className={sidebarTabClass(overviewActive)}>
+        <Link href={painelHome} prefetch className={sidebarTabClass(overviewActive)}>
           <span className="min-w-0 flex-1">Visão geral</span>
         </Link>
-        <Link href={`${painelHome}?aba=insumos`} className={sidebarTabClass(insumosActive)}>
+        <Link href={`${painelHome}?aba=dados`} prefetch className={sidebarTabClass(dadosActive)}>
+          <span className="min-w-0 flex-1">Dados da empresa</span>
+        </Link>
+        <Link href={`${painelHome}?aba=insumos`} prefetch className={sidebarTabClass(insumosActive)}>
           <span className="min-w-0 flex-1">Meus insumos</span>
         </Link>
-        <Link href={`${painelHome}?aba=entregas`} className={sidebarTabClass(entregasActive)}>
+        <Link href={`${painelHome}?aba=entregas`} prefetch className={sidebarTabClass(entregasActive)}>
           <span className="min-w-0 flex-1">Entregas aos executores</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />

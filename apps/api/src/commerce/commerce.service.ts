@@ -101,11 +101,28 @@ export class CommerceService {
     };
   }
 
+  /** Soma quantidade × snapshot por linha na montagem (JSON em `linhas`). */
+  private sumMateriaisFromLinhasJson(linhas: unknown): number {
+    if (!Array.isArray(linhas)) return 0;
+    let sum = 0;
+    for (const row of linhas) {
+      if (typeof row !== 'object' || row === null) continue;
+      const r = row as Record<string, unknown>;
+      const qRaw = r.quantidade;
+      const q = typeof qRaw === 'number' ? qRaw : Number(qRaw);
+      const cRaw = r.snapshot_custo_unitario;
+      const c = typeof cRaw === 'number' ? cRaw : Number(cRaw);
+      if (Number.isFinite(q) && Number.isFinite(c)) sum += q * c;
+    }
+    return sum;
+  }
+
   async patchProduct(
     productId: string,
     body: {
       ativo?: boolean;
       admin_pausado?: boolean;
+      /** Ignorado: o preço ao cliente é sempre derivado de materiais + taxas. */
       preco_venda_publico?: number;
       executor_fee_planejada?: number;
       platform_fee_planejada?: number;
@@ -127,12 +144,6 @@ export class CommerceService {
       body.pacote_peso_kg !== undefined;
     if (!has) {
       throw new BadRequestException('Nenhum campo para atualizar.');
-    }
-    if (
-      body.preco_venda_publico !== undefined &&
-      (!Number.isFinite(body.preco_venda_publico) || body.preco_venda_publico < 0)
-    ) {
-      throw new BadRequestException('preço inválido');
     }
     if (
       body.executor_fee_planejada !== undefined &&
@@ -166,16 +177,35 @@ export class CommerceService {
         throw new BadRequestException('pacote_peso_kg inválido (mín. 0,01 kg).');
       }
     }
-    const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
-    if (count === 0) throw new NotFoundException('Peça não encontrada.');
+    const existing = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
+    if (!existing) throw new NotFoundException('Peça não encontrada.');
+
+    const pricingTouched =
+      body.executor_fee_planejada !== undefined ||
+      body.platform_fee_planejada !== undefined ||
+      body.preco_venda_publico !== undefined;
+
+    const nextExec =
+      body.executor_fee_planejada !== undefined
+        ? body.executor_fee_planejada
+        : existing.executorFeePlanejada;
+    const nextPlat =
+      body.platform_fee_planejada !== undefined
+        ? body.platform_fee_planejada
+        : existing.platformFeePlanejada;
+
+    let precoComputed: number | undefined;
+    if (pricingTouched) {
+      const materials = this.sumMateriaisFromLinhasJson(existing.linhas);
+      precoComputed = materials + nextExec + nextPlat;
+    }
+
     await this.prisma.compositeProduct.update({
       where: { id: productId },
       data: {
         ...(body.ativo !== undefined ? { ativo: body.ativo } : {}),
         ...(body.admin_pausado !== undefined ? { adminPausado: body.admin_pausado } : {}),
-        ...(body.preco_venda_publico !== undefined
-          ? { precoVendaPublico: body.preco_venda_publico }
-          : {}),
+        ...(precoComputed !== undefined ? { precoVendaPublico: precoComputed } : {}),
         ...(body.executor_fee_planejada !== undefined
           ? { executorFeePlanejada: body.executor_fee_planejada }
           : {}),
@@ -237,7 +267,6 @@ export class CommerceService {
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    preco_venda_publico?: number;
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
   },
@@ -294,6 +323,12 @@ export class CommerceService {
     }
 
     const id = `cp-${randomUUID().slice(0, 12)}`;
+    const materialsTotal = linhasPayload.reduce(
+      (sum, row) => sum + row.quantidade * row.snapshot_custo_unitario,
+      0,
+    );
+    const execFee = body.executor_fee_planejada ?? 0;
+    const platFee = body.platform_fee_planejada ?? 0;
     await this.prisma.compositeProduct.create({
       data: {
         id,
@@ -302,9 +337,9 @@ export class CommerceService {
         sku,
         descricaoCurta: desc,
         linhas: linhasPayload as unknown as Prisma.InputJsonValue,
-        executorFeePlanejada: body.executor_fee_planejada ?? 0,
-        platformFeePlanejada: body.platform_fee_planejada ?? 0,
-        precoVendaPublico: body.preco_venda_publico ?? 0,
+        executorFeePlanejada: execFee,
+        platformFeePlanejada: platFee,
+        precoVendaPublico: materialsTotal + execFee + platFee,
         ativo: true,
         adminPausado: false,
         imagemUrl:

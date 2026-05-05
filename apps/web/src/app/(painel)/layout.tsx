@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { PageLoadingFallback } from "@/components/ui/page-loading-fallback";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
@@ -32,7 +33,19 @@ export default async function PainelLayout({ children }: { children: React.React
         </Suspense>
       </aside>
       <div className="flex-1 bg-gradient-to-br from-background via-background to-muted/25">
-        <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">{children}</div>
+        <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+          <Suspense
+            fallback={
+              <PageLoadingFallback
+                className="min-h-[52vh] py-12 sm:min-h-[48vh]"
+                indicatorHeight={128}
+                visibleMessage="A carregar o painel…"
+              />
+            }
+          >
+            {children}
+          </Suspense>
+        </div>
       </div>
     </div>
   );

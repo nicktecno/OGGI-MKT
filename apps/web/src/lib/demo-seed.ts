@@ -193,7 +193,8 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     ],
     executor_fee_planejada: 85,
     platform_fee_planejada: 45,
-    preco_venda_publico: 459.9,
+    /** materiais + costureira + loja (2,2×89,9 + 4,5 + 85 + 45) */
+    preco_venda_publico: 332.28,
     ativo: true,
     admin_pausado: false,
     pacote_altura_cm: 24,
@@ -226,7 +227,8 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     ],
     executor_fee_planejada: 35,
     platform_fee_planejada: 22,
-    preco_venda_publico: 189.9,
+    /** materiais + costureira + loja */
+    preco_venda_publico: 92.97,
     ativo: true,
     admin_pausado: false,
     pacote_altura_cm: 18,
@@ -433,6 +435,24 @@ export function lineTotal(line: DemoCompositeLine): number {
 
 export function compositeInsumosTotal(product: DemoCompositeProduct): number {
   return product.linhas.reduce((acc, line) => acc + lineTotal(line), 0);
+}
+
+/** Soma de custos de materiais + repasse costureira + margem loja (preço ao cliente planejado). */
+export function compositePrecoFromLinhasAndFees(
+  linhas: DemoCompositeLine[],
+  executor_fee_planejada: number,
+  platform_fee_planejada: number,
+): number {
+  const materiais = linhas.reduce((acc, line) => acc + lineTotal(line), 0);
+  return materiais + executor_fee_planejada + platform_fee_planejada;
+}
+
+export function compositePrecoLojaPlanejado(product: DemoCompositeProduct): number {
+  return compositePrecoFromLinhasAndFees(
+    product.linhas,
+    product.executor_fee_planejada,
+    product.platform_fee_planejada,
+  );
 }
 
 export type ResolvedLine = DemoCompositeLine & { insumo: DemoSupplyItem };

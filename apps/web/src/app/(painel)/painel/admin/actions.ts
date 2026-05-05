@@ -59,7 +59,6 @@ export async function createCompositeProductAction(
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    preco_venda_publico?: number;
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
   },
@@ -92,7 +91,6 @@ export async function setProductActive(productId: string, ativo: boolean) {
 
 export async function updateCompositeProductPricing(input: {
   productId: string;
-  preco_venda_publico: number;
   executor_fee_planejada: number;
   platform_fee_planejada: number;
   pacote_altura_cm: number;
@@ -103,7 +101,6 @@ export async function updateCompositeProductPricing(input: {
   await requireAdmin();
   const {
     productId,
-    preco_venda_publico,
     executor_fee_planejada,
     platform_fee_planejada,
     pacote_altura_cm,
@@ -112,10 +109,8 @@ export async function updateCompositeProductPricing(input: {
     pacote_peso_kg,
   } = input;
   if (
-    !Number.isFinite(preco_venda_publico) ||
     !Number.isFinite(executor_fee_planejada) ||
     !Number.isFinite(platform_fee_planejada) ||
-    preco_venda_publico < 0 ||
     executor_fee_planejada < 0 ||
     platform_fee_planejada < 0
   ) {
@@ -135,7 +130,6 @@ export async function updateCompositeProductPricing(input: {
   }
   await persistCompositeProductPricing({
     productId,
-    preco_venda_publico,
     executor_fee_planejada,
     platform_fee_planejada,
     pacote_altura_cm,
