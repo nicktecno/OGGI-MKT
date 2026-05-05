@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   createSupplyItemAction,
+  deleteSupplyItemAction,
   updateSupplyItemAction,
   uploadSupplyItemImageAction,
 } from "@/app/(painel)/painel/fornecedor/fornecedor-actions";
@@ -42,9 +44,11 @@ function defaultPacote(row?: DemoSupplyItem) {
 }
 
 export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }: Props) {
+  const router = useRouter();
   const items = initialItems;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [nome, setNome] = useState("");
@@ -211,6 +215,28 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
   }
 
   const kindLabel = quantidadeKind === "METRO" ? "Metros" : "Peças";
+
+  async function onDelete(id: string) {
+    if (!apiMode) return;
+    if (
+      !window.confirm(
+        "Apagar este insumo definitivamente? Não é possível se estiver na montagem de alguma peça na loja.",
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    setDeletingId(id);
+    try {
+      await deleteSupplyItemAction(id);
+      if (editingId === id) resetForm();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível apagar.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -427,9 +453,21 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
                 </td>
                 {apiMode ? (
                   <td className="px-3 py-3 text-right">
-                    <Button type="button" variant="outline" size="sm" onClick={() => startEdit(row)}>
-                      Editar
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => startEdit(row)}>
+                        Editar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="border-destructive/80"
+                        disabled={pending || deletingId !== null}
+                        onClick={() => void onDelete(row.id)}
+                      >
+                        {deletingId === row.id ? "A apagar…" : "Apagar"}
+                      </Button>
+                    </div>
                   </td>
                 ) : null}
               </tr>

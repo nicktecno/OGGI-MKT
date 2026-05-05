@@ -25,10 +25,14 @@ export function platformInternalConfigured(): boolean {
 
 export async function fetchPendingRegistrationsCount(): Promise<number> {
   if (!platformInternalConfigured()) return 0;
-  const res = await platformInternalFetch("/internal/platform/accounts/pending-count");
-  if (!res.ok) return 0;
-  const j = (await res.json()) as { count?: number };
-  return typeof j.count === "number" ? j.count : 0;
+  try {
+    const res = await platformInternalFetch("/internal/platform/accounts/pending-count");
+    if (!res.ok) return 0;
+    const j = (await res.json()) as { count?: number };
+    return typeof j.count === "number" ? j.count : 0;
+  } catch {
+    return 0;
+  }
 }
 
 /** Costureiras com cadastro ativo (API + banco). Lista vazia se a chamada falhar. */

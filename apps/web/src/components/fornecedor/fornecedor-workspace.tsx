@@ -1,80 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { FornecedorEntregasPanel } from "@/components/fornecedor/fornecedor-entregas-panel";
 import { FornecedorInsumosPanel } from "@/components/fornecedor/fornecedor-insumos-panel";
 import type { DemoSupplyItem } from "@/lib/demo-seed";
 import type { SupplierFulfillmentLineDto } from "@/lib/platform-account-server";
+import { cn } from "@/lib/utils";
 
-type TabKey = "insumos" | "entregas";
+export type FornecedorSection = "overview" | "insumos" | "entregas";
 
 type Props = {
+  section: FornecedorSection;
   apiMode: boolean;
   meusInsumos: DemoSupplyItem[];
   fulfillmentLines: SupplierFulfillmentLineDto[];
   email: string;
-  initialTab: TabKey;
 };
 
-function tabFromSearchParam(aba: string | null): TabKey {
-  return aba === "entregas" ? "entregas" : "insumos";
+function SectionLinkCard({
+  href,
+  title,
+  description,
+  meta,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  meta: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group block rounded-xl border border-border/60 bg-card/80 p-5 shadow-sm ring-1 ring-foreground/[0.03] transition-colors",
+        "hover:border-border hover:bg-muted/20 hover:ring-foreground/[0.06]",
+      )}
+    >
+      <p className="font-serif text-lg font-medium text-foreground group-hover:text-foreground">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <p className="mt-3 text-xs font-medium uppercase tracking-wide text-primary">{meta}</p>
+    </Link>
+  );
 }
 
 export function FornecedorWorkspace({
+  section,
   apiMode,
   meusInsumos,
   fulfillmentLines,
   email,
-  initialTab,
 }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [tab, setTab] = useState<TabKey>(initialTab);
-
-  const aba = searchParams.get("aba");
-  useEffect(() => {
-    setTab(tabFromSearchParam(aba));
-  }, [aba]);
-
-  function go(tabKey: TabKey) {
-    const q = tabKey === "entregas" ? "entregas" : "insumos";
-    router.replace(`${pathname}?aba=${q}`, { scroll: false });
-    setTab(tabKey);
+  if (section === "overview") {
+    return (
+      <div className="space-y-5">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Use o menu à esquerda ou escolha abaixo o que quer gerir. Cada secção abre no seu próprio contexto.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SectionLinkCard
+            href="/painel/fornecedor?aba=insumos"
+            title="Meus insumos"
+            description="Cadastrar e editar materiais, fotos, pacotes e custos que o admin usa nas peças."
+            meta={`${meusInsumos.length} item(ns) · ${apiMode ? "API" : "demonstração"}`}
+          />
+          <SectionLinkCard
+            href="/painel/fornecedor?aba=entregas"
+            title="Entregas aos executores"
+            description="Envios ao executor quando uma combinação usar os seus insumos — pacote e etiqueta quando o Melhor Envio estiver ligado."
+            meta={`${fulfillmentLines.length} linha(ns) de entrega`}
+          />
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2 border-b border-border pb-1">
-        <Button
-          type="button"
-          variant={tab === "insumos" ? "default" : "ghost"}
-          size="sm"
-          className="rounded-none border-b-2 border-transparent data-[active=true]:border-primary"
-          data-active={tab === "insumos"}
-          onClick={() => go("insumos")}
-        >
-          Meus insumos
-        </Button>
-        <Button
-          type="button"
-          variant={tab === "entregas" ? "default" : "ghost"}
-          size="sm"
-          className="rounded-none border-b-2 border-transparent data-[active=true]:border-primary"
-          data-active={tab === "entregas"}
-          onClick={() => go("entregas")}
-        >
-          Entregas aos executores
-        </Button>
-      </div>
+  if (section === "insumos") {
+    return <FornecedorInsumosPanel initialItems={meusInsumos} apiMode={apiMode} supplierEmail={email} />;
+  }
 
-      {tab === "insumos" ? (
-        <FornecedorInsumosPanel initialItems={meusInsumos} apiMode={apiMode} supplierEmail={email} />
-      ) : (
-        <FornecedorEntregasPanel lines={fulfillmentLines} demoMode={!apiMode} />
-      )}
-    </div>
-  );
+  return <FornecedorEntregasPanel lines={fulfillmentLines} demoMode={!apiMode} />;
 }

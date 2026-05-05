@@ -60,6 +60,31 @@ export async function createSupplyItemAction(input: {
   return (await res.json()) as { id: string };
 }
 
+export async function deleteSupplyItemAction(id: string) {
+  if (!commerceUsesDatabase()) {
+    throw new Error("Remover insumos exige API com banco de dados e integração interna ativas.");
+  }
+  const token = await bearer();
+  if (!token) throw new Error("Sessão expirada. Entre novamente.");
+  const res = await fetch(`${serverApiUrl()}/supply-items/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    let msg = await res.text();
+    try {
+      const j = JSON.parse(msg) as { message?: string | string[] };
+      if (typeof j.message === "string") msg = j.message;
+      else if (Array.isArray(j.message)) msg = j.message.join(", ");
+    } catch {
+      /* keep text */
+    }
+    throw new Error(msg || `Erro ${res.status}`);
+  }
+  revalidatePath("/painel/fornecedor");
+  revalidatePath("/painel/admin", "layout");
+}
+
 export async function updateSupplyItemAction(
   id: string,
   input: {

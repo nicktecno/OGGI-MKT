@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -139,6 +140,39 @@ export class SupplyService {
       },
     });
     return this.toListRow(updated, user.email);
+  }
+
+  private async assertSupplyItemNotUsedInCompositeProducts(supplyItemId: string): Promise<void> {
+    const products = await this.prisma.compositeProduct.findMany({
+      select: { id: true, nome: true, linhas: true },
+    });
+    for (const p of products) {
+      const linhas = p.linhas as unknown;
+      if (!Array.isArray(linhas)) continue;
+      for (const line of linhas as Record<string, unknown>[]) {
+        const sid =
+          typeof line.supplyItemId === 'string'
+            ? line.supplyItemId
+            : typeof line.supply_item_id === 'string'
+              ? line.supply_item_id
+              : null;
+        if (sid === supplyItemId) {
+          throw new ConflictException(
+            `Este insumo está na montagem da peça «${p.nome}». Peça ao administrador para remover essa linha antes de apagar.`,
+          );
+        }
+      }
+    }
+  }
+
+  async delete(user: PlatformJwtUser, id: string): Promise<void> {
+    this.assertSupplier(user);
+    const row = await this.prisma.supplyItem.findFirst({
+      where: { id, supplierAccountId: user.sub },
+    });
+    if (!row) throw new NotFoundException('Insumo não encontrado.');
+    await this.assertSupplyItemNotUsedInCompositeProducts(id);
+    await this.prisma.supplyItem.delete({ where: { id } });
   }
 
   async uploadImage(

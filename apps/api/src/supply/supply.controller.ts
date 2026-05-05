@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -93,5 +94,10 @@ export class SupplyController {
     @Body() body: UpdateSupplyItemDto,
   ) {
     return this.supply.update(req.platformUser, id, body);
+  }
+
+  @Delete(':id')
+  remove(@Req() req: Request & { platformUser: PlatformJwtUser }, @Param('id') id: string) {
+    return this.supply.delete(req.platformUser, id);
   }
 }

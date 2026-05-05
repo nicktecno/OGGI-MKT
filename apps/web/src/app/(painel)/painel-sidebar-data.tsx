@@ -12,14 +12,23 @@ export async function PainelSidebarWithNavCounts({
 }) {
   let adminNavCounts: AdminNavCounts | undefined;
   if (role === "ADMIN") {
-    const state = await getDemoCommerceState();
-    const pendingRegistrationsCount = await fetchPendingRegistrationsCount();
-    adminNavCounts = {
-      pendingRegistrationsCount,
-      pendingRequestsCount: state.executionRequests.filter((r) => r.status === "PENDING").length,
-      activeCombinationsCount: state.productionAssignments.filter((a) => a.status !== "ARCHIVED")
-        .length,
-    };
+    try {
+      const state = await getDemoCommerceState();
+      const pendingRegistrationsCount = await fetchPendingRegistrationsCount();
+      adminNavCounts = {
+        pendingRegistrationsCount,
+        pendingRequestsCount: state.executionRequests.filter((r) => r.status === "PENDING").length,
+        activeCombinationsCount: state.productionAssignments.filter((a) => a.status !== "ARCHIVED")
+          .length,
+      };
+    } catch (e) {
+      console.error("[PainelSidebarWithNavCounts] estado da loja ou contagem de cadastros:", e);
+      adminNavCounts = {
+        pendingRegistrationsCount: 0,
+        pendingRequestsCount: 0,
+        activeCombinationsCount: 0,
+      };
+    }
   }
   return <PainelSidebar role={role} painelHome={painelHome} adminNavCounts={adminNavCounts} />;
 }

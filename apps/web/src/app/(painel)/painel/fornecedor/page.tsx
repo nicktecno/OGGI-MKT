@@ -28,9 +28,15 @@ type PageProps = {
   searchParams: Promise<{ aba?: string }>;
 };
 
+function fornecedorSection(aba: string | undefined): "overview" | "insumos" | "entregas" {
+  if (aba === "entregas") return "entregas";
+  if (aba === "insumos") return "insumos";
+  return "overview";
+}
+
 export default async function FornecedorPainelPage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const initialTab = sp?.aba === "entregas" ? "entregas" : "insumos";
+  const section = fornecedorSection(sp?.aba);
   const session = await getSession();
   const email = session?.email ?? "";
   const apiOn = commerceUsesDatabase();
@@ -88,10 +94,31 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
 
       <Card className="max-w-4xl border-border">
         <CardHeader>
-          <CardTitle className="font-serif text-xl">Insumos e entregas</CardTitle>
+          <CardTitle className="font-serif text-xl">
+            {section === "insumos"
+              ? "Meus insumos"
+              : section === "entregas"
+                ? "Entregas aos executores"
+                : "Área de trabalho"}
+          </CardTitle>
           <CardDescription>
-            {meusInsumos.length} item(ns) para <span className="text-foreground">{email}</span>
-            {apiMode ? " (API + banco)" : " (demonstração)"}.
+            {section === "overview" ? (
+              <>
+                Conta <span className="text-foreground">{email}</span>
+                {apiMode ? " · dados em API + banco" : " · modo demonstração"}.
+              </>
+            ) : section === "insumos" ? (
+              <>
+                {meusInsumos.length} insumo(s) cadastrado(s) para{" "}
+                <span className="text-foreground">{email}</span>
+                {apiMode ? " (API + banco)" : " (demonstração)"}.
+              </>
+            ) : (
+              <>
+                Envios ligados às suas matérias-primas para executores.{" "}
+                <span className="text-foreground">{fulfillmentLines.length}</span> linha(s) listada(s).
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,11 +126,11 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
             fallback={<PageLoadingFallback className="py-10" indicatorHeight={80} />}
           >
             <FornecedorWorkspace
+              section={section}
               apiMode={apiMode}
               meusInsumos={meusInsumos}
               fulfillmentLines={fulfillmentLines}
               email={email}
-              initialTab={initialTab}
             />
           </Suspense>
         </CardContent>
