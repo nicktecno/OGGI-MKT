@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -10,7 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AddToCartActions } from "@/components/loja/add-to-cart";
-import { DEMO_COMPOSITE_PRODUCTS, getListingForProduct, getProductBySlug } from "@/lib/demo-seed";
+import { ProductPageGallery } from "@/components/loja/product-page-gallery";
+import {
+  DEMO_COMPOSITE_PRODUCTS,
+  getListingForProduct,
+  getProductBySlug,
+  productImageSlides,
+} from "@/lib/demo-seed";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { SITE_NAME } from "@/lib/site";
 import { formatBrl } from "@/lib/utils";
@@ -43,6 +48,8 @@ export default async function ProdutoLojaPage({ params }: Props) {
   const listing = getListingForProduct(product.id, commerce.productionAssignments);
   if (!listing) notFound();
 
+  const galleryUrls = productImageSlides(product);
+
   return (
     <main className="pb-20">
       <div className="border-b border-border bg-muted/15">
@@ -64,16 +71,7 @@ export default async function ProdutoLojaPage({ params }: Props) {
       <article className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
           <div className="space-y-4">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-muted/30 shadow-sm">
-              <Image
-                src={product.imagem_url}
-                alt={product.nome}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 55vw"
-              />
-            </div>
+            <ProductPageGallery productName={product.nome} imageUrls={galleryUrls} />
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
               SKU {product.sku}
             </p>
@@ -107,7 +105,7 @@ export default async function ProdutoLojaPage({ params }: Props) {
                 unitPrice: product.preco_venda_publico,
                 maxQuantity: listing.available_quantity,
                 executorNome: listing.executorNome,
-                imageUrl: product.imagem_url,
+                imageUrl: galleryUrls[0] ?? product.imagem_url,
               }}
             />
             <div className="mt-4">

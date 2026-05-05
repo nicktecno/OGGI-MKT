@@ -10,8 +10,11 @@ import {
   persistCompositeProductPricing,
   persistCreateCompositeProduct,
   persistCreateDirectAssignment,
+  persistDeleteCompositeProduct,
+  persistProductGalleryImage,
   persistProductMarketplaceImage,
   persistRejectExecutionRequest,
+  persistRemoveProductGalleryImage,
   persistSetProductActive,
   persistSetProductAdminPaused,
 } from "@/lib/demo-runtime";
@@ -32,6 +35,10 @@ function revalidateStorefront() {
   for (const p of DEMO_COMPOSITE_PRODUCTS) {
     revalidatePath(`/loja/produto/${p.slug}`);
   }
+}
+
+function revalidateProductPage(slug: string) {
+  revalidatePath(`/loja/produto/${slug}`);
 }
 
 export async function createCompositeProductAction(input: {
@@ -160,7 +167,11 @@ export async function setAssignmentStorefrontHighlightOrderAction(
   revalidateStorefront();
 }
 
-export async function uploadMarketplaceProductImage(productId: string, formData: FormData) {
+export async function uploadMarketplaceProductImage(
+  productId: string,
+  formData: FormData,
+  productSlug?: string,
+) {
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File)) {
@@ -168,4 +179,38 @@ export async function uploadMarketplaceProductImage(productId: string, formData:
   }
   await persistProductMarketplaceImage(productId, formData);
   revalidateStorefront();
+  if (productSlug) revalidateProductPage(productSlug);
+}
+
+export async function uploadMarketplaceProductGalleryImage(
+  productId: string,
+  productSlug: string,
+  formData: FormData,
+) {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("Nenhum ficheiro recebido.");
+  }
+  await persistProductGalleryImage(productId, formData);
+  revalidateStorefront();
+  revalidateProductPage(productSlug);
+}
+
+export async function removeMarketplaceProductGalleryImageAction(
+  productId: string,
+  productSlug: string,
+  imageUrl: string,
+) {
+  await requireAdmin();
+  await persistRemoveProductGalleryImage(productId, imageUrl);
+  revalidateStorefront();
+  revalidateProductPage(productSlug);
+}
+
+export async function deleteCompositeProductAction(productId: string, productSlug: string) {
+  await requireAdmin();
+  await persistDeleteCompositeProduct(productId);
+  revalidateStorefront();
+  revalidateProductPage(productSlug);
 }

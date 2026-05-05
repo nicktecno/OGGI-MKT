@@ -5,7 +5,11 @@ import type {
   DemoExecutionRequest,
   DemoProductionAssignment,
 } from "./demo-seed";
-import { getSupplyItemById } from "./demo-seed";
+import {
+  DEMO_ASSIGNMENTS_INITIAL,
+  DEMO_EXECUTION_REQUESTS_INITIAL,
+  getSupplyItemById,
+} from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
 import { serverApiConfigured, serverApiUrl } from "./server-api-url";
 
@@ -465,6 +469,91 @@ export async function persistProductMarketplaceImage(
   return data.url.trim();
 }
 
+/** Adiciona imagem extra à galeria do produto (R2 + API). */
+export async function persistProductGalleryImage(
+  productId: string,
+  formData: FormData,
+): Promise<string> {
+  if (!commerceUsesDatabase()) {
+    throw new Error(
+      "Galeria de fotos exige API Nest com Cloudflare R2 (variáveis R2_* na API), como a imagem de capa.",
+    );
+  }
+  const res = await internalFetch(
+    `/internal/commerce/products/${encodeURIComponent(productId)}/gallery-image`,
+    { method: "POST", body: formData },
+  );
+  if (!res.ok) throw new Error(await readApiError(res));
+  const data = (await res.json()) as { url?: string };
+  if (!data.url?.trim()) throw new Error("Resposta da API sem URL da imagem.");
+  return data.url.trim();
+}
+
+export async function persistRemoveProductGalleryImage(productId: string, imageUrl: string): Promise<void> {
+  if (commerceUsesDatabase()) {
+    const res = await internalFetch(
+      `/internal/commerce/products/${encodeURIComponent(productId)}/gallery-remove`,
+      {
+        method: "POST",
+        body: JSON.stringify({ url: imageUrl.trim() }),
+      },
+    );
+    if (!res.ok) throw new Error(await readApiError(res));
+    return;
+  }
+  const state = await getCommerceStateFromCookies();
+  const product = state.products.find((p) => p.id === productId);
+  if (!product) throw new Error("Peça não encontrada.");
+  const u = imageUrl.trim();
+  if (!u) throw new Error("URL inválida.");
+  if (u === product.imagem_url.trim()) {
+    throw new Error(
+      "A foto de capa não pode ser removida por aqui — use “Substituir imagem da vitrine” ou remova uma foto extra.",
+    );
+  }
+  const prev = [...(product.galeria_imagens ?? [])];
+  const next = prev.filter((x) => x !== u);
+  if (next.length === prev.length) throw new Error("Esta URL não está na galeria extra.");
+  await updateCommerceDelta((d) => ({
+    ...d,
+    productPatch: {
+      ...d.productPatch,
+      [productId]: { ...d.productPatch?.[productId], galeria_imagens: next },
+    },
+  }));
+}
+
+export async function persistDeleteCompositeProduct(productId: string): Promise<void> {
+  if (commerceUsesDatabase()) {
+    const res = await internalFetch(`/internal/commerce/products/${encodeURIComponent(productId)}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(await readApiError(res));
+    return;
+  }
+  await updateCommerceDelta((d) => {
+    const addedList = d.addedProducts ?? [];
+    const idx = addedList.findIndex((p) => p.id === productId);
+    if (idx === -1) {
+      throw new Error(
+        "No modo demonstração só pode apagar peças que você criou nesta sessão. Com API e base de dados pode apagar qualquer peça.",
+      );
+    }
+    const nextAdded = addedList.filter((_, i) => i !== idx);
+    const baseAssignments = d.assignments ?? structuredClone(DEMO_ASSIGNMENTS_INITIAL);
+    const baseReqs = d.executionRequests ?? structuredClone(DEMO_EXECUTION_REQUESTS_INITIAL);
+    const nextPatch = { ...(d.productPatch ?? {}) };
+    delete nextPatch[productId];
+    return {
+      ...d,
+      productPatch: nextPatch,
+      addedProducts: nextAdded,
+      assignments: baseAssignments.filter((a) => a.compositeProductId !== productId),
+      executionRequests: baseReqs.filter((r) => r.compositeProductId !== productId),
+    };
+  });
+}
+
 function slugifyNomeWeb(nome: string): string {
   const s = nome
     .trim()
@@ -559,6 +648,7 @@ export async function persistCreateCompositeProduct(input: {
     admin_pausado: false,
     imagem_url:
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88",
+    galeria_imagens: [],
     pacote_altura_cm: 22,
     pacote_largura_cm: 18,
     pacote_comprimento_cm: 8,

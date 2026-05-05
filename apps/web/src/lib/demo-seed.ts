@@ -44,6 +44,8 @@ export type DemoCompositeProduct = {
   ativo: boolean;
   admin_pausado: boolean;
   imagem_url: string;
+  /** URLs extra (galeria na página do produto); a capa é `imagem_url`. */
+  galeria_imagens?: string[];
   /** Pacote peça pronta → cliente (costureira posta). */
   pacote_altura_cm: number;
   pacote_largura_cm: number;
@@ -198,6 +200,7 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     pacote_peso_kg: 0.62,
     imagem_url:
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88",
+    galeria_imagens: [],
   },
   {
     id: "cp-cachecol",
@@ -229,6 +232,7 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     pacote_peso_kg: 0.38,
     imagem_url:
       "https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88",
+    galeria_imagens: [],
   },
 ];
 
@@ -336,6 +340,18 @@ export function getCatalogRowsFromData(
     if (!product || !product.ativo || product.admin_pausado) return [];
     return [{ listing, product }];
   });
+}
+
+/** URLs para carrossel na ficha do produto: capa + extras (sem duplicar). */
+export function productImageSlides(product: DemoCompositeProduct): string[] {
+  const capa = product.imagem_url?.trim() ?? "";
+  const extra = (product.galeria_imagens ?? []).map((u) => u.trim()).filter(Boolean);
+  const out: string[] = [];
+  if (capa) out.push(capa);
+  for (const u of extra) {
+    if (!out.includes(u)) out.push(u);
+  }
+  return out.length > 0 ? out : capa ? [capa] : [];
 }
 
 /**

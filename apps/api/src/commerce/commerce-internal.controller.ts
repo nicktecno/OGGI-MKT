@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -83,6 +84,35 @@ export class CommerceInternalController {
     file: Express.Multer.File,
   ) {
     return this.commerce.uploadProductImage(id, file.buffer, file.mimetype);
+  }
+
+  @Post('products/:id/gallery-image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 1024 * 1024 },
+    }),
+  )
+  uploadProductGalleryImage(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 })],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.commerce.uploadProductGalleryImage(id, file.buffer, file.mimetype);
+  }
+
+  @Post('products/:id/gallery-remove')
+  removeProductGalleryImage(@Param('id') id: string, @Body() body: { url: string }) {
+    return this.commerce.removeProductGalleryImage(id, body.url ?? '');
+  }
+
+  @Delete('products/:id')
+  deleteProduct(@Param('id') id: string) {
+    return this.commerce.deleteCompositeProduct(id);
   }
 
   @Post('execution-requests')

@@ -22,6 +22,7 @@ export type DemoProductPatch = Partial<
     | "pacote_largura_cm"
     | "pacote_comprimento_cm"
     | "pacote_peso_kg"
+    | "galeria_imagens"
   >
 >;
 
@@ -68,7 +69,8 @@ export async function writeCommerceDelta(next: DemoCommerceDelta): Promise<void>
 export function mergeProducts(delta: DemoCommerceDelta): DemoCompositeProduct[] {
   const patch = delta.productPatch ?? {};
   const base = DEMO_COMPOSITE_PRODUCTS.map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
-  return [...base, ...(delta.addedProducts ?? [])];
+  const added = (delta.addedProducts ?? []).map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
+  return [...base, ...added];
 }
 
 export async function getCommerceStateFromCookies(): Promise<DemoCommerceState> {

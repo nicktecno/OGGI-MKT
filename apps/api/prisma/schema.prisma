@@ -20,6 +20,8 @@ model CompositeProduct {
   ativo                  Boolean
   adminPausado           Boolean @map("admin_pausado")
   imagemUrl              String  @map("imagem_url")
+  /// URLs extra (WebP) para galeria na página do produto; a capa continua em `imagem_url`.
+  galeriaImagens         Json    @default("[]") @map("galeria_imagens")
   // Pacote peça pronta → cliente (admin); cotação ME na postagem da costureira.
   pacoteAlturaCm         Float   @map("pacote_altura_cm")
   pacoteLarguraCm        Float   @map("pacote_largura_cm")

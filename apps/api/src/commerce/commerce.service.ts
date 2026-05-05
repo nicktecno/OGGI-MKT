@@ -237,6 +237,7 @@ export class CommerceService {
         adminPausado: false,
         imagemUrl:
           'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
+        galeriaImagens: [] as unknown as Prisma.InputJsonValue,
         pacoteAlturaCm: 22,
         pacoteLarguraCm: 18,
         pacoteComprimentoCm: 8,
@@ -479,6 +480,98 @@ export class CommerceService {
     });
   }
 
+  private parseProductGallery(value: unknown): string[] {
+    if (value == null) return [];
+    if (Array.isArray(value)) {
+      return value
+        .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+        .map((s) => s.trim());
+    }
+    return [];
+  }
+
+  /** Fotos extra (galeria) — até 8 URLs além da capa `imagemUrl`. */
+  async uploadProductGalleryImage(
+    productId: string,
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<{ url: string }> {
+    const MAX_EXTRA = 8;
+    if (buffer.length === 0) {
+      throw new BadRequestException('Ficheiro vazio.');
+    }
+    if (buffer.length > 1024 * 1024) {
+      throw new BadRequestException('A imagem não pode ultrapassar 1 MB.');
+    }
+    const mime = mimeType.toLowerCase().split(';')[0]?.trim() ?? '';
+    if (mime !== 'image/webp') {
+      throw new BadRequestException('Envie apenas WebP (o painel comprime automaticamente antes do envio).');
+    }
+    const p = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
+    if (!p) throw new NotFoundException('Peça não encontrada.');
+    const current = this.parseProductGallery(p.galeriaImagens);
+    if (current.length >= MAX_EXTRA) {
+      throw new BadRequestException(`Máximo de ${MAX_EXTRA} fotos extra na galeria.`);
+    }
+    const key = this.r2.marketplaceProductGalleryImageKey(productId);
+    const url = await this.r2.putPublicObject({
+      key,
+      body: buffer,
+      contentType: 'image/webp',
+    });
+    const next = [...current, url];
+    await this.prisma.compositeProduct.update({
+      where: { id: productId },
+      data: { galeriaImagens: next as unknown as Prisma.InputJsonValue },
+    });
+    return { url };
+  }
+
+  async removeProductGalleryImage(productId: string, imageUrl: string): Promise<void> {
+    const p = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
+    if (!p) throw new NotFoundException('Peça não encontrada.');
+    const u = imageUrl.trim();
+    if (!u) throw new BadRequestException('URL inválida.');
+    if (u === p.imagemUrl.trim()) {
+      throw new BadRequestException(
+        'A foto de capa não pode ser removida por aqui — use “Substituir imagem da vitrine” ou remova uma foto extra da galeria.',
+      );
+    }
+    const current = this.parseProductGallery(p.galeriaImagens);
+    const next = current.filter((x) => x !== u);
+    if (next.length === current.length) {
+      throw new BadRequestException('Esta URL não está na galeria extra desta peça.');
+    }
+    await this.prisma.compositeProduct.update({
+      where: { id: productId },
+      data: { galeriaImagens: next as unknown as Prisma.InputJsonValue },
+    });
+  }
+
+  /** Remove a peça, atribuições, pedidos de execução e linhas de cumprimento ligadas. */
+  async deleteCompositeProduct(productId: string): Promise<void> {
+    const product = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Peça não encontrada.');
+
+    await this.prisma.$transaction(async (tx) => {
+      const assignmentIds = (
+        await tx.productionAssignment.findMany({
+          where: { compositeProductId: productId },
+          select: { id: true },
+        })
+      ).map((a) => a.id);
+
+      if (assignmentIds.length > 0) {
+        await tx.supplierFulfillmentLine.deleteMany({
+          where: { productionAssignmentId: { in: assignmentIds } },
+        });
+        await tx.productionAssignment.deleteMany({ where: { compositeProductId: productId } });
+      }
+      await tx.executionRequest.deleteMany({ where: { compositeProductId: productId } });
+      await tx.compositeProduct.delete({ where: { id: productId } });
+    });
+  }
+
   private toProductDto(p: CompositeProduct) {
     return {
       id: p.id,
@@ -493,6 +586,7 @@ export class CommerceService {
       ativo: p.ativo,
       admin_pausado: p.adminPausado,
       imagem_url: p.imagemUrl,
+      galeria_imagens: this.parseProductGallery(p.galeriaImagens),
       pacote_altura_cm: p.pacoteAlturaCm,
       pacote_largura_cm: p.pacoteLarguraCm,
       pacote_comprimento_cm: p.pacoteComprimentoCm,

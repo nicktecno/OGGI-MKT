@@ -69,6 +69,11 @@ export class R2StorageService {
     return `marketplace/products/${safeId}/${randomUUID()}.webp`;
   }
 
+  marketplaceProductGalleryImageKey(productId: string): string {
+    const safeId = productId.replace(/[^a-zA-Z0-9_-]/g, '');
+    return `marketplace/products/${safeId}/gallery/${randomUUID()}.webp`;
+  }
+
   supplyItemImageKey(supplyItemId: string): string {
     const safeId = supplyItemId.replace(/[^a-zA-Z0-9_-]/g, '');
     return `marketplace/supply-items/${safeId}/${randomUUID()}.webp`;

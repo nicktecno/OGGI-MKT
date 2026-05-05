@@ -25,11 +25,14 @@ import {
   archiveProductionAssignment,
   createCompositeProductAction,
   createDirectAssignment,
+  deleteCompositeProductAction,
   rejectExecutionRequest,
+  removeMarketplaceProductGalleryImageAction,
   setAssignmentStorefrontHighlightOrderAction,
   setProductActive,
   setProductAdminPaused,
   updateCompositeProductPricing,
+  uploadMarketplaceProductGalleryImage,
   uploadMarketplaceProductImage,
 } from "./actions";
 
@@ -242,7 +245,7 @@ function AdminNovaPecaCard({
                 const f = new File([prep.blob], prep.filename, { type: "image/webp" });
                 const fd = new FormData();
                 fd.append("file", f);
-                await uploadMarketplaceProductImage(result.id, fd);
+                await uploadMarketplaceProductImage(result.id, fd, result.slug);
               }
               setNome("");
               setSlug("");
@@ -454,6 +457,25 @@ export function AdminPecasPanel({
                   >
                     {product.ativo ? "Desativar peça" : "Ativar peça"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="border-destructive/80"
+                    disabled={pending}
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          `Excluir definitivamente a peça “${product.nome}”? Na API isto apaga também combinações, pedidos de execução e linhas de cumprimento ligados a este modelo.`,
+                        )
+                      ) {
+                        return;
+                      }
+                      run(() => deleteCompositeProductAction(product.id, product.slug));
+                    }}
+                  >
+                    Excluir peça
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
@@ -480,7 +502,7 @@ export function AdminPecasPanel({
                             const f = new File([prep.blob], prep.filename, { type: "image/webp" });
                             const fd = new FormData();
                             fd.append("file", f);
-                            await uploadMarketplaceProductImage(product.id, fd);
+                            await uploadMarketplaceProductImage(product.id, fd, product.slug);
                           });
                         }}
                       />
@@ -492,6 +514,58 @@ export function AdminPecasPanel({
                     )}
                   </div>
                 </div>
+
+                {marketplaceImagesEnabled ? (
+                  <div className="rounded-lg border border-border/60 bg-muted/5 p-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Galeria na página do produto
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      A primeira imagem é sempre a <strong className="text-foreground">capa</strong> acima. Até 8
+                      fotos extra em carrossel na ficha pública (ampliar / zoom).
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(product.galeria_imagens ?? []).map((url) => (
+                        <div
+                          key={url}
+                          className="group relative h-20 w-20 overflow-hidden rounded-md border border-border bg-background"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute right-0.5 top-0.5 h-7 px-1.5 text-[0.65rem] opacity-90 group-hover:opacity-100"
+                            disabled={pending}
+                            onClick={() =>
+                              run(() =>
+                                removeMarketplaceProductGalleryImageAction(product.id, product.slug, url),
+                              )
+                            }
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4">
+                      <ImageUploadField
+                        label="Adicionar foto à galeria"
+                        description={`WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · máx. 8 fotos extra.`}
+                        disabled={pending}
+                        onPrepared={(prep) => {
+                          run(async () => {
+                            const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                            const fd = new FormData();
+                            fd.append("file", f);
+                            await uploadMarketplaceProductGalleryImage(product.id, product.slug, fd);
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
 
                 <div>
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

@@ -1,4 +1,4 @@
-import { PrismaClient, SupplyQuantityKind } from '@prisma/client';
+import { Prisma, PrismaClient, SupplyQuantityKind } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { TERMS_ACCEPTANCE_VERSION } from '../src/legal/terms-acceptance-version';
 import { pickShipmentPackFromSupplies, stubFreteB2B } from '../src/supply/package-shipping.util';
@@ -164,6 +164,7 @@ async function main() {
       pacotePesoKg: 0.62,
       imagemUrl:
         'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
+      galeriaImagens: [] as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -198,6 +199,7 @@ async function main() {
       pacotePesoKg: 0.38,
       imagemUrl:
         'https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88',
+      galeriaImagens: [] as unknown as Prisma.InputJsonValue,
     },
   });
 
