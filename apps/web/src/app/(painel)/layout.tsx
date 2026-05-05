@@ -15,7 +15,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="border-b border-border/60 bg-card/55 px-5 py-6 backdrop-blur-md md:flex md:w-56 md:flex-col md:border-b-0 md:border-r md:border-r-foreground/[0.06] md:py-10 lg:w-60">
+      <aside className="border-b border-border/60 bg-card/55 px-5 py-6 backdrop-blur-md md:sticky md:top-0 md:flex md:h-screen md:max-h-screen md:w-60 md:shrink-0 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:border-r-foreground/[0.06] md:py-10 lg:w-64">
         <div className="mb-8">
           <Link href="/" className="font-serif text-xl text-foreground/90 transition-colors hover:text-foreground">
             {SITE_NAME}

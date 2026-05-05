@@ -17,24 +17,38 @@ type Props = {
   adminNavCounts?: AdminNavCounts;
 };
 
-function linkClass(active: boolean, opts?: { compact?: boolean }) {
-  return cn(
-    "rounded-md px-3 py-2.5 transition-colors",
-    opts?.compact
-      ? "w-full min-w-0 py-2 text-left text-sm leading-snug md:mx-0"
-      : "text-base md:-mx-1",
-    active
-      ? "bg-muted/80 font-medium text-foreground"
-      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+/** Painel lateral tipo “tab rail”: faixa escura com itens em destaque. */
+function SidebarTabRail({ "aria-label": ariaLabel, children }: { "aria-label": string; children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border/50 bg-muted/35 p-1",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] dark:bg-muted/25 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+      )}
+    >
+      <nav className="flex flex-col gap-px" aria-label={ariaLabel}>
+        {children}
+      </nav>
+    </div>
   );
 }
 
-function adminNavLinkClass(active: boolean) {
+function sidebarTabClass(active: boolean) {
   return cn(
-    "inline-flex min-h-9 items-center gap-2 rounded-full border px-3.5 py-2 text-left text-[0.8125rem] font-medium leading-tight transition-all sm:text-sm",
+    "group relative flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-[0.8125rem] font-medium leading-snug transition-all duration-150 sm:text-sm",
     active
-      ? "border-primary/25 bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/20"
-      : "border-border/70 bg-background/70 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
+      ? "bg-background text-foreground shadow-sm ring-1 ring-foreground/[0.07]"
+      : "text-muted-foreground hover:bg-background/55 hover:text-foreground",
+  );
+}
+
+function TabAccent({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <span
+      className="absolute left-0 top-1/2 h-[58%] w-[3px] -translate-y-1/2 rounded-full bg-primary"
+      aria-hidden
+    />
   );
 }
 
@@ -70,36 +84,40 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
       },
     ];
 
+    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
+
     return (
-      <nav className="flex flex-row flex-wrap items-center gap-2" aria-label="Menu da administração">
-        {items.map((item) => {
-          const active = pathname === item.href;
-          const badge = "badge" in item ? item.badge : 0;
-          return (
-            <Link key={item.href} href={item.href} className={adminNavLinkClass(active)}>
-              <span className="min-w-0 flex-1">{item.label}</span>
-              {badge > 0 ? (
-                <span
-                  className={cn(
-                    "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[0.65rem] font-bold tabular-nums",
-                    active
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-accent/25 text-accent-foreground dark:bg-accent/35",
-                  )}
-                >
-                  {badge > 99 ? "99+" : badge}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
-        <Link
-          href="/loja"
-          className={adminNavLinkClass(pathname === "/loja" || pathname.startsWith("/loja/"))}
-        >
-          Loja pública
-        </Link>
-      </nav>
+      <div className="flex w-full flex-col gap-3">
+        <SidebarTabRail aria-label="Menu da administração">
+          {items.map((item) => {
+            const active = pathname === item.href;
+            const badge = "badge" in item ? item.badge : 0;
+            return (
+              <Link key={item.href} href={item.href} className={cn(sidebarTabClass(active), "pl-3.5")}>
+                <TabAccent active={active} />
+                <span className="min-w-0 flex-1 pl-1">{item.label}</span>
+                {badge > 0 ? (
+                  <span
+                    className={cn(
+                      "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1 text-[0.65rem] font-semibold tabular-nums",
+                      active
+                        ? "bg-primary/12 text-primary"
+                        : "bg-muted-foreground/10 text-muted-foreground group-hover:bg-muted-foreground/15 group-hover:text-foreground",
+                    )}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+          <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
+          <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
+            <TabAccent active={lojaActive} />
+            <span className="pl-1">Loja pública</span>
+          </Link>
+        </SidebarTabRail>
+      </div>
     );
   }
 
@@ -113,37 +131,43 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
     return (
-      <nav className="flex w-full flex-col gap-1" aria-label="Menu do fornecedor">
-        <Link href={painelHome} className={linkClass(overviewActive, { compact: true })}>
-          Visão geral
+      <SidebarTabRail aria-label="Menu do fornecedor">
+        <Link href={painelHome} className={cn(sidebarTabClass(overviewActive), "pl-3.5")}>
+          <TabAccent active={overviewActive} />
+          <span className="pl-1">Visão geral</span>
         </Link>
-        <Link href={`${painelHome}?aba=insumos`} className={linkClass(insumosActive, { compact: true })}>
-          Meus insumos
+        <Link href={`${painelHome}?aba=insumos`} className={cn(sidebarTabClass(insumosActive), "pl-3.5")}>
+          <TabAccent active={insumosActive} />
+          <span className="pl-1">Meus insumos</span>
         </Link>
-        <Link href={`${painelHome}?aba=entregas`} className={linkClass(entregasActive, { compact: true })}>
-          Entregas aos executores
+        <Link href={`${painelHome}?aba=entregas`} className={cn(sidebarTabClass(entregasActive), "pl-3.5")}>
+          <TabAccent active={entregasActive} />
+          <span className="pl-1">Entregas aos executores</span>
         </Link>
-        <Link href="/loja" className={linkClass(lojaActive, { compact: true })}>
-          Loja pública
+        <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
+        <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
+          <TabAccent active={lojaActive} />
+          <span className="pl-1">Loja pública</span>
         </Link>
-      </nav>
+      </SidebarTabRail>
     );
   }
 
   const overviewActive =
     pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
+  const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
   return (
-    <nav className="flex w-full flex-col gap-1" aria-label="Menu do painel">
-      <Link href={painelHome} className={linkClass(overviewActive, { compact: true })}>
-        Visão geral
+    <SidebarTabRail aria-label="Menu do painel">
+      <Link href={painelHome} className={cn(sidebarTabClass(overviewActive), "pl-3.5")}>
+        <TabAccent active={overviewActive} />
+        <span className="pl-1">Visão geral</span>
       </Link>
-      <Link
-        href="/loja"
-        className={linkClass(pathname === "/loja" || pathname.startsWith("/loja/"), { compact: true })}
-      >
-        Loja pública
+      <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
+      <Link href="/loja" className={cn(sidebarTabClass(lojaActive), "pl-3.5")}>
+        <TabAccent active={lojaActive} />
+        <span className="pl-1">Loja pública</span>
       </Link>
-    </nav>
+    </SidebarTabRail>
   );
 }
