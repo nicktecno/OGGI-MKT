@@ -61,6 +61,7 @@ export type DemoListing = {
   cep_origem: string;
   available_quantity: number;
   status: "PUBLISHED";
+  storefront_highlight_order?: number | null;
 };
 
 export type DemoExecutionRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN";
@@ -96,6 +97,8 @@ export type DemoProductionAssignment = {
   status: DemoProductionAssignmentStatus;
   assignment_source: DemoAssignmentSource;
   execution_request_id: string | null;
+  /** Ordem no carrossel de destaque da loja (0 = primeiro). Omitido ou null = não forçar destaque. */
+  storefront_highlight_order?: number | null;
 };
 
 /** Opção no seletor admin “peça + costureira” (vínculo por conta cadastrada). */
@@ -243,6 +246,21 @@ export const DEMO_ASSIGNMENTS_INITIAL: DemoProductionAssignment[] = [
     status: "PUBLISHED",
     assignment_source: "ADMIN_DIRECT",
     execution_request_id: null,
+    storefront_highlight_order: 0,
+  },
+  {
+    id: "asg-cachecol-carla",
+    compositeProductId: "cp-cachecol",
+    executorEmail: "executor@demo.local",
+    executorNome: "Carla Mendes — Atelier",
+    cidade_origem: "São Paulo — SP",
+    cep_origem: "01310-100",
+    available_quantity: 2,
+    units_produced: 2,
+    status: "PUBLISHED",
+    assignment_source: "ADMIN_DIRECT",
+    execution_request_id: null,
+    storefront_highlight_order: 1,
   },
 ];
 
@@ -289,6 +307,8 @@ export function listingFromPublishedAssignment(
     cep_origem: a.cep_origem,
     available_quantity: a.available_quantity,
     status: "PUBLISHED",
+    storefront_highlight_order:
+      typeof a.storefront_highlight_order === "number" ? a.storefront_highlight_order : null,
   };
 }
 
@@ -315,6 +335,25 @@ export function getCatalogRowsFromData(
     const product = getCompositeProductById(listing.compositeProductId, products);
     if (!product || !product.ativo || product.admin_pausado) return [];
     return [{ listing, product }];
+  });
+}
+
+/**
+ * Ofertas que entram no herói da loja: as que têm `storefront_highlight_order` definido (≥0), por ordem.
+ * Se nenhuma estiver marcada, devolve só a primeira linha do catálogo (comportamento anterior).
+ */
+export function getStorefrontHeroRows(rows: CatalogRow[]): CatalogRow[] {
+  const tagged = rows.filter(
+    (r) => typeof r.listing.storefront_highlight_order === "number" && !Number.isNaN(r.listing.storefront_highlight_order),
+  );
+  if (tagged.length === 0) {
+    return rows.length > 0 ? [rows[0]] : [];
+  }
+  return [...tagged].sort((a, b) => {
+    const ao = a.listing.storefront_highlight_order ?? 0;
+    const bo = b.listing.storefront_highlight_order ?? 0;
+    if (ao !== bo) return ao - bo;
+    return a.listing.id.localeCompare(b.listing.id);
   });
 }
 

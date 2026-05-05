@@ -214,6 +214,7 @@ async function main() {
       status: 'PUBLISHED',
       assignmentSource: 'ADMIN_DIRECT',
       executionRequestId: null,
+      storefrontHighlightOrder: 0,
     },
   });
 

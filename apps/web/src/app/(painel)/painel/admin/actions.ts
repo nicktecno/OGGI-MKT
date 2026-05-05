@@ -6,6 +6,7 @@ import { DEMO_COMPOSITE_PRODUCTS } from "@/lib/demo-seed";
 import {
   persistApproveExecutionRequest,
   persistArchiveAssignment,
+  persistAssignmentStorefrontHighlight,
   persistCompositeProductPricing,
   persistCreateCompositeProduct,
   persistCreateDirectAssignment,
@@ -24,6 +25,7 @@ async function requireAdmin() {
 }
 
 function revalidateStorefront() {
+  revalidatePath("/");
   revalidatePath("/loja");
   revalidatePath("/painel/admin", "layout");
   revalidatePath("/painel/executor");
@@ -146,6 +148,15 @@ export async function createDirectAssignment(input: {
 export async function archiveProductionAssignment(assignmentId: string) {
   await requireAdmin();
   await persistArchiveAssignment(assignmentId);
+  revalidateStorefront();
+}
+
+export async function setAssignmentStorefrontHighlightOrderAction(
+  assignmentId: string,
+  order: number | null,
+) {
+  await requireAdmin();
+  await persistAssignmentStorefrontHighlight(assignmentId, order);
   revalidateStorefront();
 }
 

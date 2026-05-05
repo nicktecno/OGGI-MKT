@@ -359,6 +359,46 @@ export async function persistArchiveAssignment(assignmentId: string) {
   }));
 }
 
+/** Ordem no carrossel de destaque da loja (admin). */
+export async function persistAssignmentStorefrontHighlight(
+  assignmentId: string,
+  storefrontHighlightOrder: number | null,
+): Promise<void> {
+  if (storefrontHighlightOrder !== null) {
+    if (!Number.isInteger(storefrontHighlightOrder) || storefrontHighlightOrder < 0) {
+      throw new Error("Ordem de destaque: use um inteiro ≥ 0 ou deixe vazio para remover.");
+    }
+  }
+  if (commerceUsesDatabase()) {
+    const res = await internalFetch(
+      `/internal/commerce/assignments/${encodeURIComponent(assignmentId)}/storefront-highlight`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ storefront_highlight_order: storefrontHighlightOrder }),
+      },
+    );
+    if (!res.ok) throw new Error(await readApiError(res));
+    return;
+  }
+  const state = await getCommerceStateFromCookies();
+  const idx = state.productionAssignments.findIndex((a) => a.id === assignmentId);
+  if (idx === -1) throw new Error("Não encontramos essa combinação.");
+  const nextAssignments = state.productionAssignments.map((row, i) =>
+    i === idx
+      ? {
+          ...row,
+          ...(storefrontHighlightOrder === null
+            ? { storefront_highlight_order: undefined }
+            : { storefront_highlight_order: storefrontHighlightOrder }),
+        }
+      : row,
+  );
+  await updateCommerceDelta((d) => ({
+    ...d,
+    assignments: nextAssignments,
+  }));
+}
+
 /** Publica oferta na vitrine (costureira); cookie ou API interna. */
 export async function persistExecutorPublishAssignment(
   assignmentId: string,

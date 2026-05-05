@@ -435,6 +435,22 @@ export class CommerceService {
     await this.supplierFulfillment.deleteForAssignment(assignmentId);
   }
 
+  async patchAssignmentStorefrontHighlight(
+    assignmentId: string,
+    body: { storefront_highlight_order: number | null },
+  ): Promise<void> {
+    const v = body.storefront_highlight_order;
+    if (v !== null && (!Number.isInteger(v) || v < 0)) {
+      throw new BadRequestException('storefront_highlight_order deve ser inteiro ≥ 0 ou null.');
+    }
+    const count = await this.prisma.productionAssignment.count({ where: { id: assignmentId } });
+    if (count === 0) throw new NotFoundException('Não encontramos essa combinação.');
+    await this.prisma.productionAssignment.update({
+      where: { id: assignmentId },
+      data: { storefrontHighlightOrder: v },
+    });
+  }
+
   /** Costureira libera a oferta na vitrine (estado PUBLISHED + estoque vendável). */
   async publishAssignment(
     assignmentId: string,
@@ -509,6 +525,7 @@ export class CommerceService {
       status: a.status,
       assignment_source: a.assignmentSource,
       execution_request_id: a.executionRequestId,
+      storefront_highlight_order: a.storefrontHighlightOrder ?? null,
     };
   }
 }

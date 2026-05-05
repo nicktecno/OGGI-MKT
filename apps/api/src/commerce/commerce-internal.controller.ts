@@ -126,6 +126,15 @@ export class CommerceInternalController {
     return this.commerce.archiveAssignment(id);
   }
 
+  /** Ordem no carrossel de destaque da loja (admin). */
+  @Patch('assignments/:id/storefront-highlight')
+  patchAssignmentStorefrontHighlight(
+    @Param('id') id: string,
+    @Body() body: { storefront_highlight_order: number | null },
+  ) {
+    return this.commerce.patchAssignmentStorefrontHighlight(id, body);
+  }
+
   @Post('assignments/:id/publish')
   publishAssignment(
     @Param('id') id: string,

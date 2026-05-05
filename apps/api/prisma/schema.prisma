@@ -51,6 +51,8 @@ model ProductionAssignment {
   status              String
   assignmentSource    String  @map("assignment_source")
   executionRequestId  String? @map("execution_request_id")
+  /// Ordem no carrossel de destaque da loja (0 = primeiro). Null = não forçar destaque.
+  storefrontHighlightOrder Int? @map("storefront_highlight_order")
 
   @@index([compositeProductId])
 }

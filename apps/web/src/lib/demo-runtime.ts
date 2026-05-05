@@ -21,6 +21,7 @@ export {
   persistApproveExecutionRequest,
   persistCreateExecutionRequest,
   persistArchiveAssignment,
+  persistAssignmentStorefrontHighlight,
   persistCompositeProductPricing,
   persistCreateCompositeProduct,
   persistCreateDirectAssignment,

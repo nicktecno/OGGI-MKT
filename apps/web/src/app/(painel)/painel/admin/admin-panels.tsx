@@ -26,6 +26,7 @@ import {
   createCompositeProductAction,
   createDirectAssignment,
   rejectExecutionRequest,
+  setAssignmentStorefrontHighlightOrderAction,
   setProductActive,
   setProductAdminPaused,
   updateCompositeProductPricing,
@@ -68,6 +69,59 @@ function labelComoEntrou(origem: string): string {
   if (origem === "ADMIN_DIRECT") return "Você indicou";
   if (origem === "REQUEST_APPROVED") return "Pedido da costureira aceito";
   return origem;
+}
+
+function StorefrontHighlightOrderCell({
+  assignmentId,
+  initialOrder,
+  disabled,
+  run,
+}: {
+  assignmentId: string;
+  initialOrder?: number | null;
+  disabled: boolean;
+  run: (fn: () => Promise<void>) => void;
+}) {
+  const [val, setVal] = useState(() =>
+    initialOrder === undefined || initialOrder === null ? "" : String(initialOrder),
+  );
+
+  useEffect(() => {
+    setVal(initialOrder === undefined || initialOrder === null ? "" : String(initialOrder));
+  }, [initialOrder, assignmentId]);
+
+  return (
+    <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:justify-end">
+      <Input
+        className="h-9 w-14 text-right tabular-nums"
+        inputMode="numeric"
+        placeholder="—"
+        value={val}
+        disabled={disabled}
+        onChange={(e) => setVal(e.target.value.replace(/\D/g, "").slice(0, 2))}
+        aria-label="Ordem no destaque da loja (0 = primeiro; vazio = não destacar)"
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="shrink-0"
+        disabled={disabled}
+        onClick={() =>
+          run(async () => {
+            const t = val.trim();
+            const order = t === "" ? null : Number.parseInt(t, 10);
+            if (order !== null && (!Number.isInteger(order) || order < 0)) {
+              throw new Error("Use um número inteiro ≥ 0 ou deixe vazio.");
+            }
+            await setAssignmentStorefrontHighlightOrderAction(assignmentId, order);
+          })
+        }
+      >
+        OK
+      </Button>
+    </div>
+  );
 }
 
 function MarketplaceImagesDisabledCallout() {
@@ -655,6 +709,11 @@ export function AdminCombinacoesPanel({
           do fluxo, use <strong className="text-foreground">Encerrar</strong> — a combinação deixa de
           aparecer como ativa.
         </p>
+        <p className="mt-3">
+          <strong className="text-foreground">Destaque na loja:</strong> para ofertas já publicadas, defina
+          a ordem no carrossel do topo da página Loja (0 = primeiro slide). Vazio + OK remove do destaque; se
+          nenhuma tiver ordem, a loja usa a primeira oferta do catálogo como antes.
+        </p>
       </SectionIntro>
 
       <div>
@@ -665,7 +724,7 @@ export function AdminCombinacoesPanel({
               <p className="p-6 text-base text-muted-foreground">Nada ativo por aqui.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left text-base">
+                <table className="w-full min-w-[760px] text-left text-base">
                   <thead className="border-b border-border/60 bg-gradient-to-r from-muted/60 to-muted/25 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3.5 font-semibold">Peça</th>
@@ -673,6 +732,9 @@ export function AdminCombinacoesPanel({
                       <th className="px-4 py-3.5 font-semibold">Situação</th>
                       <th className="px-4 py-3.5 font-semibold">Como entrou</th>
                       <th className="px-4 py-3.5 text-right font-semibold">À venda (un.)</th>
+                      <th className="whitespace-nowrap px-4 py-3.5 text-right font-semibold">
+                        Destaque loja
+                      </th>
                       <th className="px-4 py-3.5 text-right font-semibold"> </th>
                     </tr>
                   </thead>
@@ -695,6 +757,14 @@ export function AdminCombinacoesPanel({
                           </td>
                           <td className="px-4 py-3.5 align-middle text-right text-base tabular-nums text-foreground">
                             {a.available_quantity}
+                          </td>
+                          <td className="px-4 py-3.5 align-middle text-right">
+                            <StorefrontHighlightOrderCell
+                              assignmentId={a.id}
+                              initialOrder={a.storefront_highlight_order}
+                              disabled={pending}
+                              run={run}
+                            />
                           </td>
                           <td className="px-4 py-3.5 align-middle text-right">
                             <Button

@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { CatalogProductGrid } from "@/components/loja/catalog-product-grid";
-import { searchCatalogRowsFromData } from "@/lib/demo-seed";
+import { LojaHeroSpotlight } from "@/components/loja/loja-hero-spotlight";
+import { getStorefrontHeroRows, searchCatalogRowsFromData } from "@/lib/demo-seed";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
-import { cn, formatBrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,11 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
     commerce.productionAssignments,
     query || undefined,
   );
-  const heroListing = rows[0];
+  const heroRows = query.trim()
+    ? rows.length > 0
+      ? [rows[0]]
+      : []
+    : getStorefrontHeroRows(rows);
 
   return (
     <main className="pb-24">
@@ -76,38 +81,10 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
           </div>
 
           <div className="lg:col-span-7">
-            {heroListing ? (
-              <Link
-                href={`/loja/produto/${heroListing.product.slug}`}
-                className="group block overflow-hidden rounded-2xl border border-border/50 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-luxury"
-              >
-                <div className="relative aspect-[4/3] lg:aspect-[16/10]">
-                  <Image
-                    src={heroListing.product.imagem_url}
-                    alt={heroListing.product.nome}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                    sizes="(max-width: 1024px) 100vw, 55vw"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-accent">
-                      Destaque da vitrine
-                    </p>
-                    <p className="mt-2 font-serif text-xl font-medium text-foreground md:text-2xl">
-                      {heroListing.product.nome}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">{heroListing.listing.executorNome}</p>
-                    <p className="mt-3 font-serif text-3xl font-medium tracking-tight text-foreground">
-                      {formatBrl(heroListing.product.preco_venda_publico)}
-                    </p>
-                    <span className="mt-3 inline-flex text-sm font-medium text-accent group-hover:underline">
-                      Ver detalhes e comprar →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+            {heroRows.length > 0 ? (
+              <div className="transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-luxury">
+                <LojaHeroSpotlight key={heroRows.map((r) => r.listing.id).join("-")} rows={heroRows} />
+              </div>
             ) : (
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border/50 shadow-luxury-sm lg:aspect-[16/10]">
                 <Image
