@@ -19,7 +19,7 @@ import {
   type DemoProductionAssignment,
   type ExecutorPickerOption,
 } from "@/lib/demo-seed";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { cn, formatBrl } from "@/lib/utils";
 import {
@@ -577,6 +577,273 @@ function SectionIntro({ title, children }: { title: string; children: ReactNode 
   );
 }
 
+function AdminPecaProductCard({
+  product,
+  supplyCatalog,
+  marketplaceImagesEnabled,
+  pending,
+  pendingScope,
+  run,
+}: {
+  product: DemoCompositeProduct;
+  supplyCatalog: DemoSupplyItem[];
+  marketplaceImagesEnabled: boolean;
+  pending: boolean;
+  pendingScope: string | null;
+  run: AdminMutationRun;
+}) {
+  const [open, setOpen] = useState(false);
+  const lines = resolveCompositeLines(product, supplyCatalog);
+  const insumoTotal = compositeInsumosTotal(product);
+  const sPause = `peca-${product.id}-pause`;
+  const sActive = `peca-${product.id}-active`;
+  const sDelete = `peca-${product.id}-delete`;
+  const sCover = `peca-${product.id}-cover`;
+  const sGalAdd = `peca-${product.id}-gallery-add`;
+  const tamanhosLabel = product.variacoes_tamanho?.length
+    ? formatVariacoesTamanhosLabel(product.variacoes_tamanho)
+    : null;
+
+  return (
+    <Card className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`peca-detalhes-${product.id}`}
+        id={`peca-resumo-${product.id}`}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start gap-3 rounded-t-lg border-b border-border/40 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
+        <img
+          src={product.imagem_url}
+          alt=""
+          className="h-14 w-14 shrink-0 rounded-md border border-border object-cover sm:h-16 sm:w-16"
+        />
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="font-serif text-base font-semibold leading-snug text-foreground sm:text-lg">
+            {product.nome}
+          </p>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            <span className="font-mono text-foreground/90">{product.sku}</span>
+            {tamanhosLabel ? (
+              <>
+                <span className="mx-1 text-border">·</span>
+                {tamanhosLabel}
+              </>
+            ) : null}
+          </p>
+          <p className="text-sm font-medium tabular-nums text-foreground">
+            Preço na loja: {formatBrl(product.preco_venda_publico)}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap justify-end gap-1.5">
+            <StatusChip ok={product.ativo} label={product.ativo ? "Ativa" : "Inativa"} />
+            <StatusChip
+              ok={!product.admin_pausado}
+              label={product.admin_pausado ? "Pausada" : "Na vitrine"}
+              muted={product.admin_pausado}
+            />
+          </div>
+          <ChevronDown
+            aria-hidden
+            className={cn("size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          />
+        </div>
+      </button>
+
+      {open ? (
+        <div id={`peca-detalhes-${product.id}`} role="region" aria-labelledby={`peca-resumo-${product.id}`}>
+          <CardHeader className={cn("space-y-3 border-b border-border/30 pb-5 pt-2", ADMIN_CARD_HEADER)}>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={product.admin_pausado ? "default" : "outline"}
+                size="sm"
+                disabled={pending}
+                onClick={() => run(() => setProductAdminPaused(product.id, !product.admin_pausado), sPause)}
+              >
+                {adminActionLoading(pending, pendingScope, sPause) ? (
+                  <Loader2 className="animate-spin" aria-hidden />
+                ) : null}
+                {product.admin_pausado ? "Voltar a mostrar na vitrine" : "Pausar na vitrine"}
+              </Button>
+              <Button
+                type="button"
+                variant={product.ativo ? "outline" : "default"}
+                size="sm"
+                disabled={pending}
+                onClick={() => run(() => setProductActive(product.id, !product.ativo), sActive)}
+              >
+                {adminActionLoading(pending, pendingScope, sActive) ? (
+                  <Loader2 className="animate-spin" aria-hidden />
+                ) : null}
+                {product.ativo ? "Desativar peça" : "Ativar peça"}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="border-destructive/80"
+                disabled={pending}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Excluir definitivamente a peça “${product.nome}”? Na API isto apaga também combinações, pedidos de execução e linhas de cumprimento ligados a este modelo.`,
+                    )
+                  ) {
+                    return;
+                  }
+                  run(() => deleteCompositeProductAction(product.id, product.slug), sDelete);
+                }}
+              >
+                {adminActionLoading(pending, pendingScope, sDelete) ? (
+                  <Loader2 className="animate-spin" aria-hidden />
+                ) : null}
+                Excluir peça
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/5 p-4 sm:flex-row sm:items-start">
+              <div className="space-y-2 shrink-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Foto na loja</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
+                <img
+                  src={product.imagem_url}
+                  alt=""
+                  className="h-40 w-full max-w-[200px] rounded-md border border-border object-cover sm:h-36 sm:w-36"
+                />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                {marketplaceImagesEnabled ? (
+                  <ImageUploadField
+                    label="Substituir imagem da vitrine"
+                    description={`JPEG, PNG ou WebP · comprimimos no navegador (WebP ou JPEG) até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · envio para Cloudflare R2 via API.`}
+                    disabled={pending}
+                    onPrepared={(prep) => {
+                      run(async () => {
+                        const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
+                        const fd = new FormData();
+                        fd.append("file", f);
+                        await uploadMarketplaceProductImage(product.id, fd, product.slug);
+                      }, sCover);
+                    }}
+                  />
+                ) : (
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    O envio de ficheiros fica disponível quando a API e o R2 estiverem configurados (ver aviso acima).
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {marketplaceImagesEnabled ? (
+              <div className="rounded-lg border border-border/60 bg-muted/5 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Galeria na página do produto
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A primeira imagem é sempre a <strong className="text-foreground">capa</strong> acima. Até 8 fotos
+                  extra em carrossel na ficha pública (ampliar / zoom).
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(product.galeria_imagens ?? []).map((url, galIdx) => {
+                    const sGalDel = `peca-${product.id}-gal-del-${galIdx}`;
+                    return (
+                      <div
+                        key={url}
+                        className="group relative h-20 w-20 overflow-hidden rounded-md border border-border bg-background"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute right-0.5 top-0.5 h-7 px-1.5 text-[0.65rem] opacity-90 group-hover:opacity-100"
+                          disabled={pending}
+                          onClick={() =>
+                            run(
+                              () =>
+                                removeMarketplaceProductGalleryImageAction(product.id, product.slug, url),
+                              sGalDel,
+                            )
+                          }
+                        >
+                          {adminActionLoading(pending, pendingScope, sGalDel) ? (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                          ) : (
+                            "✕"
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4">
+                  <ImageUploadField
+                    label="Adicionar foto à galeria"
+                    description={`WebP ou JPEG até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · máx. 8 fotos extra.`}
+                    disabled={pending}
+                    onPrepared={(prep) => {
+                      run(async () => {
+                        const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
+                        const fd = new FormData();
+                        fd.append("file", f);
+                        await uploadMarketplaceProductGalleryImage(product.id, product.slug, fd);
+                      }, sGalAdd);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Materiais usados neste modelo
+              </h3>
+              <ul className="mt-3 divide-y divide-border rounded-lg border border-border/80">
+                {lines.map((row) => (
+                  <li
+                    key={row.supplyItemId}
+                    className="flex flex-col gap-1 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground">{row.insumo.nome}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
+                        {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por {row.insumo.unidade}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-base tabular-nums text-foreground">
+                      {formatBrl(row.quantidade * row.snapshot_custo_unitario)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-right text-sm text-muted-foreground">
+                Soma dos materiais: <span className="font-medium text-foreground">{formatBrl(insumoTotal)}</span>
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-dashed border-border/80 bg-muted/10 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Valores de venda</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Estes números aparecem para o cliente e ajudam a calcular repasses.
+              </p>
+              <div className="mt-4">
+                <PricingForm product={product} pending={pending} pendingScope={pendingScope} run={run} />
+              </div>
+            </div>
+          </CardContent>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 export function AdminPecasPanel({
   products,
   supplyCatalogExtra,
@@ -600,11 +867,10 @@ export function AdminPecasPanel({
       {!marketplaceImagesEnabled ? <MarketplaceImagesDisabledCallout /> : null}
       <SectionIntro title="Peças e preços">
         <p>
-          Aqui você ajusta o preço que o cliente vê, o que fica para a costureira e para a loja, e
-          pode pausar uma peça inteira na vitrine ou tirá-la de uso.{" "}
-          <strong className="text-foreground">Pausar na vitrine</strong> esconde todas as ofertas
-          daquele modelo; <strong className="text-foreground">Desativar</strong> tira a peça das
-          buscas.
+          Aqui você ajusta o preço que o cliente vê, o que fica para a costureira e para a loja, e pode pausar uma peça
+          inteira na vitrine ou tirá-la de uso. <strong className="text-foreground">Pausar na vitrine</strong> esconde
+          todas as ofertas daquele modelo; <strong className="text-foreground">Desativar</strong> tira a peça das
+          buscas. Toque num cartão para ver fotos, materiais e preços.
         </p>
       </SectionIntro>
 
@@ -617,244 +883,17 @@ export function AdminPecasPanel({
       />
 
       <div className="grid gap-8 xl:grid-cols-2">
-        {products.map((product) => {
-          const lines = resolveCompositeLines(product, supplyCatalog);
-          const insumoTotal = compositeInsumosTotal(product);
-          const sPause = `peca-${product.id}-pause`;
-          const sActive = `peca-${product.id}-active`;
-          const sDelete = `peca-${product.id}-delete`;
-          const sCover = `peca-${product.id}-cover`;
-          const sGalAdd = `peca-${product.id}-gallery-add`;
-          return (
-            <Card key={product.id} className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
-              <CardHeader className={cn("space-y-3 pb-5", ADMIN_CARD_HEADER)}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <CardTitle className="font-serif text-xl leading-snug sm:text-2xl">
-                      {product.nome}
-                    </CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
-                      Código da peça: {product.sku}
-                      {product.variacoes_tamanho?.length ? (
-                        <>
-                          <span className="mx-1.5 text-border">·</span>
-                          Tamanhos: {formatVariacoesTamanhosLabel(product.variacoes_tamanho)}
-                        </>
-                      ) : null}
-                    </CardDescription>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <StatusChip ok={product.ativo} label={product.ativo ? "Ativa" : "Inativa"} />
-                    <StatusChip
-                      ok={!product.admin_pausado}
-                      label={product.admin_pausado ? "Pausada na vitrine" : "Aparece na loja"}
-                      muted={product.admin_pausado}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant={product.admin_pausado ? "default" : "outline"}
-                    size="sm"
-                    disabled={pending}
-                    onClick={() =>
-                      run(() => setProductAdminPaused(product.id, !product.admin_pausado), sPause)
-                    }
-                  >
-                    {adminActionLoading(pending, pendingScope, sPause) ? (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    ) : null}
-                    {product.admin_pausado ? "Voltar a mostrar na vitrine" : "Pausar na vitrine"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={product.ativo ? "outline" : "default"}
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => run(() => setProductActive(product.id, !product.ativo), sActive)}
-                  >
-                    {adminActionLoading(pending, pendingScope, sActive) ? (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    ) : null}
-                    {product.ativo ? "Desativar peça" : "Ativar peça"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="border-destructive/80"
-                    disabled={pending}
-                    onClick={() => {
-                      if (
-                        !window.confirm(
-                          `Excluir definitivamente a peça “${product.nome}”? Na API isto apaga também combinações, pedidos de execução e linhas de cumprimento ligados a este modelo.`,
-                        )
-                      ) {
-                        return;
-                      }
-                      run(() => deleteCompositeProductAction(product.id, product.slug), sDelete);
-                    }}
-                  >
-                    {adminActionLoading(pending, pendingScope, sDelete) ? (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    ) : null}
-                    Excluir peça
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/5 p-4 sm:flex-row sm:items-start">
-                  <div className="space-y-2 shrink-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Foto na loja
-                    </p>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
-                    <img
-                      src={product.imagem_url}
-                      alt=""
-                      className="h-40 w-full max-w-[200px] rounded-md border border-border object-cover sm:h-36 sm:w-36"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-2">
-                    {marketplaceImagesEnabled ? (
-                      <ImageUploadField
-                        label="Substituir imagem da vitrine"
-                        description={`JPEG, PNG ou WebP · comprimimos no navegador (WebP ou JPEG) até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · envio para Cloudflare R2 via API.`}
-                        disabled={pending}
-                        onPrepared={(prep) => {
-                          run(async () => {
-                            const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
-                            const fd = new FormData();
-                            fd.append("file", f);
-                            await uploadMarketplaceProductImage(product.id, fd, product.slug);
-                          }, sCover);
-                        }}
-                      />
-                    ) : (
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        O envio de ficheiros fica disponível quando a API e o R2 estiverem configurados (ver aviso
-                        acima).
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {marketplaceImagesEnabled ? (
-                  <div className="rounded-lg border border-border/60 bg-muted/5 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Galeria na página do produto
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      A primeira imagem é sempre a <strong className="text-foreground">capa</strong> acima. Até 8
-                      fotos extra em carrossel na ficha pública (ampliar / zoom).
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(product.galeria_imagens ?? []).map((url, galIdx) => {
-                        const sGalDel = `peca-${product.id}-gal-del-${galIdx}`;
-                        return (
-                          <div
-                            key={url}
-                            className="group relative h-20 w-20 overflow-hidden rounded-md border border-border bg-background"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={url} alt="" className="h-full w-full object-cover" />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              className="absolute right-0.5 top-0.5 h-7 px-1.5 text-[0.65rem] opacity-90 group-hover:opacity-100"
-                              disabled={pending}
-                              onClick={() =>
-                                run(
-                                  () =>
-                                    removeMarketplaceProductGalleryImageAction(
-                                      product.id,
-                                      product.slug,
-                                      url,
-                                    ),
-                                  sGalDel,
-                                )
-                              }
-                            >
-                              {adminActionLoading(pending, pendingScope, sGalDel) ? (
-                                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                              ) : (
-                                "✕"
-                              )}
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-4">
-                      <ImageUploadField
-                        label="Adicionar foto à galeria"
-                        description={`WebP ou JPEG até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · máx. 8 fotos extra.`}
-                        disabled={pending}
-                        onPrepared={(prep) => {
-                          run(async () => {
-                            const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
-                            const fd = new FormData();
-                            fd.append("file", f);
-                            await uploadMarketplaceProductGalleryImage(product.id, product.slug, fd);
-                          }, sGalAdd);
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : null}
-
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Materiais usados neste modelo
-                  </h3>
-                  <ul className="mt-3 divide-y divide-border rounded-lg border border-border/80">
-                    {lines.map((row) => (
-                      <li
-                        key={row.supplyItemId}
-                        className="flex flex-col gap-1 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground">{row.insumo.nome}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
-                            {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por{" "}
-                            {row.insumo.unidade}
-                          </p>
-                        </div>
-                        <p className="shrink-0 text-base tabular-nums text-foreground">
-                          {formatBrl(row.quantidade * row.snapshot_custo_unitario)}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-right text-sm text-muted-foreground">
-                    Soma dos materiais:{" "}
-                    <span className="font-medium text-foreground">{formatBrl(insumoTotal)}</span>
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-dashed border-border/80 bg-muted/10 p-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Valores de venda
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Estes números aparecem para o cliente e ajudam a calcular repasses.
-                  </p>
-                  <div className="mt-4">
-                    <PricingForm
-                      product={product}
-                      pending={pending}
-                      pendingScope={pendingScope}
-                      run={run}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {products.map((product) => (
+          <AdminPecaProductCard
+            key={product.id}
+            product={product}
+            supplyCatalog={supplyCatalog}
+            marketplaceImagesEnabled={marketplaceImagesEnabled}
+            pending={pending}
+            pendingScope={pendingScope}
+            run={run}
+          />
+        ))}
       </div>
     </div>
   );
