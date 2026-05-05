@@ -1,0 +1,24 @@
+# Mantém o serviço da API acordado em planos que adormecem após inatividade (ex.: Render free).
+# Configure o secret do repositório: API_HEALTH_URL = URL completa do GET /health (ex.: https://sua-api.onrender.com/health)
+name: API keep-alive
+
+on:
+  schedule:
+    # A cada 12 minutos (abaixo do típico ~15 min de spin-down do Render free)
+    - cron: "*/12 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping health
+        env:
+          URL: ${{ secrets.API_HEALTH_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "Defina o secret API_HEALTH_URL no repositório (Settings → Secrets → Actions)."
+            exit 0
+          fi
+          curl -fsS -m 45 --retry 2 --retry-delay 5 "$URL"

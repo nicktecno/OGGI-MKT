@@ -98,6 +98,13 @@ Código em `apps/web/src/app/(public)/` e `apps/web/src/app/(painel)/` (route gr
 - **API**: Render (Web Service + Docker) → **`Dockerfile` na raiz do repo** (contexto monorepo) ou Root Directory `apps/api` + `Dockerfile` local; `PORT` injetado pela plataforma; `DATABASE_URL` (Neon), `FRONTEND_URL` com URL(s) do Vercel, `INTERNAL_API_SECRET` e `AUTH_SECRET` iguais ao web.
 - **DB**: Neon → `DATABASE_URL` na API.
 
+### API que “adormece” (Render free e similares)
+
+O endpoint **`GET /health`** responde rápido, sem autenticação e **fora do rate limit** global — use-o para acordar o serviço.
+
+1. **Monitor externo (recomendado):** em [UptimeRobot](https://uptimerobot.com), [cron-job.org](https://cron-job.org) ou equivalente, crie um HTTP check a cada **10–14 minutos** apontando para `https://<sua-api>/health`.
+2. **GitHub Actions:** existe o workflow [`.github/workflows/api-keepalive.yml`](.github/workflows/api-keepalive.yml). No repositório, em **Settings → Secrets and variables → Actions**, crie o secret **`API_HEALTH_URL`** com o valor completo (ex.: `https://sua-api.onrender.com/health`). Sem o secret, o job termina sem erro e não faz pedidos.
+
 Detalhes: [docs/infrastructure.md](docs/infrastructure.md).
 
 ## Stripe (sandbox / teste)
