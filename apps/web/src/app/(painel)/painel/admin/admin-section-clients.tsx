@@ -13,9 +13,12 @@ import { AdminFlash, useAdminMutations } from "./use-admin-mutations";
 export function PecasSectionClient({
   products,
   supplyCatalogExtra,
+  marketplaceImagesEnabled,
 }: {
   products: DemoCompositeProduct[];
   supplyCatalogExtra?: DemoSupplyItem[];
+  /** API Nest + secret internos: envio de fotos da vitrine para R2. */
+  marketplaceImagesEnabled: boolean;
 }) {
   const { pending, message, error, run } = useAdminMutations();
   return (
@@ -24,6 +27,7 @@ export function PecasSectionClient({
       <AdminPecasPanel
         products={products}
         supplyCatalogExtra={supplyCatalogExtra}
+        marketplaceImagesEnabled={marketplaceImagesEnabled}
         pending={pending}
         run={run}
       />

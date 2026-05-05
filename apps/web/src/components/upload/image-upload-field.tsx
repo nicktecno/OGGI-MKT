@@ -14,6 +14,8 @@ export type ImageUploadFieldProps = {
   label?: string;
   description?: string;
   className?: string;
+  /** Desativa o input (ex.: API / R2 não configurados). */
+  disabled?: boolean;
   /** Chamado após compressão bem-sucedida (ex.: FormData.append ou upload S3) */
   onPrepared?: (payload: {
     blob: Blob;
@@ -23,6 +25,8 @@ export type ImageUploadFieldProps = {
     outputWidth: number;
     outputHeight: number;
   }) => void;
+  /** Chamado quando o utilizador limpa a pré-visualização (ex.: anular imagem opcional antes de criar a peça). */
+  onCleared?: () => void;
 };
 
 function formatBytes(n: number): string {
@@ -35,7 +39,9 @@ export function ImageUploadField({
   label = "Imagem",
   description = `JPEG, PNG ou WebP · até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOriginalFileBytes / (1024 * 1024))} MB · comprimimos para WebP (~máx. ${formatBytes(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes)}).`,
   className,
+  disabled = false,
   onPrepared,
+  onCleared,
 }: ImageUploadFieldProps) {
   const inputId = useId();
   const previewRef = useRef<string | null>(null);
@@ -58,6 +64,7 @@ export function ImageUploadField({
       setInfo(null);
       revokePreview();
       if (!file) return;
+      if (disabled) return;
 
       setBusy(true);
       try {
@@ -89,7 +96,7 @@ export function ImageUploadField({
         setBusy(false);
       }
     },
-    [onPrepared, revokePreview],
+    [disabled, onPrepared, revokePreview],
   );
 
   return (
@@ -100,7 +107,7 @@ export function ImageUploadField({
           id={inputId}
           type="file"
           accept={acceptAttributeForImageInput()}
-          disabled={busy}
+          disabled={disabled || busy}
           className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted/80"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -140,6 +147,7 @@ export function ImageUploadField({
             onClick={() => {
               revokePreview();
               setInfo(null);
+              onCleared?.();
             }}
           >
             Limpar

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { commerceUsesDatabase, getDemoCommerceState } from "@/lib/demo-runtime";
 import { fetchSupplyCatalogFromApi } from "@/lib/supply-catalog";
 import { PecasSectionClient } from "../admin-section-clients";
 
@@ -10,7 +10,12 @@ export const metadata: Metadata = {
 export default async function AdminPecasPage() {
   const state = await getDemoCommerceState();
   const supplyCatalogExtra = await fetchSupplyCatalogFromApi();
+  const marketplaceImagesEnabled = commerceUsesDatabase();
   return (
-    <PecasSectionClient products={state.products} supplyCatalogExtra={supplyCatalogExtra} />
+    <PecasSectionClient
+      products={state.products}
+      supplyCatalogExtra={supplyCatalogExtra}
+      marketplaceImagesEnabled={marketplaceImagesEnabled}
+    />
   );
 }

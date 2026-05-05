@@ -70,6 +70,33 @@ function labelComoEntrou(origem: string): string {
   return origem;
 }
 
+function MarketplaceImagesDisabledCallout() {
+  return (
+    <div className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3 text-sm leading-relaxed text-amber-950 shadow-sm ring-1 ring-amber-500/15 dark:text-amber-50">
+      <p className="font-medium text-foreground">Fotos da vitrine só com API e R2</p>
+      <p className="mt-1.5 text-muted-foreground">
+        No Next, defina{" "}
+        <span className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-xs text-foreground">
+          COMMERCE_API_URL
+        </span>{" "}
+        (ou{" "}
+        <span className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-xs text-foreground">
+          SERVER_API_URL
+        </span>
+        ) e{" "}
+        <span className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-xs text-foreground">
+          INTERNAL_API_SECRET
+        </span>
+        . Na API Nest, configure{" "}
+        <span className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-xs text-foreground">
+          R2_*
+        </span>{" "}
+        e URL pública do bucket. Sem isso o envio de imagens não é guardado.
+      </p>
+    </div>
+  );
+}
+
 function pacoteDefaults(p: DemoCompositeProduct) {
   return {
     pacote_altura_cm: p.pacote_altura_cm ?? 22,
@@ -83,15 +110,19 @@ function AdminNovaPecaCard({
   supplies,
   pending,
   run,
+  marketplaceImagesEnabled,
 }: {
   supplies: DemoSupplyItem[];
   pending: boolean;
   run: (fn: () => Promise<void>) => void;
+  marketplaceImagesEnabled: boolean;
 }) {
   const [nome, setNome] = useState("");
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
   const [desc, setDesc] = useState("");
+  const [coverPrep, setCoverPrep] = useState<{ blob: Blob; filename: string } | null>(null);
+  const [coverFieldKey, setCoverFieldKey] = useState(0);
   const [lines, setLines] = useState<Array<{ supplyItemId: string; quantidade: string }>>(() =>
     supplies[0] ? [{ supplyItemId: supplies[0].id, quantidade: "1" }] : [{ supplyItemId: "", quantidade: "1" }],
   );
@@ -124,8 +155,11 @@ function AdminNovaPecaCard({
       <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
-          Crie o desenho do produto: insumos e quantidades. Depois defina preço, pacote e foto nos cartões
-          abaixo; para vincular costureiras use <strong className="text-foreground">Quem faz o quê</strong>.
+          Crie o desenho do produto: insumos e quantidades.
+          {marketplaceImagesEnabled
+            ? " Pode já escolher a foto da vitrine abaixo (opcional). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
+            : " Depois ajuste preço e pacote nos cartões (envio de foto da vitrine após configurar API e R2); para vincular costureiras use "}
+          <strong className="text-foreground">Quem faz o quê</strong>.
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -141,18 +175,27 @@ function AdminNovaPecaCard({
               }));
             if (!nome.trim() || !sku.trim() || !desc.trim() || linhasParsed.length === 0) return;
             if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) return;
+            const prep = coverPrep;
             run(async () => {
-              await createCompositeProductAction({
+              const result = await createCompositeProductAction({
                 nome: nome.trim(),
                 slug: slug.trim() || undefined,
                 sku: sku.trim(),
                 descricao_curta: desc.trim(),
                 linhas: linhasParsed,
               });
+              if (marketplaceImagesEnabled && prep) {
+                const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                const fd = new FormData();
+                fd.append("file", f);
+                await uploadMarketplaceProductImage(result.id, fd);
+              }
               setNome("");
               setSlug("");
               setSku("");
               setDesc("");
+              setCoverPrep(null);
+              setCoverFieldKey((k) => k + 1);
               setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
             });
           }}
@@ -187,6 +230,16 @@ function AdminNovaPecaCard({
               />
             </div>
           </div>
+          {marketplaceImagesEnabled ? (
+            <ImageUploadField
+              key={coverFieldKey}
+              label="Foto da vitrine (opcional)"
+              description={`Enviada após criar a peça · WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · Cloudflare R2.`}
+              disabled={pending}
+              onPrepared={(p) => setCoverPrep({ blob: p.blob, filename: p.filename })}
+              onCleared={() => setCoverPrep(null)}
+            />
+          ) : null}
           <div className="space-y-3">
             <Label>Insumos e quantidades</Label>
             {lines.map((line, idx) => (
@@ -268,12 +321,14 @@ function SectionIntro({ title, children }: { title: string; children: ReactNode 
 export function AdminPecasPanel({
   products,
   supplyCatalogExtra,
+  marketplaceImagesEnabled,
   pending,
   run,
 }: {
   products: DemoCompositeProduct[];
   /** Insumos vindos da API para resolver linhas além do seed. */
   supplyCatalogExtra?: DemoSupplyItem[];
+  marketplaceImagesEnabled: boolean;
   pending: boolean;
   run: (fn: () => Promise<void>) => void;
 }) {
@@ -281,6 +336,7 @@ export function AdminPecasPanel({
 
   return (
     <div className="space-y-8">
+      {!marketplaceImagesEnabled ? <MarketplaceImagesDisabledCallout /> : null}
       <SectionIntro title="Peças e preços">
         <p>
           Aqui você ajusta o preço que o cliente vê, o que fica para a costureira e para a loja, e
@@ -291,7 +347,12 @@ export function AdminPecasPanel({
         </p>
       </SectionIntro>
 
-      <AdminNovaPecaCard supplies={supplyCatalog} pending={pending} run={run} />
+      <AdminNovaPecaCard
+        supplies={supplyCatalog}
+        pending={pending}
+        run={run}
+        marketplaceImagesEnabled={marketplaceImagesEnabled}
+      />
 
       <div className="grid gap-8 xl:grid-cols-2">
         {products.map((product) => {
@@ -355,18 +416,26 @@ export function AdminPecasPanel({
                     />
                   </div>
                   <div className="min-w-0 flex-1 space-y-2">
-                    <ImageUploadField
-                      label="Substituir imagem da vitrine"
-                      description={`JPEG, PNG ou WebP · comprimimos no navegador para WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB e enviamos para o armazenamento Cloudflare R2 (se estiver configurado na API).`}
-                      onPrepared={(prep) => {
-                        run(async () => {
-                          const f = new File([prep.blob], prep.filename, { type: "image/webp" });
-                          const fd = new FormData();
-                          fd.append("file", f);
-                          await uploadMarketplaceProductImage(product.id, fd);
-                        });
-                      }}
-                    />
+                    {marketplaceImagesEnabled ? (
+                      <ImageUploadField
+                        label="Substituir imagem da vitrine"
+                        description={`JPEG, PNG ou WebP · comprimimos para WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · envio para Cloudflare R2 via API.`}
+                        disabled={pending}
+                        onPrepared={(prep) => {
+                          run(async () => {
+                            const f = new File([prep.blob], prep.filename, { type: "image/webp" });
+                            const fd = new FormData();
+                            fd.append("file", f);
+                            await uploadMarketplaceProductImage(product.id, fd);
+                          });
+                        }}
+                      />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        O envio de ficheiros fica disponível quando a API e o R2 estiverem configurados (ver aviso
+                        acima).
+                      </p>
+                    )}
                   </div>
                 </div>
 
