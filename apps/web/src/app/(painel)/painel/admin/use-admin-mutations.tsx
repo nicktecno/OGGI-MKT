@@ -40,12 +40,12 @@ export function AdminFlash({
   if (pending) {
     return (
       <div
-        className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
+        className="flex items-center gap-4 rounded-2xl border border-border/50 bg-gradient-to-r from-card/90 to-muted/30 px-5 py-3.5 shadow-sm ring-1 ring-foreground/[0.04]"
         role="status"
         aria-live="polite"
       >
         <LottieLoading className="shrink-0" height={44} />
-        <span className="text-sm text-muted-foreground">A guardar alterações…</span>
+        <span className="text-sm font-medium text-muted-foreground">A guardar alterações…</span>
       </div>
     );
   }
@@ -53,10 +53,10 @@ export function AdminFlash({
   return (
     <div
       className={cn(
-        "rounded-xl border px-4 py-3 text-base leading-relaxed",
+        "rounded-2xl border px-5 py-3.5 text-base leading-relaxed shadow-sm ring-1 ring-foreground/[0.03]",
         error
           ? "border-destructive/40 bg-destructive/10 text-destructive"
-          : "border-border bg-muted/50 text-foreground",
+          : "border-border/60 bg-gradient-to-r from-muted/40 to-muted/20 text-foreground",
       )}
       role="status"
     >

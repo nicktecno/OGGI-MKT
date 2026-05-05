@@ -18,6 +18,7 @@ import {
   type DemoProductionAssignment,
   type ExecutorPickerOption,
 } from "@/lib/demo-seed";
+import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { cn, formatBrl } from "@/lib/utils";
 import {
   approveExecutionRequest,
@@ -106,7 +107,7 @@ function AdminNovaPecaCard({
 
   if (supplies.length === 0) {
     return (
-      <Card className="border-amber-500/35 bg-amber-500/[0.06]">
+      <Card className="border-amber-500/40 bg-amber-500/[0.08] ring-1 ring-amber-500/15">
         <CardHeader>
           <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
           <CardDescription className="text-base leading-relaxed">
@@ -119,8 +120,8 @@ function AdminNovaPecaCard({
   }
 
   return (
-    <Card className="border-border/80">
-      <CardHeader className="border-b border-border/50 bg-muted/10">
+    <Card className={ADMIN_CARD}>
+      <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
           Crie o desenho do produto: insumos e quantidades. Depois defina preço, pacote e foto nos cartões
@@ -252,11 +253,14 @@ function AdminNovaPecaCard({
 
 function SectionIntro({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <header className="mb-6 max-w-2xl space-y-2 border-b border-border/60 pb-5">
-      <h2 className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
-        {title}
-      </h2>
-      <div className="text-base leading-relaxed text-muted-foreground">{children}</div>
+    <header className="relative mb-8 overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card/85 via-card/45 to-muted/25 px-5 py-6 shadow-sm ring-1 ring-foreground/[0.03] sm:px-7 sm:py-7">
+      <div className="pointer-events-none absolute -right-8 top-0 h-28 w-40 rounded-full bg-accent/[0.08] blur-2xl" />
+      <div className="relative max-w-2xl space-y-2">
+        <h2 className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+          {title}
+        </h2>
+        <div className="text-base leading-relaxed text-muted-foreground">{children}</div>
+      </div>
     </header>
   );
 }
@@ -294,8 +298,8 @@ export function AdminPecasPanel({
           const lines = resolveCompositeLines(product, supplyCatalog);
           const insumoTotal = compositeInsumosTotal(product);
           return (
-            <Card key={product.id} className="overflow-hidden border-border/80 shadow-none">
-              <CardHeader className="space-y-3 border-b border-border/50 bg-muted/15 pb-5">
+            <Card key={product.id} className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
+              <CardHeader className={cn("space-y-3 pb-5", ADMIN_CARD_HEADER)}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 space-y-1">
                     <CardTitle className="font-serif text-xl leading-snug sm:text-2xl">
@@ -428,7 +432,7 @@ function StatusChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide shadow-sm",
         ok && !muted
           ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
           : "border-border bg-muted/60 text-muted-foreground",
@@ -465,8 +469,8 @@ export function AdminPedidosPanel({
       </SectionIntro>
 
       <div>
-        <h3 className="mb-3 text-base font-medium text-foreground">Aguardando você</h3>
-        <Card className="border-border/80">
+        <h3 className="mb-3 font-serif text-lg font-medium text-foreground">Aguardando você</h3>
+        <Card className={ADMIN_CARD}>
           <CardContent className="pt-6">
             {pendingRequests.length === 0 ? (
               <p className="text-base leading-relaxed text-muted-foreground">
@@ -479,7 +483,7 @@ export function AdminPedidosPanel({
                   return (
                     <li
                       key={r.id}
-                      className="rounded-xl border border-border/80 bg-card/50 p-4 sm:p-5"
+                      className="rounded-xl border border-border/50 bg-muted/10 p-4 shadow-sm ring-1 ring-foreground/[0.02] sm:p-5"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-2">
@@ -517,10 +521,10 @@ export function AdminPedidosPanel({
 
       {processed.length > 0 ? (
         <div>
-          <h3 className="mb-3 text-base font-medium text-foreground">Respostas anteriores</h3>
-          <div className="overflow-x-auto rounded-xl border border-border/80">
+          <h3 className="mb-3 font-serif text-lg font-medium text-foreground">Respostas anteriores</h3>
+          <div className="overflow-hidden overflow-x-auto rounded-xl border border-border/50 shadow-sm ring-1 ring-foreground/[0.03]">
             <table className="w-full min-w-[520px] text-left text-base">
-              <thead className="border-b border-border bg-muted/40 text-sm uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border/60 bg-gradient-to-r from-muted/60 to-muted/25 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Peça</th>
                   <th className="px-4 py-3 font-medium">Costureira</th>
@@ -532,7 +536,7 @@ export function AdminPedidosPanel({
                 {processed.map((r) => {
                   const p = products.find((x) => x.id === r.compositeProductId);
                   return (
-                    <tr key={r.id} className="bg-card/30">
+                    <tr key={r.id} className="bg-card/40 transition-colors hover:bg-muted/15">
                       <td className="px-4 py-3 align-top font-medium text-foreground">
                         {p?.nome ?? "—"}
                       </td>
@@ -585,15 +589,15 @@ export function AdminCombinacoesPanel({
       </SectionIntro>
 
       <div>
-        <h3 className="mb-3 text-base font-medium text-foreground">Em andamento</h3>
-        <Card className="border-border/80">
+        <h3 className="mb-3 font-serif text-lg font-medium text-foreground">Em andamento</h3>
+        <Card className={cn(ADMIN_CARD, "overflow-hidden")}>
           <CardContent className="p-0 sm:p-0">
             {visibleAssignments.length === 0 ? (
               <p className="p-6 text-base text-muted-foreground">Nada ativo por aqui.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left text-base">
-                  <thead className="border-b border-border bg-muted/40 text-sm uppercase tracking-wide text-muted-foreground">
+                  <thead className="border-b border-border/60 bg-gradient-to-r from-muted/60 to-muted/25 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3.5 font-semibold">Peça</th>
                       <th className="px-4 py-3.5 font-semibold">Costureira</th>
@@ -607,7 +611,7 @@ export function AdminCombinacoesPanel({
                     {visibleAssignments.map((a) => {
                       const p = products.find((x) => x.id === a.compositeProductId);
                       return (
-                        <tr key={a.id} className="bg-card/40">
+                        <tr key={a.id} className="bg-card/50 transition-colors hover:bg-muted/15">
                           <td className="px-4 py-3.5 align-middle font-medium text-foreground">
                             {p?.nome ?? "—"}
                           </td>
@@ -741,7 +745,7 @@ function PricingForm({
           />
         </div>
       </div>
-      <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
+      <div className="rounded-xl border border-border/50 bg-gradient-to-br from-muted/35 to-muted/10 p-4 shadow-sm ring-1 ring-foreground/[0.02]">
         <h4 className="text-sm font-semibold text-foreground">Pacote da peça pronta (envio ao cliente)</h4>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           Dimensões e peso usados na cotação Melhor Envio quando a costureira posta o produto acabado. Ajuste
@@ -891,8 +895,8 @@ function DirectAssignForm({
 
   if (executorOptions.length === 0) {
     return (
-      <Card className="max-w-2xl border-border/80">
-        <CardHeader className="border-b border-border/50 bg-muted/10">
+      <Card className={cn(ADMIN_CARD, "max-w-2xl")}>
+        <CardHeader className={ADMIN_CARD_HEADER}>
           <CardTitle className="font-serif text-xl">Nova combinação peça + costureira</CardTitle>
           <CardDescription className="text-base leading-relaxed">
             Para vincular uma costureira, é preciso ter pelo menos uma conta de costureira ativa
@@ -905,8 +909,8 @@ function DirectAssignForm({
   }
 
   return (
-    <Card className="max-w-2xl border-border/80">
-      <CardHeader className="border-b border-border/50 bg-muted/10">
+    <Card className={cn(ADMIN_CARD, "max-w-2xl")}>
+      <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova combinação peça + costureira</CardTitle>
         <CardDescription className="text-base leading-relaxed">
           Escolha a costureira na lista (nome e e-mail vêm do cadastro). Use quando você quer definir

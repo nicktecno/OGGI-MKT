@@ -29,6 +29,15 @@ function linkClass(active: boolean, opts?: { compact?: boolean }) {
   );
 }
 
+function adminNavLinkClass(active: boolean) {
+  return cn(
+    "inline-flex min-h-9 items-center gap-2 rounded-full border px-3.5 py-2 text-left text-[0.8125rem] font-medium leading-tight transition-all sm:text-sm",
+    active
+      ? "border-primary/25 bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/20"
+      : "border-border/70 bg-background/70 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
+  );
+}
+
 export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -62,26 +71,31 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     ];
 
     return (
-      <nav className="flex flex-row flex-wrap items-center gap-1.5">
+      <nav className="flex flex-row flex-wrap items-center gap-2" aria-label="Menu da administração">
         {items.map((item) => {
           const active = pathname === item.href;
           const badge = "badge" in item ? item.badge : 0;
           return (
-            <Link key={item.href} href={item.href} className={linkClass(active)}>
-              <span className="flex items-center justify-between gap-2">
-                <span>{item.label}</span>
-                {badge > 0 ? (
-                  <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 px-1.5 text-xs font-bold text-accent">
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                ) : null}
-              </span>
+            <Link key={item.href} href={item.href} className={adminNavLinkClass(active)}>
+              <span className="min-w-0 flex-1">{item.label}</span>
+              {badge > 0 ? (
+                <span
+                  className={cn(
+                    "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[0.65rem] font-bold tabular-nums",
+                    active
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-accent/25 text-accent-foreground dark:bg-accent/35",
+                  )}
+                >
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              ) : null}
             </Link>
           );
         })}
         <Link
           href="/loja"
-          className={linkClass(pathname === "/loja" || pathname.startsWith("/loja/"))}
+          className={adminNavLinkClass(pathname === "/loja" || pathname.startsWith("/loja/"))}
         >
           Loja pública
         </Link>

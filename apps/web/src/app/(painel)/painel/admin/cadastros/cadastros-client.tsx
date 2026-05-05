@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
+import { cn } from "@/lib/utils";
 import { approvePlatformAccount, rejectPlatformAccount } from "../platform-admin-actions";
 
 export type PendingPlatformAccount = {
@@ -73,24 +75,24 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-border/50 bg-muted/15 px-5 py-8 text-center text-sm text-muted-foreground ring-1 ring-foreground/[0.02]">
         Nenhum cadastro aguardando aprovação no momento.
-      </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       {error ? (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm">
           {error}
         </p>
       ) : null}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {items.map((row) => (
-          <Card key={row.id} className="border-border">
-            <CardHeader>
-              <CardTitle className="font-serif text-lg">
+          <Card key={row.id} className={cn(ADMIN_CARD, "overflow-hidden")}>
+            <CardHeader className={cn(ADMIN_CARD_HEADER)}>
+              <CardTitle className="font-serif text-lg md:text-xl">
                 {row.name}{" "}
                 <span className="font-sans text-sm font-normal text-muted-foreground">
                   ({row.role === "SUPPLIER" ? "Fornecedor" : "Executor"})
@@ -100,7 +102,7 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               {row.supplierProfile ? (
-                <div className="rounded-lg border border-border bg-muted/20 p-3 text-muted-foreground">
+                <div className="rounded-xl border border-border/50 bg-muted/15 p-4 text-muted-foreground ring-1 ring-foreground/[0.02]">
                   <p className="font-medium text-foreground">{row.supplierProfile.businessName}</p>
                   <p>
                     {row.supplierProfile.addressLine1}, {row.supplierProfile.city} —{" "}
@@ -111,7 +113,7 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
                 </div>
               ) : null}
               {row.executorProfile ? (
-                <div className="rounded-lg border border-border bg-muted/20 p-3 text-muted-foreground">
+                <div className="rounded-xl border border-border/50 bg-muted/15 p-4 text-muted-foreground ring-1 ring-foreground/[0.02]">
                   <p className="font-medium text-foreground">{row.executorProfile.displayName}</p>
                   <p>
                     {row.executorProfile.addressLine1}, {row.executorProfile.city} —{" "}

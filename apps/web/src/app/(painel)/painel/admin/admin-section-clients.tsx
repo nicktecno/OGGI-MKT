@@ -19,7 +19,7 @@ export function PecasSectionClient({
 }) {
   const { pending, message, error, run } = useAdminMutations();
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminFlash pending={pending} message={message} error={error} />
       <AdminPecasPanel
         products={products}
@@ -40,7 +40,7 @@ export function PedidosSectionClient({
 }) {
   const { pending, message, error, run } = useAdminMutations();
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminFlash pending={pending} message={message} error={error} />
       <AdminPedidosPanel
         products={products}
@@ -63,7 +63,7 @@ export function CombinacoesSectionClient({
 }) {
   const { pending, message, error, run } = useAdminMutations();
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminFlash pending={pending} message={message} error={error} />
       <AdminCombinacoesPanel
         products={products}

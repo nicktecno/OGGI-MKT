@@ -27,7 +27,7 @@ export default async function PainelLayout({ children }: { children: React.React
         </Suspense>
       </aside>
       <div className="flex-1 bg-gradient-to-br from-background via-background to-muted/25">
-        <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">{children}</div>
+        <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">{children}</div>
       </div>
     </div>
   );
