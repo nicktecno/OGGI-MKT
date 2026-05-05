@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PageLoadingFallback } from "@/components/ui/page-loading-fallback";
 import {
   Card,
   CardContent,
@@ -95,7 +96,9 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<p className="text-sm text-muted-foreground">Carregando abas…</p>}>
+          <Suspense
+            fallback={<PageLoadingFallback className="py-10" indicatorHeight={80} />}
+          >
             <FornecedorWorkspace
               apiMode={apiMode}
               meusInsumos={meusInsumos}

@@ -2,36 +2,40 @@
 
 import { cn } from "@/lib/utils";
 
-/** Vídeo servido de `public/loading/sewing-tools.webm` (evita problemas do Lottie no App Router). */
-const LOADING_VIDEO_SRC = "/loading/sewing-tools.webm";
-
 type LottieLoadingProps = {
   className?: string;
-  /** Altura em px; largura limitada proporcionalmente. */
+  /** Altura em px; o anel escala proporcionalmente. */
   height?: number;
-  /** Mantido por compatibilidade com chamadas antigas; o vídeo repete em loop. */
+  /** @deprecated ignorado — mantido para compatibilidade com chamadas antigas. */
   loop?: boolean;
 };
 
-export function LottieLoading({ className, height = 96, loop = true }: LottieLoadingProps) {
-  const aspect = 16 / 9;
-  const width = Math.round(height * aspect);
+/**
+ * Indicador de carregamento padrão da aplicação (anéis em CSS).
+ * Se existir `public/loading/sewing-tools.webm`, pode ser reativado como camada extra no futuro.
+ */
+export function LottieLoading({ className, height = 96 }: LottieLoadingProps) {
+  const outer = Math.max(height < 40 ? 18 : 22, Math.round(height * 0.44));
+  const inner = Math.max(12, Math.round(outer * 0.52));
+  const box = Math.max(outer + 10, Math.round(height * 1.08));
 
   return (
     <div
-      className={cn("inline-flex items-center justify-center overflow-hidden", className)}
-      style={{ minHeight: height, minWidth: Math.min(width, 320), maxWidth: "min(100vw, 320px)" }}
+      className={cn("relative inline-flex items-center justify-center", className)}
+      style={{
+        minHeight: height,
+        width: box,
+        maxWidth: "min(100vw, 320px)",
+      }}
+      aria-hidden
     >
-      <video
-        src={LOADING_VIDEO_SRC}
-        className="pointer-events-none block h-full max-h-full w-full object-contain"
-        style={{ height, width: "auto", maxWidth: "min(100vw, 320px)" }}
-        autoPlay
-        muted
-        loop={loop}
-        playsInline
-        preload="metadata"
-        aria-hidden
+      <div
+        className="absolute rounded-full border-2 border-muted/55 border-t-accent border-r-accent/55 shadow-sm ring-2 ring-accent/10 animate-spin"
+        style={{ width: outer, height: outer }}
+      />
+      <div
+        className="absolute rounded-full border border-muted/40 border-b-accent/80 animate-spin shadow-inner [animation-duration:1.15s] [animation-direction:reverse]"
+        style={{ width: inner, height: inner }}
       />
     </div>
   );

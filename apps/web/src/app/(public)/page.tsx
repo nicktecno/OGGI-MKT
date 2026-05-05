@@ -1,9 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FeaturedProductsSection } from "@/components/loja/featured-products-section";
 import { buttonVariants } from "@/components/ui/button";
+import { searchCatalogRowsFromData } from "@/lib/demo-seed";
+import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 const editorial = [
   {
@@ -26,7 +31,14 @@ const editorial = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const commerce = await getDemoCommerceState();
+  const featuredRows = searchCatalogRowsFromData(
+    commerce.products,
+    commerce.productionAssignments,
+    undefined,
+  );
+
   return (
     <>
       <section className="relative min-h-[85vh] overflow-hidden">
@@ -54,14 +66,20 @@ export default function HomePage() {
               com tempo, mão na agulha e respeito por cada detalhe.
             </p>
             <div className="mt-11 flex flex-wrap gap-4">
-              <Link href="/loja" className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem] justify-center")}>
-                Ver a loja
+              <Link
+                href="/#em-destaque"
+                className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem] justify-center")}
+              >
+                Ver ofertas em destaque
+              </Link>
+              <Link href="/loja" className={cn(buttonVariants({ variant: "outline", size: "xl" }), "min-w-[11rem] justify-center border-foreground/15 bg-background/40 backdrop-blur-sm hover:bg-background/70")}>
+                Vitrine completa
               </Link>
               <Link
                 href="/entrar"
                 className={cn(
-                  buttonVariants({ variant: "outline", size: "xl" }),
-                  "min-w-[11rem] justify-center border-foreground/15 bg-background/40 backdrop-blur-sm hover:bg-background/70",
+                  buttonVariants({ variant: "ghost", size: "xl" }),
+                  "min-w-[10rem] justify-center text-muted-foreground hover:text-foreground",
                 )}
               >
                 Entrar
@@ -70,6 +88,13 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <FeaturedProductsSection
+        rows={featuredRows}
+        sectionId="em-destaque"
+        eyebrow="Compre agora"
+        gridColumns={featuredRows.length >= 4 ? "2-4" : "2-3"}
+      />
 
       <section className="relative border-b border-border/70 bg-gradient-to-b from-card via-card to-background py-24">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,oklch(0.5_0.08_48_/_0.06),transparent_70%)]" />
