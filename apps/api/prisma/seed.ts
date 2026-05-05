@@ -1,5 +1,6 @@
 import { PrismaClient, SupplyQuantityKind } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { pickShipmentPackFromSupplies, stubFreteB2B } from '../src/supply/package-shipping.util';
 
 const prisma = new PrismaClient();
 
@@ -99,6 +100,10 @@ async function main() {
         freteAteExecutor: 12.0,
         observacao: 'Largura útil 1,40 m.',
         ativo: true,
+        pacoteAlturaCm: 32,
+        pacoteLarguraCm: 28,
+        pacoteComprimentoCm: 10,
+        pacotePesoKg: 1.35,
       },
       {
         id: 'supply-ziper-invisivel-40',
@@ -111,6 +116,10 @@ async function main() {
         custoFornecedor: 4.5,
         freteAteExecutor: 3.0,
         ativo: true,
+        pacoteAlturaCm: 16,
+        pacoteLarguraCm: 12,
+        pacoteComprimentoCm: 5,
+        pacotePesoKg: 0.22,
       },
     ],
   });
@@ -140,6 +149,10 @@ async function main() {
       precoVendaPublico: 459.9,
       ativo: true,
       adminPausado: false,
+      pacoteAlturaCm: 24,
+      pacoteLarguraCm: 20,
+      pacoteComprimentoCm: 9,
+      pacotePesoKg: 0.62,
       imagemUrl:
         'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
     },
@@ -170,6 +183,10 @@ async function main() {
       precoVendaPublico: 189.9,
       ativo: true,
       adminPausado: false,
+      pacoteAlturaCm: 18,
+      pacoteLarguraCm: 14,
+      pacoteComprimentoCm: 7,
+      pacotePesoKg: 0.38,
       imagemUrl:
         'https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88',
     },
@@ -201,6 +218,16 @@ async function main() {
     },
   });
 
+  const demoShip = pickShipmentPackFromSupplies([
+    { alturaCm: 32, larguraCm: 28, comprimentoCm: 10, pesoKg: 1.35 },
+    { alturaCm: 16, larguraCm: 12, comprimentoCm: 5, pesoKg: 0.22 },
+  ]);
+  const demoFrete = stubFreteB2B({
+    cepOrigem: '01310-100',
+    cepDestino: '01310-100',
+    ...demoShip,
+  });
+
   await prisma.supplierFulfillmentLine.createMany({
     data: [
       {
@@ -216,6 +243,11 @@ async function main() {
         executorCep: '01310-100',
         executorCidade: 'São Paulo',
         executorEndereco: 'Av. Paulista, 800',
+        envioPacoteAlturaCm: demoShip.alturaCm,
+        envioPacoteLarguraCm: demoShip.larguraCm,
+        envioPacoteComprimentoCm: demoShip.comprimentoCm,
+        envioPacotePesoKg: demoShip.pesoKg,
+        freteCotadoReais: demoFrete,
       },
       {
         id: 'fulf-seed-ziper',
@@ -230,6 +262,11 @@ async function main() {
         executorCep: '01310-100',
         executorCidade: 'São Paulo',
         executorEndereco: 'Av. Paulista, 800',
+        envioPacoteAlturaCm: demoShip.alturaCm,
+        envioPacoteLarguraCm: demoShip.larguraCm,
+        envioPacoteComprimentoCm: demoShip.comprimentoCm,
+        envioPacotePesoKg: demoShip.pesoKg,
+        freteCotadoReais: demoFrete,
       },
     ],
   });

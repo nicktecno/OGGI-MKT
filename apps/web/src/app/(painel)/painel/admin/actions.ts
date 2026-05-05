@@ -48,10 +48,22 @@ export async function updateCompositeProductPricing(input: {
   preco_venda_publico: number;
   executor_fee_planejada: number;
   platform_fee_planejada: number;
+  pacote_altura_cm: number;
+  pacote_largura_cm: number;
+  pacote_comprimento_cm: number;
+  pacote_peso_kg: number;
 }) {
   await requireAdmin();
-  const { productId, preco_venda_publico, executor_fee_planejada, platform_fee_planejada } =
-    input;
+  const {
+    productId,
+    preco_venda_publico,
+    executor_fee_planejada,
+    platform_fee_planejada,
+    pacote_altura_cm,
+    pacote_largura_cm,
+    pacote_comprimento_cm,
+    pacote_peso_kg,
+  } = input;
   if (
     !Number.isFinite(preco_venda_publico) ||
     !Number.isFinite(executor_fee_planejada) ||
@@ -62,11 +74,27 @@ export async function updateCompositeProductPricing(input: {
   ) {
     throw new Error("Confira os números: use valores em reais, zero ou maiores.");
   }
+  if (
+    !Number.isFinite(pacote_altura_cm) ||
+    !Number.isFinite(pacote_largura_cm) ||
+    !Number.isFinite(pacote_comprimento_cm) ||
+    !Number.isFinite(pacote_peso_kg) ||
+    pacote_altura_cm < 0.1 ||
+    pacote_largura_cm < 0.1 ||
+    pacote_comprimento_cm < 0.1 ||
+    pacote_peso_kg < 0.01
+  ) {
+    throw new Error("Pacote: use dimensões ≥ 0,1 cm e peso ≥ 0,01 kg.");
+  }
   await persistCompositeProductPricing({
     productId,
     preco_venda_publico,
     executor_fee_planejada,
     platform_fee_planejada,
+    pacote_altura_cm,
+    pacote_largura_cm,
+    pacote_comprimento_cm,
+    pacote_peso_kg,
   });
   revalidateStorefront();
 }

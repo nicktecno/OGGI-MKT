@@ -72,12 +72,21 @@ export type SupplierFulfillmentLineDto = {
   executor_endereco: string;
   melhor_envio_etiqueta_url: string | null;
   melhor_envio_pedido_id: string | null;
+  envio_pacote_altura_cm: number | null;
+  envio_pacote_largura_cm: number | null;
+  envio_pacote_comprimento_cm: number | null;
+  envio_pacote_peso_kg: number | null;
+  frete_cotado_reais: number | null;
   insumo: {
     nome: string;
     sku_interno: string;
     quantidade_kind: string;
     quantidade: number;
     imagem_url: string | null;
+    pacote_altura_cm?: number;
+    pacote_largura_cm?: number;
+    pacote_comprimento_cm?: number;
+    pacote_peso_kg?: number;
   };
 };
 

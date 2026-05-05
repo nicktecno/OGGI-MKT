@@ -38,6 +38,10 @@ export class CommerceInternalController {
       preco_venda_publico?: number;
       executor_fee_planejada?: number;
       platform_fee_planejada?: number;
+      pacote_altura_cm?: number;
+      pacote_largura_cm?: number;
+      pacote_comprimento_cm?: number;
+      pacote_peso_kg?: number;
     },
   ) {
     return this.commerce.patchProduct(id, body);

@@ -104,6 +104,10 @@ export async function persistCompositeProductPricing(input: {
   preco_venda_publico: number;
   executor_fee_planejada: number;
   platform_fee_planejada: number;
+  pacote_altura_cm: number;
+  pacote_largura_cm: number;
+  pacote_comprimento_cm: number;
+  pacote_peso_kg: number;
 }) {
   if (commerceUsesDatabase()) {
     const res = await internalFetch(
@@ -114,6 +118,10 @@ export async function persistCompositeProductPricing(input: {
           preco_venda_publico: input.preco_venda_publico,
           executor_fee_planejada: input.executor_fee_planejada,
           platform_fee_planejada: input.platform_fee_planejada,
+          pacote_altura_cm: input.pacote_altura_cm,
+          pacote_largura_cm: input.pacote_largura_cm,
+          pacote_comprimento_cm: input.pacote_comprimento_cm,
+          pacote_peso_kg: input.pacote_peso_kg,
         }),
       },
     );
@@ -129,6 +137,10 @@ export async function persistCompositeProductPricing(input: {
         preco_venda_publico: input.preco_venda_publico,
         executor_fee_planejada: input.executor_fee_planejada,
         platform_fee_planejada: input.platform_fee_planejada,
+        pacote_altura_cm: input.pacote_altura_cm,
+        pacote_largura_cm: input.pacote_largura_cm,
+        pacote_comprimento_cm: input.pacote_comprimento_cm,
+        pacote_peso_kg: input.pacote_peso_kg,
       },
     },
   }));

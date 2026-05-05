@@ -20,6 +20,11 @@ model CompositeProduct {
   ativo                  Boolean
   adminPausado           Boolean @map("admin_pausado")
   imagemUrl              String  @map("imagem_url")
+  // Pacote peça pronta → cliente (admin); cotação ME na postagem da costureira.
+  pacoteAlturaCm         Float   @map("pacote_altura_cm")
+  pacoteLarguraCm        Float   @map("pacote_largura_cm")
+  pacoteComprimentoCm    Float   @map("pacote_comprimento_cm")
+  pacotePesoKg           Float   @map("pacote_peso_kg")
 }
 
 model ExecutionRequest {
@@ -125,6 +130,11 @@ model SupplyItem {
   observacao          String?
   quantidadeKind      SupplyQuantityKind  @default(METRO) @map("quantidade_kind")
   quantidade          Float               @default(1)
+  // Pacote padrão deste insumo (fornecedor → executor).
+  pacoteAlturaCm      Float               @map("pacote_altura_cm")
+  pacoteLarguraCm     Float               @map("pacote_largura_cm")
+  pacoteComprimentoCm Float               @map("pacote_comprimento_cm")
+  pacotePesoKg        Float               @map("pacote_peso_kg")
   ativo               Boolean             @default(true)
   createdAt           DateTime            @default(now()) @map("created_at")
   updatedAt           DateTime            @updatedAt @map("updated_at")
@@ -149,6 +159,12 @@ model SupplierFulfillmentLine {
   executorEndereco        String   @map("executor_endereco")
   melhorEnvioEtiquetaUrl  String?  @map("melhor_envio_etiqueta_url")
   melhorEnvioPedidoId     String?  @map("melhor_envio_pedido_id")
+  // Pacote efetivo B2B; vários insumos → maior volume; fornecedor pode ajustar.
+  envioPacoteAlturaCm      Float?   @map("envio_pacote_altura_cm")
+  envioPacoteLarguraCm     Float?   @map("envio_pacote_largura_cm")
+  envioPacoteComprimentoCm Float?   @map("envio_pacote_comprimento_cm")
+  envioPacotePesoKg        Float?   @map("envio_pacote_peso_kg")
+  freteCotadoReais         Float?   @map("frete_cotado_reais")
   createdAt               DateTime @default(now()) @map("created_at")
   updatedAt               DateTime @updatedAt @map("updated_at")
 

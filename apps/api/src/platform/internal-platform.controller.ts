@@ -28,6 +28,10 @@ export class InternalPlatformController {
       observacao: r.observacao,
       quantidade_kind: r.quantidadeKind,
       quantidade: r.quantidade,
+      pacote_altura_cm: r.pacoteAlturaCm,
+      pacote_largura_cm: r.pacoteLarguraCm,
+      pacote_comprimento_cm: r.pacoteComprimentoCm,
+      pacote_peso_kg: r.pacotePesoKg,
     }));
   }
 

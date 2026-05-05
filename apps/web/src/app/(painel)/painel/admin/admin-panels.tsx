@@ -67,6 +67,15 @@ function labelComoEntrou(origem: string): string {
   return origem;
 }
 
+function pacoteDefaults(p: DemoCompositeProduct) {
+  return {
+    pacote_altura_cm: p.pacote_altura_cm ?? 22,
+    pacote_largura_cm: p.pacote_largura_cm ?? 18,
+    pacote_comprimento_cm: p.pacote_comprimento_cm ?? 8,
+    pacote_peso_kg: p.pacote_peso_kg ?? 0.55,
+  };
+}
+
 function SectionIntro({ title, children }: { title: string; children: ReactNode }) {
   return (
     <header className="mb-6 max-w-2xl space-y-2 border-b border-border/60 pb-5">
@@ -483,11 +492,21 @@ function PricingForm({
   const [preco, setPreco] = useState(String(product.preco_venda_publico));
   const [execFee, setExecFee] = useState(String(product.executor_fee_planejada));
   const [platFee, setPlatFee] = useState(String(product.platform_fee_planejada));
+  const pd0 = pacoteDefaults(product);
+  const [pacAlt, setPacAlt] = useState(String(pd0.pacote_altura_cm));
+  const [pacLar, setPacLar] = useState(String(pd0.pacote_largura_cm));
+  const [pacComp, setPacComp] = useState(String(pd0.pacote_comprimento_cm));
+  const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
 
   useEffect(() => {
     setPreco(String(product.preco_venda_publico));
     setExecFee(String(product.executor_fee_planejada));
     setPlatFee(String(product.platform_fee_planejada));
+    const pd = pacoteDefaults(product);
+    setPacAlt(String(pd.pacote_altura_cm));
+    setPacLar(String(pd.pacote_largura_cm));
+    setPacComp(String(pd.pacote_comprimento_cm));
+    setPacPeso(String(pd.pacote_peso_kg));
   }, [product]);
 
   return (
@@ -501,6 +520,10 @@ function PricingForm({
             preco_venda_publico: Number(preco.replace(",", ".")),
             executor_fee_planejada: Number(execFee.replace(",", ".")),
             platform_fee_planejada: Number(platFee.replace(",", ".")),
+            pacote_altura_cm: Number(pacAlt.replace(",", ".")),
+            pacote_largura_cm: Number(pacLar.replace(",", ".")),
+            pacote_comprimento_cm: Number(pacComp.replace(",", ".")),
+            pacote_peso_kg: Number(pacPeso.replace(",", ".")),
           }),
         );
       }}
@@ -538,6 +561,63 @@ function PricingForm({
             onChange={(e) => setPlatFee(e.target.value)}
             disabled={disabled}
           />
+        </div>
+      </div>
+      <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
+        <h4 className="text-sm font-semibold text-foreground">Pacote da peça pronta (envio ao cliente)</h4>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          Dimensões e peso usados na cotação Melhor Envio quando a costureira posta o produto acabado. Ajuste
+          conforme a embalagem real do modelo.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-medium" htmlFor={`pac-a-${product.id}`}>
+              Altura (cm)
+            </Label>
+            <Input
+              id={`pac-a-${product.id}`}
+              value={pacAlt}
+              onChange={(e) => setPacAlt(e.target.value)}
+              disabled={disabled}
+              inputMode="decimal"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-medium" htmlFor={`pac-l-${product.id}`}>
+              Largura (cm)
+            </Label>
+            <Input
+              id={`pac-l-${product.id}`}
+              value={pacLar}
+              onChange={(e) => setPacLar(e.target.value)}
+              disabled={disabled}
+              inputMode="decimal"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-medium" htmlFor={`pac-c-${product.id}`}>
+              Comprimento (cm)
+            </Label>
+            <Input
+              id={`pac-c-${product.id}`}
+              value={pacComp}
+              onChange={(e) => setPacComp(e.target.value)}
+              disabled={disabled}
+              inputMode="decimal"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-medium" htmlFor={`pac-p-${product.id}`}>
+              Peso (kg)
+            </Label>
+            <Input
+              id={`pac-p-${product.id}`}
+              value={pacPeso}
+              onChange={(e) => setPacPeso(e.target.value)}
+              disabled={disabled}
+              inputMode="decimal"
+            />
+          </div>
         </div>
       </div>
       <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">

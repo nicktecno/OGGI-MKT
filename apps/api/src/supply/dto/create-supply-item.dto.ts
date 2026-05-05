@@ -1,5 +1,6 @@
 import { SupplyQuantityKind } from '@prisma/client';
-import { IsBoolean, IsEnum, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class CreateSupplyItemDto {
   @IsString()
@@ -35,4 +36,28 @@ export class CreateSupplyItemDto {
   @IsOptional()
   @IsBoolean()
   ativo?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.1)
+  pacoteAlturaCm?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.1)
+  pacoteLarguraCm?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.1)
+  pacoteComprimentoCm?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  pacotePesoKg?: number;
 }

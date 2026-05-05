@@ -48,6 +48,10 @@ export class CommerceService {
       preco_venda_publico?: number;
       executor_fee_planejada?: number;
       platform_fee_planejada?: number;
+      pacote_altura_cm?: number;
+      pacote_largura_cm?: number;
+      pacote_comprimento_cm?: number;
+      pacote_peso_kg?: number;
     },
   ): Promise<void> {
     const has =
@@ -55,7 +59,11 @@ export class CommerceService {
       body.admin_pausado !== undefined ||
       body.preco_venda_publico !== undefined ||
       body.executor_fee_planejada !== undefined ||
-      body.platform_fee_planejada !== undefined;
+      body.platform_fee_planejada !== undefined ||
+      body.pacote_altura_cm !== undefined ||
+      body.pacote_largura_cm !== undefined ||
+      body.pacote_comprimento_cm !== undefined ||
+      body.pacote_peso_kg !== undefined;
     if (!has) {
       throw new BadRequestException('Nenhum campo para atualizar.');
     }
@@ -77,6 +85,26 @@ export class CommerceService {
     ) {
       throw new BadRequestException('platform_fee inválido');
     }
+    if (body.pacote_altura_cm !== undefined) {
+      if (!Number.isFinite(body.pacote_altura_cm) || body.pacote_altura_cm < 0.1) {
+        throw new BadRequestException('pacote_altura_cm inválido (mín. 0,1 cm).');
+      }
+    }
+    if (body.pacote_largura_cm !== undefined) {
+      if (!Number.isFinite(body.pacote_largura_cm) || body.pacote_largura_cm < 0.1) {
+        throw new BadRequestException('pacote_largura_cm inválido (mín. 0,1 cm).');
+      }
+    }
+    if (body.pacote_comprimento_cm !== undefined) {
+      if (!Number.isFinite(body.pacote_comprimento_cm) || body.pacote_comprimento_cm < 0.1) {
+        throw new BadRequestException('pacote_comprimento_cm inválido (mín. 0,1 cm).');
+      }
+    }
+    if (body.pacote_peso_kg !== undefined) {
+      if (!Number.isFinite(body.pacote_peso_kg) || body.pacote_peso_kg < 0.01) {
+        throw new BadRequestException('pacote_peso_kg inválido (mín. 0,01 kg).');
+      }
+    }
     const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
     if (count === 0) throw new NotFoundException('Peça não encontrada.');
     await this.prisma.compositeProduct.update({
@@ -93,6 +121,12 @@ export class CommerceService {
         ...(body.platform_fee_planejada !== undefined
           ? { platformFeePlanejada: body.platform_fee_planejada }
           : {}),
+        ...(body.pacote_altura_cm !== undefined ? { pacoteAlturaCm: body.pacote_altura_cm } : {}),
+        ...(body.pacote_largura_cm !== undefined ? { pacoteLarguraCm: body.pacote_largura_cm } : {}),
+        ...(body.pacote_comprimento_cm !== undefined
+          ? { pacoteComprimentoCm: body.pacote_comprimento_cm }
+          : {}),
+        ...(body.pacote_peso_kg !== undefined ? { pacotePesoKg: body.pacote_peso_kg } : {}),
       },
     });
   }
@@ -346,6 +380,10 @@ export class CommerceService {
       ativo: p.ativo,
       admin_pausado: p.adminPausado,
       imagem_url: p.imagemUrl,
+      pacote_altura_cm: p.pacoteAlturaCm,
+      pacote_largura_cm: p.pacoteLarguraCm,
+      pacote_comprimento_cm: p.pacoteComprimentoCm,
+      pacote_peso_kg: p.pacotePesoKg,
     };
   }
 

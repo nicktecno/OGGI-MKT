@@ -16,6 +16,11 @@ export type DemoSupplyItem = {
   observacao?: string | null;
   quantidade_kind?: "METRO" | "PECA";
   quantidade?: number;
+  /** Pacote fornecedor → executor (cm / kg). */
+  pacote_altura_cm?: number;
+  pacote_largura_cm?: number;
+  pacote_comprimento_cm?: number;
+  pacote_peso_kg?: number;
 };
 
 export type DemoCompositeLine = {
@@ -39,6 +44,11 @@ export type DemoCompositeProduct = {
   ativo: boolean;
   admin_pausado: boolean;
   imagem_url: string;
+  /** Pacote peça pronta → cliente (costureira posta). */
+  pacote_altura_cm: number;
+  pacote_largura_cm: number;
+  pacote_comprimento_cm: number;
+  pacote_peso_kg: number;
 };
 
 /** Oferta na vitrine = atribuição em `PUBLISHED`. */
@@ -131,6 +141,10 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
     quantidade_kind: "METRO",
     quantidade: 1,
     observacao: "Largura útil 1,40 m.",
+    pacote_altura_cm: 32,
+    pacote_largura_cm: 28,
+    pacote_comprimento_cm: 10,
+    pacote_peso_kg: 1.35,
   },
   {
     id: "supply-ziper-invisivel-40",
@@ -143,6 +157,10 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
     ativo: true,
     quantidade_kind: "PECA",
     quantidade: 1,
+    pacote_altura_cm: 16,
+    pacote_largura_cm: 12,
+    pacote_comprimento_cm: 5,
+    pacote_peso_kg: 0.22,
   },
 ];
 
@@ -171,6 +189,10 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     preco_venda_publico: 459.9,
     ativo: true,
     admin_pausado: false,
+    pacote_altura_cm: 24,
+    pacote_largura_cm: 20,
+    pacote_comprimento_cm: 9,
+    pacote_peso_kg: 0.62,
     imagem_url:
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88",
   },
@@ -198,6 +220,10 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     preco_venda_publico: 189.9,
     ativo: true,
     admin_pausado: false,
+    pacote_altura_cm: 18,
+    pacote_largura_cm: 14,
+    pacote_comprimento_cm: 7,
+    pacote_peso_kg: 0.38,
     imagem_url:
       "https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88",
   },

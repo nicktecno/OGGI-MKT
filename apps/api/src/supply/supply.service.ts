@@ -45,6 +45,10 @@ export class SupplyService {
     observacao: string | null;
     quantidadeKind: SupplyQuantityKind;
     quantidade: number;
+    pacoteAlturaCm: number;
+    pacoteLarguraCm: number;
+    pacoteComprimentoCm: number;
+    pacotePesoKg: number;
   }, email: string) {
     return {
       id: r.id,
@@ -59,6 +63,10 @@ export class SupplyService {
       observacao: r.observacao,
       quantidade_kind: r.quantidadeKind,
       quantidade: r.quantidade,
+      pacote_altura_cm: r.pacoteAlturaCm,
+      pacote_largura_cm: r.pacoteLarguraCm,
+      pacote_comprimento_cm: r.pacoteComprimentoCm,
+      pacote_peso_kg: r.pacotePesoKg,
     };
   }
 
@@ -89,6 +97,10 @@ export class SupplyService {
         observacao: dto.observacao?.trim() || null,
         imagemUrl: dto.imagemUrl?.trim() || null,
         ativo: dto.ativo ?? true,
+        pacoteAlturaCm: dto.pacoteAlturaCm ?? 14,
+        pacoteLarguraCm: dto.pacoteLarguraCm ?? 12,
+        pacoteComprimentoCm: dto.pacoteComprimentoCm ?? 5,
+        pacotePesoKg: dto.pacotePesoKg ?? 0.4,
       },
     });
     return this.toListRow(row, user.email);
@@ -119,6 +131,10 @@ export class SupplyService {
               unidade: this.unidadeFromKind(dto.quantidadeKind),
             }
           : {}),
+        ...(dto.pacoteAlturaCm !== undefined ? { pacoteAlturaCm: dto.pacoteAlturaCm } : {}),
+        ...(dto.pacoteLarguraCm !== undefined ? { pacoteLarguraCm: dto.pacoteLarguraCm } : {}),
+        ...(dto.pacoteComprimentoCm !== undefined ? { pacoteComprimentoCm: dto.pacoteComprimentoCm } : {}),
+        ...(dto.pacotePesoKg !== undefined ? { pacotePesoKg: dto.pacotePesoKg } : {}),
       },
     });
     return this.toListRow(updated, user.email);

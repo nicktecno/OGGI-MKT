@@ -31,6 +31,15 @@ function parseQty(s: string): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
+function defaultPacote(row?: DemoSupplyItem) {
+  return {
+    altura: String(row?.pacote_altura_cm ?? 14),
+    largura: String(row?.pacote_largura_cm ?? 12),
+    comprimento: String(row?.pacote_comprimento_cm ?? 5),
+    peso: String(row?.pacote_peso_kg ?? 0.4),
+  };
+}
+
 export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }: Props) {
   const items = initialItems;
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +52,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
   const [quantidade, setQuantidade] = useState("1");
   const [custo, setCusto] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [pacAlt, setPacAlt] = useState("14");
+  const [pacLar, setPacLar] = useState("12");
+  const [pacComp, setPacComp] = useState("5");
+  const [pacPeso, setPacPeso] = useState("0.4");
   const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
   const [pendingImageName, setPendingImageName] = useState<string | null>(null);
 
@@ -53,6 +66,11 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setQuantidade("1");
     setCusto("");
     setObservacao("");
+    const d = defaultPacote();
+    setPacAlt(d.altura);
+    setPacLar(d.largura);
+    setPacComp(d.comprimento);
+    setPacPeso(d.peso);
     setPendingImageBlob(null);
     setPendingImageName(null);
     setEditingId(null);
@@ -63,8 +81,25 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setError(null);
     const c = parseMoney(custo);
     const q = parseQty(quantidade);
+    const pa = parseQty(pacAlt);
+    const pl = parseQty(pacLar);
+    const pc = parseQty(pacComp);
+    const pp = parseQty(pacPeso);
     if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
       setError("Preencha nome, SKU, custo e quantidade válidos.");
+      return;
+    }
+    if (
+      Number.isNaN(pa) ||
+      Number.isNaN(pl) ||
+      Number.isNaN(pc) ||
+      Number.isNaN(pp) ||
+      pa < 0.1 ||
+      pl < 0.1 ||
+      pc < 0.1 ||
+      pp < 0.01
+    ) {
+      setError("Pacote: dimensões ≥ 0,1 cm e peso ≥ 0,01 kg.");
       return;
     }
     setPending(true);
@@ -77,6 +112,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         custoFornecedor: c,
         freteAteExecutor: 0,
         observacao: observacao.trim() || undefined,
+        pacoteAlturaCm: pa,
+        pacoteLarguraCm: pl,
+        pacoteComprimentoCm: pc,
+        pacotePesoKg: pp,
       });
       if (pendingImageBlob && created?.id) {
         const fd = new FormData();
@@ -97,8 +136,25 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setError(null);
     const c = parseMoney(custo);
     const q = parseQty(quantidade);
+    const pa = parseQty(pacAlt);
+    const pl = parseQty(pacLar);
+    const pc = parseQty(pacComp);
+    const pp = parseQty(pacPeso);
     if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
       setError("Confira os campos antes de salvar.");
+      return;
+    }
+    if (
+      Number.isNaN(pa) ||
+      Number.isNaN(pl) ||
+      Number.isNaN(pc) ||
+      Number.isNaN(pp) ||
+      pa < 0.1 ||
+      pl < 0.1 ||
+      pc < 0.1 ||
+      pp < 0.01
+    ) {
+      setError("Pacote: dimensões ≥ 0,1 cm e peso ≥ 0,01 kg.");
       return;
     }
     setPending(true);
@@ -110,6 +166,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         quantidade: q,
         custoFornecedor: c,
         observacao: observacao.trim() || undefined,
+        pacoteAlturaCm: pa,
+        pacoteLarguraCm: pl,
+        pacoteComprimentoCm: pc,
+        pacotePesoKg: pp,
       });
       if (pendingImageBlob) {
         const fd = new FormData();
@@ -133,6 +193,11 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setQuantidade(String(row.quantidade ?? 1));
     setCusto(String(row.custo_fornecedor));
     setObservacao(row.observacao ?? "");
+    const d = defaultPacote(row);
+    setPacAlt(d.altura);
+    setPacLar(d.largura);
+    setPacComp(d.comprimento);
+    setPacPeso(d.peso);
     setPendingImageBlob(null);
     setPendingImageName(null);
   }
@@ -160,8 +225,8 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
             O frete até a costureira é cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a
-            peça a um executor. Abaixo você define custo, tipo de quantidade (metro ou peça) e a quantidade
-            do item no seu catálogo.
+            peça a um executor. Informe o <strong>pacote</strong> típico deste insumo (para cotação); se
+            vários insumos seus forem no mesmo envio, prevalece o de maior volume.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
@@ -217,6 +282,51 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
                 className="bg-background"
               />
             </div>
+            <div className="space-y-2 sm:col-span-2 rounded-md border border-border/60 bg-background/50 p-3">
+              <p className="text-xs font-medium text-foreground">Pacote do insumo (cm e kg)</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ins-pac-a">Altura</Label>
+                  <Input
+                    id="ins-pac-a"
+                    value={pacAlt}
+                    onChange={(e) => setPacAlt(e.target.value)}
+                    className="bg-background"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ins-pac-l">Largura</Label>
+                  <Input
+                    id="ins-pac-l"
+                    value={pacLar}
+                    onChange={(e) => setPacLar(e.target.value)}
+                    className="bg-background"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ins-pac-c">Comprimento</Label>
+                  <Input
+                    id="ins-pac-c"
+                    value={pacComp}
+                    onChange={(e) => setPacComp(e.target.value)}
+                    className="bg-background"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ins-pac-p">Peso</Label>
+                  <Input
+                    id="ins-pac-p"
+                    value={pacPeso}
+                    onChange={(e) => setPacPeso(e.target.value)}
+                    className="bg-background"
+                    inputMode="decimal"
+                  />
+                </div>
+              </div>
+            </div>
             <div className="sm:col-span-2">
               <ImageUploadField
                 label="Foto do insumo (opcional)"
@@ -266,6 +376,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
               <th className="px-3 py-3 font-medium">Nome</th>
               <th className="px-3 py-3 font-medium">SKU</th>
               <th className="px-3 py-3 font-medium">Tipo / qtd</th>
+              <th className="px-3 py-3 font-medium">Pacote (cm)</th>
               <th className="px-3 py-3 font-medium text-right">Custo</th>
               <th className="px-3 py-3 font-medium text-right">Frete*</th>
               <th className="px-3 py-3 font-medium text-right">Total</th>
@@ -293,6 +404,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
                 <td className="px-3 py-3 font-mono text-xs text-muted-foreground">{row.sku_interno}</td>
                 <td className="px-3 py-3 text-muted-foreground">
                   {row.quantidade_kind === "PECA" ? "Peça" : "Metro"} · {row.quantidade ?? 1}
+                </td>
+                <td className="px-3 py-3 text-xs tabular-nums text-muted-foreground">
+                  {row.pacote_altura_cm ?? "—"}×{row.pacote_largura_cm ?? "—"}×{row.pacote_comprimento_cm ?? "—"}{" "}
+                  · {row.pacote_peso_kg ?? "—"} kg
                 </td>
                 <td className="px-3 py-3 text-right tabular-nums">{formatBrl(row.custo_fornecedor)}</td>
                 <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">

@@ -18,6 +18,10 @@ export type DemoProductPatch = Partial<
     | "platform_fee_planejada"
     | "ativo"
     | "admin_pausado"
+    | "pacote_altura_cm"
+    | "pacote_largura_cm"
+    | "pacote_comprimento_cm"
+    | "pacote_peso_kg"
   >
 >;
 
