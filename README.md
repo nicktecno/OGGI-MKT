@@ -102,8 +102,19 @@ Código em `apps/web/src/app/(public)/` e `apps/web/src/app/(painel)/` (route gr
 
 O endpoint **`GET /health`** responde rápido, sem autenticação e **fora do rate limit** global — use-o para acordar o serviço.
 
-1. **Monitor externo (recomendado):** em [UptimeRobot](https://uptimerobot.com), [cron-job.org](https://cron-job.org) ou equivalente, crie um HTTP check a cada **10–14 minutos** apontando para `https://<sua-api>/health`.
-2. **GitHub Actions:** existe o workflow [`.github/workflows/api-keepalive.yml`](.github/workflows/api-keepalive.yml). No repositório, em **Settings → Secrets and variables → Actions**, crie o secret **`API_HEALTH_URL`** com o valor completo (ex.: `https://sua-api.onrender.com/health`). Sem o secret, o job termina sem erro e não faz pedidos.
+#### UptimeRobot (passo a passo)
+
+1. Crie conta em [uptimerobot.com](https://uptimerobot.com) e faça login.
+2. **Add New Monitor** (ou *+ Add Monitor*).
+3. **Monitor Type:** `HTTP(s)`.
+4. **Friendly Name:** ex. `API agregador — keep-alive`.
+5. **URL (or IP):** a URL pública completa da API, com o path de health, ex. `https://sua-api.onrender.com/health` (substitui pelo teu domínio real).
+6. **Monitoring Interval:** no plano gratuito o intervalo mínimo costuma ser **5 minutos** — é suficiente para evitar o spin-down típico (~15 min sem tráfego no Render free).
+7. Guarda o monitor. O painel deve passar a mostrar **Up** quando a API responder `200` com JSON `status: "ok"`.
+
+Opcional: associa um **Alert contact** se quiseres e-mail quando a API estiver em baixo (útil para falhas reais, não só para manter o dyno acordado).
+
+Outras opções: [cron-job.org](https://cron-job.org) com pedido GET periódico à mesma URL, ou o workflow **GitHub Actions** em [`.github/workflows/api-keepalive.yml`](.github/workflows/api-keepalive.yml) com o secret `API_HEALTH_URL`.
 
 Detalhes: [docs/infrastructure.md](docs/infrastructure.md).
 
