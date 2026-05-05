@@ -567,17 +567,20 @@ function slugifyNomeWeb(nome: string): string {
   return s || `peca-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export async function persistCreateCompositeProduct(input: {
-  nome: string;
-  slug?: string;
-  sku: string;
-  descricao_curta: string;
-  linhas: { supply_item_id: string; quantidade: number }[];
-  variacoes_tamanho: string[];
-  preco_venda_publico?: number;
-  executor_fee_planejada?: number;
-  platform_fee_planejada?: number;
-}): Promise<{ id: string; slug: string }> {
+export async function persistCreateCompositeProduct(
+  input: {
+    nome: string;
+    slug?: string;
+    sku: string;
+    descricao_curta: string;
+    linhas: { supply_item_id: string; quantidade: number }[];
+    variacoes_tamanho: string[];
+    preco_venda_publico?: number;
+    executor_fee_planejada?: number;
+    platform_fee_planejada?: number;
+  },
+  cover?: { blob: Blob; filename: string; mimeType: string },
+): Promise<{ id: string; slug: string }> {
   const nome = input.nome.trim();
   const sku = input.sku.trim();
   const desc = input.descricao_curta.trim();
@@ -591,22 +594,37 @@ export async function persistCreateCompositeProduct(input: {
   }
 
   if (commerceUsesDatabase()) {
+    const payload = {
+      nome,
+      slug: input.slug?.trim() || undefined,
+      sku,
+      descricao_curta: desc,
+      linhas: input.linhas.map((l) => ({
+        supply_item_id: l.supply_item_id,
+        quantidade: l.quantidade,
+      })),
+      variacoes_tamanho,
+      preco_venda_publico: input.preco_venda_publico ?? 0,
+      executor_fee_planejada: input.executor_fee_planejada ?? 0,
+      platform_fee_planejada: input.platform_fee_planejada ?? 0,
+    };
+
+    if (cover && cover.blob.size > 0) {
+      const fd = new FormData();
+      fd.append("payload", JSON.stringify(payload));
+      const file = new File([cover.blob], cover.filename, { type: cover.mimeType });
+      fd.append("cover", file);
+      const res = await internalFetch("/internal/commerce/products/with-cover", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await readApiError(res));
+      return (await res.json()) as { id: string; slug: string };
+    }
+
     const res = await internalFetch("/internal/commerce/products", {
       method: "POST",
-      body: JSON.stringify({
-        nome,
-        slug: input.slug?.trim() || undefined,
-        sku,
-        descricao_curta: desc,
-        linhas: input.linhas.map((l) => ({
-          supply_item_id: l.supply_item_id,
-          quantidade: l.quantidade,
-        })),
-        variacoes_tamanho,
-        preco_venda_publico: input.preco_venda_publico ?? 0,
-        executor_fee_planejada: input.executor_fee_planejada ?? 0,
-        platform_fee_planejada: input.platform_fee_planejada ?? 0,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(await readApiError(res));
     return (await res.json()) as { id: string; slug: string };

@@ -41,19 +41,27 @@ function revalidateProductPage(slug: string) {
   revalidatePath(`/loja/produto/${slug}`);
 }
 
-export async function createCompositeProductAction(input: {
-  nome: string;
-  slug?: string;
-  sku: string;
-  descricao_curta: string;
-  linhas: { supply_item_id: string; quantidade: number }[];
-  variacoes_tamanho: string[];
-  preco_venda_publico?: number;
-  executor_fee_planejada?: number;
-  platform_fee_planejada?: number;
-}) {
+export async function createCompositeProductAction(
+  input: {
+    nome: string;
+    slug?: string;
+    sku: string;
+    descricao_curta: string;
+    linhas: { supply_item_id: string; quantidade: number }[];
+    variacoes_tamanho: string[];
+    preco_venda_publico?: number;
+    executor_fee_planejada?: number;
+    platform_fee_planejada?: number;
+  },
+  /** Capa da vitrine: enviada no mesmo pedido à API para evitar placeholder na listagem. */
+  coverFile?: File,
+) {
   await requireAdmin();
-  const result = await persistCreateCompositeProduct(input);
+  const cover =
+    coverFile && coverFile.size > 0
+      ? { blob: coverFile, filename: coverFile.name, mimeType: coverFile.type || "image/webp" }
+      : undefined;
+  const result = await persistCreateCompositeProduct(input, cover);
   revalidatePath(`/loja/produto/${result.slug}`);
   revalidatePath("/loja");
   revalidatePath("/painel/admin", "layout");

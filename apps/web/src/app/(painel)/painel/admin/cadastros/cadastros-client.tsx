@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,36 +42,35 @@ export type PendingPlatformAccount = {
   } | null;
 };
 
+type CadastroBusy = { id: string; action: "approve" | "reject" } | null;
+
 export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatformAccount[] }) {
   const [items, setItems] = useState(initial);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<CadastroBusy>(null);
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
 
   async function approve(id: string) {
-    setError(null);
-    setBusyId(id);
+    setBusy({ id, action: "approve" });
     try {
       await approvePlatformAccount(id);
       setItems((prev) => prev.filter((x) => x.id !== id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao aprovar");
+      toast.error(e instanceof Error ? e.message : "Erro ao aprovar");
     } finally {
-      setBusyId(null);
+      setBusy(null);
     }
   }
 
   async function reject(id: string) {
-    setError(null);
     const reason = (rejectReason[id] ?? "").trim() || "Cadastro recusado.";
-    setBusyId(id);
+    setBusy({ id, action: "reject" });
     try {
       await rejectPlatformAccount(id, reason);
       setItems((prev) => prev.filter((x) => x.id !== id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao recusar");
+      toast.error(e instanceof Error ? e.message : "Erro ao recusar");
     } finally {
-      setBusyId(null);
+      setBusy(null);
     }
   }
 
@@ -83,11 +84,6 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
 
   return (
     <div className="space-y-6">
-      {error ? (
-        <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm">
-          {error}
-        </p>
-      ) : null}
       <div className="space-y-5">
         {items.map((row) => (
           <Card key={row.id} className={cn(ADMIN_CARD, "overflow-hidden")}>
@@ -140,12 +136,18 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={busyId === row.id}
+                    disabled={busy?.id === row.id}
                     onClick={() => reject(row.id)}
                   >
+                    {busy?.id === row.id && busy.action === "reject" ? (
+                      <Loader2 className="animate-spin" aria-hidden />
+                    ) : null}
                     Recusar
                   </Button>
-                  <Button type="button" disabled={busyId === row.id} onClick={() => approve(row.id)}>
+                  <Button type="button" disabled={busy?.id === row.id} onClick={() => approve(row.id)}>
+                    {busy?.id === row.id && busy.action === "approve" ? (
+                      <Loader2 className="animate-spin" aria-hidden />
+                    ) : null}
                     Aprovar
                   </Button>
                 </div>

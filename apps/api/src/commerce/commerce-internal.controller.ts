@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -46,6 +47,53 @@ export class CommerceInternalController {
     },
   ) {
     return this.commerce.createCompositeProduct(body);
+  }
+
+  /**
+   * Cria peça e opcionalmente define a capa da vitrine no mesmo pedido (multipart).
+   * Evita janela em que a listagem ainda mostra a imagem placeholder.
+   */
+  @Post('products/with-cover')
+  @UseInterceptors(
+    FileInterceptor('cover', {
+      limits: { fileSize: 1024 * 1024 },
+    }),
+  )
+  createProductWithCover(
+    @Body('payload') payloadJson: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: false,
+        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 })],
+      }),
+    )
+    cover: Express.Multer.File | undefined,
+  ) {
+    if (typeof payloadJson !== 'string' || !payloadJson.trim()) {
+      throw new BadRequestException('Campo payload (JSON da peça) é obrigatório.');
+    }
+    let body: {
+      nome: string;
+      slug?: string;
+      sku: string;
+      descricao_curta: string;
+      linhas: { supply_item_id: string; quantidade: number }[];
+      variacoes_tamanho: string[];
+      preco_venda_publico?: number;
+      executor_fee_planejada?: number;
+      platform_fee_planejada?: number;
+    };
+    try {
+      body = JSON.parse(payloadJson) as typeof body;
+    } catch {
+      throw new BadRequestException('Campo payload deve ser JSON válido.');
+    }
+    return this.commerce.createCompositeProduct(
+      body,
+      cover?.buffer?.length
+        ? { buffer: cover.buffer, mimeType: cover.mimetype || 'application/octet-stream' }
+        : undefined,
+    );
   }
 
   @Patch('products/:id')

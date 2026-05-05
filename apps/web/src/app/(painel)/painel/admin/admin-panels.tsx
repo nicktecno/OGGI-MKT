@@ -19,6 +19,7 @@ import {
   type DemoProductionAssignment,
   type ExecutorPickerOption,
 } from "@/lib/demo-seed";
+import { Loader2 } from "lucide-react";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { cn, formatBrl } from "@/lib/utils";
 import {
@@ -36,6 +37,7 @@ import {
   uploadMarketplaceProductGalleryImage,
   uploadMarketplaceProductImage,
 } from "./actions";
+import { adminActionLoading, type AdminMutationRun } from "./use-admin-mutations";
 
 function labelPedidoCostureira(status: string): string {
   switch (status) {
@@ -82,14 +84,18 @@ function labelComoEntrou(origem: string): string {
 function StorefrontHighlightOrderCell({
   assignmentId,
   initialOrder,
-  disabled,
+  pending,
+  pendingScope,
   run,
 }: {
   assignmentId: string;
   initialOrder?: number | null;
-  disabled: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pending: boolean;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
+  const scope = `highlight-${assignmentId}`;
+  const saving = adminActionLoading(pending, pendingScope, scope);
   const [val, setVal] = useState(() =>
     initialOrder === undefined || initialOrder === null ? "" : String(initialOrder),
   );
@@ -105,7 +111,7 @@ function StorefrontHighlightOrderCell({
         inputMode="numeric"
         placeholder="—"
         value={val}
-        disabled={disabled}
+        disabled={pending}
         onChange={(e) => setVal(e.target.value.replace(/\D/g, "").slice(0, 2))}
         aria-label="Ordem no destaque da loja (0 = primeiro; vazio = não destacar)"
       />
@@ -114,7 +120,7 @@ function StorefrontHighlightOrderCell({
         variant="secondary"
         size="sm"
         className="shrink-0"
-        disabled={disabled}
+        disabled={pending}
         onClick={() =>
           run(async () => {
             const t = val.trim();
@@ -123,9 +129,10 @@ function StorefrontHighlightOrderCell({
               throw new Error("Use um número inteiro ≥ 0 ou deixe vazio.");
             }
             await setAssignmentStorefrontHighlightOrderAction(assignmentId, order);
-          })
+          }, scope)
         }
       >
+        {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
         OK
       </Button>
     </div>
@@ -210,14 +217,18 @@ function NovaPecaImagemPrepRow({
 function AdminNovaPecaCard({
   supplies,
   pending,
+  pendingScope,
   run,
   marketplaceImagesEnabled,
 }: {
   supplies: DemoSupplyItem[];
   pending: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pendingScope: string | null;
+  run: AdminMutationRun;
   marketplaceImagesEnabled: boolean;
 }) {
+  const novaScope = "nova-peca";
+  const novaSaving = adminActionLoading(pending, pendingScope, novaScope);
   const [nome, setNome] = useState("");
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
@@ -286,25 +297,28 @@ function AdminNovaPecaCard({
             setTamanhosError(null);
             const imagens = imagensPrep;
             run(async () => {
-              const result = await createCompositeProductAction({
-                nome: nome.trim(),
-                slug: slug.trim() || undefined,
-                sku: sku.trim(),
-                descricao_curta: desc.trim(),
-                linhas: linhasParsed,
-                variacoes_tamanho,
-              });
-              if (marketplaceImagesEnabled && imagens.length > 0) {
-                for (let i = 0; i < imagens.length; i++) {
+              const capa =
+                marketplaceImagesEnabled && imagens.length > 0
+                  ? new File([imagens[0].blob], imagens[0].filename, { type: imagens[0].mimeType })
+                  : undefined;
+              const result = await createCompositeProductAction(
+                {
+                  nome: nome.trim(),
+                  slug: slug.trim() || undefined,
+                  sku: sku.trim(),
+                  descricao_curta: desc.trim(),
+                  linhas: linhasParsed,
+                  variacoes_tamanho,
+                },
+                capa,
+              );
+              if (marketplaceImagesEnabled && imagens.length > 1) {
+                for (let i = 1; i < imagens.length; i++) {
                   const prep = imagens[i];
                   const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
                   const fd = new FormData();
                   fd.append("file", f);
-                  if (i === 0) {
-                    await uploadMarketplaceProductImage(result.id, fd, result.slug);
-                  } else {
-                    await uploadMarketplaceProductGalleryImage(result.id, result.slug, fd);
-                  }
+                  await uploadMarketplaceProductGalleryImage(result.id, result.slug, fd);
                 }
               }
               setNome("");
@@ -315,7 +329,7 @@ function AdminNovaPecaCard({
               setNovaImagemFieldKey((k) => k + 1);
               setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
               setTamanhosSelecionados(["P", "M", "G"]);
-            });
+            }, novaScope);
           }}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -491,6 +505,7 @@ function AdminNovaPecaCard({
             </Button>
           </div>
           <Button type="submit" disabled={pending}>
+            {novaSaving ? <Loader2 className="animate-spin" aria-hidden /> : null}
             Criar modelo
           </Button>
         </form>
@@ -518,6 +533,7 @@ export function AdminPecasPanel({
   supplyCatalogExtra,
   marketplaceImagesEnabled,
   pending,
+  pendingScope,
   run,
 }: {
   products: DemoCompositeProduct[];
@@ -525,7 +541,8 @@ export function AdminPecasPanel({
   supplyCatalogExtra?: DemoSupplyItem[];
   marketplaceImagesEnabled: boolean;
   pending: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
   const supplyCatalog = mergeSupplyCatalog(supplyCatalogExtra ?? []);
 
@@ -545,6 +562,7 @@ export function AdminPecasPanel({
       <AdminNovaPecaCard
         supplies={supplyCatalog}
         pending={pending}
+        pendingScope={pendingScope}
         run={run}
         marketplaceImagesEnabled={marketplaceImagesEnabled}
       />
@@ -553,6 +571,11 @@ export function AdminPecasPanel({
         {products.map((product) => {
           const lines = resolveCompositeLines(product, supplyCatalog);
           const insumoTotal = compositeInsumosTotal(product);
+          const sPause = `peca-${product.id}-pause`;
+          const sActive = `peca-${product.id}-active`;
+          const sDelete = `peca-${product.id}-delete`;
+          const sCover = `peca-${product.id}-cover`;
+          const sGalAdd = `peca-${product.id}-gallery-add`;
           return (
             <Card key={product.id} className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
               <CardHeader className={cn("space-y-3 pb-5", ADMIN_CARD_HEADER)}>
@@ -587,9 +610,12 @@ export function AdminPecasPanel({
                     size="sm"
                     disabled={pending}
                     onClick={() =>
-                      run(() => setProductAdminPaused(product.id, !product.admin_pausado))
+                      run(() => setProductAdminPaused(product.id, !product.admin_pausado), sPause)
                     }
                   >
+                    {adminActionLoading(pending, pendingScope, sPause) ? (
+                      <Loader2 className="animate-spin" aria-hidden />
+                    ) : null}
                     {product.admin_pausado ? "Voltar a mostrar na vitrine" : "Pausar na vitrine"}
                   </Button>
                   <Button
@@ -597,8 +623,11 @@ export function AdminPecasPanel({
                     variant={product.ativo ? "outline" : "default"}
                     size="sm"
                     disabled={pending}
-                    onClick={() => run(() => setProductActive(product.id, !product.ativo))}
+                    onClick={() => run(() => setProductActive(product.id, !product.ativo), sActive)}
                   >
+                    {adminActionLoading(pending, pendingScope, sActive) ? (
+                      <Loader2 className="animate-spin" aria-hidden />
+                    ) : null}
                     {product.ativo ? "Desativar peça" : "Ativar peça"}
                   </Button>
                   <Button
@@ -615,9 +644,12 @@ export function AdminPecasPanel({
                       ) {
                         return;
                       }
-                      run(() => deleteCompositeProductAction(product.id, product.slug));
+                      run(() => deleteCompositeProductAction(product.id, product.slug), sDelete);
                     }}
                   >
+                    {adminActionLoading(pending, pendingScope, sDelete) ? (
+                      <Loader2 className="animate-spin" aria-hidden />
+                    ) : null}
                     Excluir peça
                   </Button>
                 </div>
@@ -647,7 +679,7 @@ export function AdminPecasPanel({
                             const fd = new FormData();
                             fd.append("file", f);
                             await uploadMarketplaceProductImage(product.id, fd, product.slug);
-                          });
+                          }, sCover);
                         }}
                       />
                     ) : (
@@ -669,29 +701,42 @@ export function AdminPecasPanel({
                       fotos extra em carrossel na ficha pública (ampliar / zoom).
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {(product.galeria_imagens ?? []).map((url) => (
-                        <div
-                          key={url}
-                          className="group relative h-20 w-20 overflow-hidden rounded-md border border-border bg-background"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="" className="h-full w-full object-cover" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute right-0.5 top-0.5 h-7 px-1.5 text-[0.65rem] opacity-90 group-hover:opacity-100"
-                            disabled={pending}
-                            onClick={() =>
-                              run(() =>
-                                removeMarketplaceProductGalleryImageAction(product.id, product.slug, url),
-                              )
-                            }
+                      {(product.galeria_imagens ?? []).map((url, galIdx) => {
+                        const sGalDel = `peca-${product.id}-gal-del-${galIdx}`;
+                        return (
+                          <div
+                            key={url}
+                            className="group relative h-20 w-20 overflow-hidden rounded-md border border-border bg-background"
                           >
-                            ✕
-                          </Button>
-                        </div>
-                      ))}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute right-0.5 top-0.5 h-7 px-1.5 text-[0.65rem] opacity-90 group-hover:opacity-100"
+                              disabled={pending}
+                              onClick={() =>
+                                run(
+                                  () =>
+                                    removeMarketplaceProductGalleryImageAction(
+                                      product.id,
+                                      product.slug,
+                                      url,
+                                    ),
+                                  sGalDel,
+                                )
+                              }
+                            >
+                              {adminActionLoading(pending, pendingScope, sGalDel) ? (
+                                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                              ) : (
+                                "✕"
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="mt-4">
                       <ImageUploadField
@@ -704,7 +749,7 @@ export function AdminPecasPanel({
                             const fd = new FormData();
                             fd.append("file", f);
                             await uploadMarketplaceProductGalleryImage(product.id, product.slug, fd);
-                          });
+                          }, sGalAdd);
                         }}
                       />
                     </div>
@@ -749,7 +794,12 @@ export function AdminPecasPanel({
                     Estes números aparecem para o cliente e ajudam a calcular repasses.
                   </p>
                   <div className="mt-4">
-                    <PricingForm product={product} disabled={pending} run={run} />
+                    <PricingForm
+                      product={product}
+                      pending={pending}
+                      pendingScope={pendingScope}
+                      run={run}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -788,12 +838,14 @@ export function AdminPedidosPanel({
   products,
   executionRequests,
   pending,
+  pendingScope,
   run,
 }: {
   products: DemoCompositeProduct[];
   executionRequests: DemoExecutionRequest[];
   pending: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
   const pendingRequests = executionRequests.filter((r) => r.status === "PENDING");
   const processed = executionRequests.filter((r) => r.status !== "PENDING");
@@ -821,6 +873,7 @@ export function AdminPedidosPanel({
               <ul className="space-y-4">
                 {pendingRequests.map((r) => {
                   const p = products.find((x) => x.id === r.compositeProductId);
+                  const sApprove = `pedido-${r.id}-approve`;
                   return (
                     <li
                       key={r.id}
@@ -844,11 +897,19 @@ export function AdminPedidosPanel({
                             type="button"
                             size="sm"
                             disabled={pending}
-                            onClick={() => run(() => approveExecutionRequest(r.id))}
+                            onClick={() => run(() => approveExecutionRequest(r.id), sApprove)}
                           >
+                            {adminActionLoading(pending, pendingScope, sApprove) ? (
+                              <Loader2 className="animate-spin" aria-hidden />
+                            ) : null}
                             Aceitar pedido
                           </Button>
-                          <RejectInline requestId={r.id} disabled={pending} run={run} />
+                          <RejectInline
+                            requestId={r.id}
+                            pending={pending}
+                            pendingScope={pendingScope}
+                            run={run}
+                          />
                         </div>
                       </div>
                     </li>
@@ -909,13 +970,15 @@ export function AdminCombinacoesPanel({
   productionAssignments,
   executorOptions,
   pending,
+  pendingScope,
   run,
 }: {
   products: DemoCompositeProduct[];
   productionAssignments: DemoProductionAssignment[];
   executorOptions: ExecutorPickerOption[];
   pending: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
   const visibleAssignments = productionAssignments.filter((a) => a.status !== "ARCHIVED");
 
@@ -959,6 +1022,7 @@ export function AdminCombinacoesPanel({
                   <tbody className="divide-y divide-border">
                     {visibleAssignments.map((a) => {
                       const p = products.find((x) => x.id === a.compositeProductId);
+                      const sArchive = `comb-${a.id}-archive`;
                       return (
                         <tr key={a.id} className="bg-card/50 transition-colors hover:bg-muted/15">
                           <td className="px-4 py-3.5 align-middle font-medium text-foreground">
@@ -980,7 +1044,8 @@ export function AdminCombinacoesPanel({
                             <StorefrontHighlightOrderCell
                               assignmentId={a.id}
                               initialOrder={a.storefront_highlight_order}
-                              disabled={pending}
+                              pending={pending}
+                              pendingScope={pendingScope}
                               run={run}
                             />
                           </td>
@@ -990,8 +1055,11 @@ export function AdminCombinacoesPanel({
                               variant="outline"
                               size="sm"
                               disabled={pending}
-                              onClick={() => run(() => archiveProductionAssignment(a.id))}
+                              onClick={() => run(() => archiveProductionAssignment(a.id), sArchive)}
                             >
+                              {adminActionLoading(pending, pendingScope, sArchive) ? (
+                                <Loader2 className="animate-spin" aria-hidden />
+                              ) : null}
                               Encerrar
                             </Button>
                           </td>
@@ -1011,7 +1079,8 @@ export function AdminCombinacoesPanel({
         <DirectAssignForm
           products={products}
           executorOptions={executorOptions}
-          disabled={pending}
+          pending={pending}
+          pendingScope={pendingScope}
           run={run}
         />
       </div>
@@ -1021,13 +1090,17 @@ export function AdminCombinacoesPanel({
 
 function PricingForm({
   product,
-  disabled,
+  pending,
+  pendingScope,
   run,
 }: {
   product: DemoCompositeProduct;
-  disabled: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pending: boolean;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
+  const scope = `pricing-${product.id}`;
+  const saving = adminActionLoading(pending, pendingScope, scope);
   const [preco, setPreco] = useState(String(product.preco_venda_publico));
   const [execFee, setExecFee] = useState(String(product.executor_fee_planejada));
   const [platFee, setPlatFee] = useState(String(product.platform_fee_planejada));
@@ -1053,17 +1126,19 @@ function PricingForm({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() =>
-          updateCompositeProductPricing({
-            productId: product.id,
-            preco_venda_publico: Number(preco.replace(",", ".")),
-            executor_fee_planejada: Number(execFee.replace(",", ".")),
-            platform_fee_planejada: Number(platFee.replace(",", ".")),
-            pacote_altura_cm: Number(pacAlt.replace(",", ".")),
-            pacote_largura_cm: Number(pacLar.replace(",", ".")),
-            pacote_comprimento_cm: Number(pacComp.replace(",", ".")),
-            pacote_peso_kg: Number(pacPeso.replace(",", ".")),
-          }),
+        run(
+          () =>
+            updateCompositeProductPricing({
+              productId: product.id,
+              preco_venda_publico: Number(preco.replace(",", ".")),
+              executor_fee_planejada: Number(execFee.replace(",", ".")),
+              platform_fee_planejada: Number(platFee.replace(",", ".")),
+              pacote_altura_cm: Number(pacAlt.replace(",", ".")),
+              pacote_largura_cm: Number(pacLar.replace(",", ".")),
+              pacote_comprimento_cm: Number(pacComp.replace(",", ".")),
+              pacote_peso_kg: Number(pacPeso.replace(",", ".")),
+            }),
+          scope,
         );
       }}
     >
@@ -1076,7 +1151,7 @@ function PricingForm({
             id={`preco-${product.id}`}
             value={preco}
             onChange={(e) => setPreco(e.target.value)}
-            disabled={disabled}
+            disabled={pending}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -1087,7 +1162,7 @@ function PricingForm({
             id={`exec-${product.id}`}
             value={execFee}
             onChange={(e) => setExecFee(e.target.value)}
-            disabled={disabled}
+            disabled={pending}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -1098,7 +1173,7 @@ function PricingForm({
             id={`plat-${product.id}`}
             value={platFee}
             onChange={(e) => setPlatFee(e.target.value)}
-            disabled={disabled}
+            disabled={pending}
           />
         </div>
       </div>
@@ -1117,7 +1192,7 @@ function PricingForm({
               id={`pac-a-${product.id}`}
               value={pacAlt}
               onChange={(e) => setPacAlt(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
               inputMode="decimal"
             />
           </div>
@@ -1129,7 +1204,7 @@ function PricingForm({
               id={`pac-l-${product.id}`}
               value={pacLar}
               onChange={(e) => setPacLar(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
               inputMode="decimal"
             />
           </div>
@@ -1141,7 +1216,7 @@ function PricingForm({
               id={`pac-c-${product.id}`}
               value={pacComp}
               onChange={(e) => setPacComp(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
               inputMode="decimal"
             />
           </div>
@@ -1153,14 +1228,15 @@ function PricingForm({
               id={`pac-p-${product.id}`}
               value={pacPeso}
               onChange={(e) => setPacPeso(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
               inputMode="decimal"
             />
           </div>
         </div>
       </div>
       <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="submit" size="sm" disabled={disabled}>
+        <Button type="submit" size="sm" disabled={pending}>
+          {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
           Guardar valores
         </Button>
         <p className="text-sm text-muted-foreground">
@@ -1176,18 +1252,22 @@ function PricingForm({
 
 function RejectInline({
   requestId,
-  disabled,
+  pending,
+  pendingScope,
   run,
 }: {
   requestId: string;
-  disabled: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pending: boolean;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
+  const scope = `reject-${requestId}`;
+  const saving = adminActionLoading(pending, pendingScope, scope);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   if (!open) {
     return (
-      <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => setOpen(true)}>
         Recusar…
       </Button>
     );
@@ -1197,9 +1277,7 @@ function RejectInline({
       className="flex flex-col gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:flex-wrap sm:items-end"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => rejectExecutionRequest(requestId, reason));
-        setOpen(false);
-        setReason("");
+        run(() => rejectExecutionRequest(requestId, reason), scope);
       }}
     >
       <div className="min-w-[12rem] flex-1 space-y-1">
@@ -1211,14 +1289,15 @@ function RejectInline({
           placeholder="Ex.: falta de capacidade neste mês"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          disabled={disabled}
+          disabled={pending}
         />
       </div>
       <div className="flex gap-2">
-        <Button type="submit" variant="destructive" size="sm" disabled={disabled}>
+        <Button type="submit" variant="destructive" size="sm" disabled={pending}>
+          {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
           Confirmar recusa
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+        <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => setOpen(false)}>
           Voltar
         </Button>
       </div>
@@ -1229,14 +1308,18 @@ function RejectInline({
 function DirectAssignForm({
   products,
   executorOptions,
-  disabled,
+  pending,
+  pendingScope,
   run,
 }: {
   products: DemoCompositeProduct[];
   executorOptions: ExecutorPickerOption[];
-  disabled: boolean;
-  run: (fn: () => Promise<void>) => void;
+  pending: boolean;
+  pendingScope: string | null;
+  run: AdminMutationRun;
 }) {
+  const scope = "direct-assign";
+  const saving = adminActionLoading(pending, pendingScope, scope);
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [executorEmail, setExecutorEmail] = useState(() => executorOptions[0]?.email ?? "");
   const [cidade, setCidade] = useState("São Paulo — SP");
@@ -1281,14 +1364,16 @@ function DirectAssignForm({
           onSubmit={(e) => {
             e.preventDefault();
             if (!selectedExecutor) return;
-            run(() =>
-              createDirectAssignment({
-                compositeProductId: productId,
-                executorEmail: selectedExecutor.email,
-                executorNome: selectedExecutor.displayName,
-                cidade_origem: cidade,
-                cep_origem: cep,
-              }),
+            run(
+              () =>
+                createDirectAssignment({
+                  compositeProductId: productId,
+                  executorEmail: selectedExecutor.email,
+                  executorNome: selectedExecutor.displayName,
+                  cidade_origem: cidade,
+                  cep_origem: cep,
+                }),
+              scope,
             );
           }}
         >
@@ -1299,7 +1384,7 @@ function DirectAssignForm({
               className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-[1.0625rem] outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
             >
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -1315,7 +1400,7 @@ function DirectAssignForm({
               className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-[1.0625rem] outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
               value={executorEmail}
               onChange={(e) => setExecutorEmail(e.target.value)}
-              disabled={disabled}
+              disabled={pending}
             >
               {executorOptions.map((o) => (
                 <option key={o.email} value={o.email}>
@@ -1326,14 +1411,15 @@ function DirectAssignForm({
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="da-cidade">Cidade de onde posta</Label>
-            <Input id="da-cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={disabled} />
+            <Input id="da-cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={pending} />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="da-cep">CEP de postagem</Label>
-            <Input id="da-cep" value={cep} onChange={(e) => setCep(e.target.value)} disabled={disabled} />
+            <Input id="da-cep" value={cep} onChange={(e) => setCep(e.target.value)} disabled={pending} />
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={disabled || !selectedExecutor}>
+            <Button type="submit" disabled={pending || !selectedExecutor}>
+              {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
               Guardar combinação
             </Button>
           </div>

@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FornecedorImageUploadDemo } from "@/components/upload/fornecedor-image-upload-demo";
 import { FornecedorWorkspace } from "@/components/fornecedor/fornecedor-workspace";
 import { FornecedorProfileForm } from "@/components/fornecedor/fornecedor-profile-form";
 import { StripeConnectButton } from "@/components/platform/stripe-connect-button";
@@ -109,8 +108,6 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
           </Suspense>
         </CardContent>
       </Card>
-
-      <FornecedorImageUploadDemo />
     </div>
   );
 }

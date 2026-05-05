@@ -189,12 +189,12 @@ export class CommerceService {
     });
   }
 
-  /** Envia WebP ou JPEG (≤ 1 MB) para Cloudflare R2 e grava `imagemUrl` na peça. */
-  async uploadProductImage(
+  /** Envia bytes para R2 e grava `imagemUrl` (capa da vitrine). */
+  private async saveMarketplaceCoverImage(
     productId: string,
     buffer: Buffer,
     mimeType: string,
-  ): Promise<{ url: string }> {
+  ): Promise<string> {
     if (buffer.length === 0) {
       throw new BadRequestException('Ficheiro vazio.');
     }
@@ -202,8 +202,6 @@ export class CommerceService {
       throw new BadRequestException('A imagem não pode ultrapassar 1 MB.');
     }
     const contentType = marketplaceUploadContentType(mimeType);
-    const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
-    if (count === 0) throw new NotFoundException('Peça não encontrada.');
     const key = this.r2.marketplaceProductImageKey(productId);
     const url = await this.r2.putPublicObject({
       key,
@@ -214,6 +212,18 @@ export class CommerceService {
       where: { id: productId },
       data: { imagemUrl: url },
     });
+    return url;
+  }
+
+  /** Envia WebP ou JPEG (≤ 1 MB) para Cloudflare R2 e grava `imagemUrl` na peça. */
+  async uploadProductImage(
+    productId: string,
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<{ url: string }> {
+    const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
+    if (count === 0) throw new NotFoundException('Peça não encontrada.');
+    const url = await this.saveMarketplaceCoverImage(productId, buffer, mimeType);
     return { url };
   }
 
@@ -227,7 +237,9 @@ export class CommerceService {
     preco_venda_publico?: number;
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
-  }): Promise<{ id: string; slug: string }> {
+  },
+  cover?: { buffer: Buffer; mimeType: string },
+  ): Promise<{ id: string; slug: string }> {
     const nome = body.nome.trim();
     const sku = body.sku.trim();
     const desc = body.descricao_curta.trim();
@@ -302,6 +314,10 @@ export class CommerceService {
         pacotePesoKg: 0.55,
       },
     });
+
+    if (cover && cover.buffer.length > 0) {
+      await this.saveMarketplaceCoverImage(id, cover.buffer, cover.mimeType);
+    }
 
     return { id, slug };
   }
