@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   Card,
   CardContent,
@@ -23,7 +24,13 @@ export const metadata: Metadata = {
   title: "Fornecedor",
 };
 
-export default async function FornecedorPainelPage() {
+type PageProps = {
+  searchParams: Promise<{ aba?: string }>;
+};
+
+export default async function FornecedorPainelPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const initialTab = sp?.aba === "entregas" ? "entregas" : "insumos";
   const session = await getSession();
   const email = session?.email ?? "";
   const apiOn = commerceUsesDatabase();
@@ -88,12 +95,15 @@ export default async function FornecedorPainelPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FornecedorWorkspace
-            apiMode={apiMode}
-            meusInsumos={meusInsumos}
-            fulfillmentLines={fulfillmentLines}
-            email={email}
-          />
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Carregando abas…</p>}>
+            <FornecedorWorkspace
+              apiMode={apiMode}
+              meusInsumos={meusInsumos}
+              fulfillmentLines={fulfillmentLines}
+              email={email}
+              initialTab={initialTab}
+            />
+          </Suspense>
         </CardContent>
       </Card>
 

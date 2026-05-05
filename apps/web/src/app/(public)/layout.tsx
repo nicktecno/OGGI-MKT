@@ -26,13 +26,14 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto flex min-h-[4rem] max-w-7xl flex-col gap-3 px-5 py-3 sm:min-h-[4.25rem] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:px-8 lg:px-12">
+      <header className="sticky top-0 z-40 border-b border-foreground/[0.07] bg-background/65 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/50">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" />
+        <div className="relative mx-auto flex min-h-[4rem] max-w-7xl flex-col gap-3 px-5 py-3 sm:min-h-[4.25rem] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:px-8 lg:px-12">
           <Link href="/" className="group flex shrink-0 flex-col justify-center gap-0.5 sm:py-1">
-            <span className="font-serif text-xl font-normal tracking-[0.01em] text-foreground transition-colors group-hover:text-foreground/85 sm:text-2xl">
+            <span className="font-serif text-xl font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-foreground/80 sm:text-2xl">
               {SITE_NAME}
             </span>
-            <span className="text-[0.625rem] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.34em] text-muted-foreground">
               Moda artesanal
             </span>
           </Link>
@@ -44,7 +45,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <nav className="flex min-w-0 shrink-0 items-center justify-end gap-4 sm:gap-8 md:gap-10">
             <Link
               href="/loja"
-              className="shrink-0 text-[0.8125rem] font-medium uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+              className="shrink-0 text-[0.8125rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
             >
               Loja
             </Link>
@@ -80,12 +81,14 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-foreground/[0.08] bg-muted/25">
-        <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-12">
-          <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+      <footer className="border-t border-foreground/[0.06] bg-gradient-to-b from-muted/30 via-muted/20 to-background">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12">
+          <div className="flex flex-col items-center gap-8 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
             <div>
-              <p className="font-serif text-xl text-foreground/90">{SITE_NAME}</p>
-              <p className="mt-1 text-[0.625rem] uppercase tracking-[0.28em] text-muted-foreground">Curadoria &amp; ofício</p>
+              <p className="font-serif text-2xl font-medium tracking-tight text-foreground">{SITE_NAME}</p>
+              <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
+                Curadoria &amp; ofício
+              </p>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
               Peças selecionadas de artesãos independentes. Compra segura e suporte humano.

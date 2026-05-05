@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { Role } from "@/lib/auth-types";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +17,12 @@ type Props = {
   adminNavCounts?: AdminNavCounts;
 };
 
-function linkClass(active: boolean) {
+function linkClass(active: boolean, opts?: { compact?: boolean }) {
   return cn(
-    "rounded-md px-3 py-2.5 text-base transition-colors md:-mx-1",
+    "rounded-md px-3 py-2.5 transition-colors",
+    opts?.compact
+      ? "w-full min-w-0 py-2 text-left text-sm leading-snug md:mx-0"
+      : "text-base md:-mx-1",
     active
       ? "bg-muted/80 font-medium text-foreground"
       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -28,6 +31,7 @@ function linkClass(active: boolean) {
 
 export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (role === "ADMIN" && adminNavCounts) {
     type AdminNavItem =
@@ -85,17 +89,44 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     );
   }
 
+  if (role === "SUPPLIER") {
+    const aba = searchParams.get("aba");
+    const onFornecedor =
+      pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
+    const overviewActive = onFornecedor && aba !== "insumos" && aba !== "entregas";
+    const insumosActive = aba === "insumos";
+    const entregasActive = aba === "entregas";
+    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
+
+    return (
+      <nav className="flex w-full flex-col gap-1" aria-label="Menu do fornecedor">
+        <Link href={painelHome} className={linkClass(overviewActive, { compact: true })}>
+          Visão geral
+        </Link>
+        <Link href={`${painelHome}?aba=insumos`} className={linkClass(insumosActive, { compact: true })}>
+          Meus insumos
+        </Link>
+        <Link href={`${painelHome}?aba=entregas`} className={linkClass(entregasActive, { compact: true })}>
+          Entregas aos executores
+        </Link>
+        <Link href="/loja" className={linkClass(lojaActive, { compact: true })}>
+          Loja pública
+        </Link>
+      </nav>
+    );
+  }
+
   const overviewActive =
     pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
 
   return (
-    <nav className="flex flex-row flex-wrap items-center gap-1.5">
-      <Link href={painelHome} className={linkClass(overviewActive)}>
+    <nav className="flex w-full flex-col gap-1" aria-label="Menu do painel">
+      <Link href={painelHome} className={linkClass(overviewActive, { compact: true })}>
         Visão geral
       </Link>
       <Link
         href="/loja"
-        className={linkClass(pathname === "/loja" || pathname.startsWith("/loja/"))}
+        className={linkClass(pathname === "/loja" || pathname.startsWith("/loja/"), { compact: true })}
       >
         Loja pública
       </Link>

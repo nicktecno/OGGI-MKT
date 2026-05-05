@@ -15,7 +15,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="border-b border-border/70 bg-card/40 px-5 py-6 backdrop-blur-sm md:flex md:w-56 md:flex-col md:border-b-0 md:border-r md:py-10 lg:w-60">
+      <aside className="border-b border-border/60 bg-card/55 px-5 py-6 backdrop-blur-md md:flex md:w-56 md:flex-col md:border-b-0 md:border-r md:border-r-foreground/[0.06] md:py-10 lg:w-60">
         <div className="mb-8">
           <Link href="/" className="font-serif text-xl text-foreground/90 transition-colors hover:text-foreground">
             {SITE_NAME}
@@ -26,7 +26,7 @@ export default async function PainelLayout({ children }: { children: React.React
           <PainelSidebarWithNavCounts role={session.role} painelHome={painelHome} />
         </Suspense>
       </aside>
-      <div className="flex-1 bg-gradient-to-b from-background via-background to-muted/15">
+      <div className="flex-1 bg-gradient-to-br from-background via-background to-muted/25">
         <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">{children}</div>
       </div>
     </div>

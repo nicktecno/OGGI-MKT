@@ -38,17 +38,18 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
   );
 
   return (
-    <main className="pb-20">
-      <section className="relative border-b border-border">
-        <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-24">
+    <main className="pb-24">
+      <section className="relative border-b border-border/70">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_60%_at_50%_-10%,oklch(0.5_0.08_48_/_0.08),transparent_55%)]" />
+        <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
           <div className="relative z-10 max-w-2xl">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-accent">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-accent">
               Vitrine
             </p>
-            <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight md:text-5xl">
+            <h1 className="mt-4 font-serif text-4xl font-medium tracking-tight md:text-5xl md:tracking-[-0.02em]">
               {SITE_NAME}
             </h1>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+            <p className="mt-5 text-lg leading-relaxed text-muted-foreground md:text-xl md:leading-relaxed">
               Aqui você encontra peças feitas com dedicação por costureiras e pequenos
               ateliês — moda artesanal para vestir com orgulho.
             </p>
@@ -56,15 +57,15 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
               href="/loja#destaque"
               className={cn(
                 buttonVariants({ variant: "outline", size: "xl" }),
-                "mt-8 inline-flex",
+                "mt-10 inline-flex border-foreground/12 bg-background/50 backdrop-blur-sm hover:bg-background/80",
               )}
             >
               Ver ofertas em destaque
             </Link>
           </div>
         </div>
-        <div className="relative mx-auto max-w-6xl px-6 pb-12">
-          <div className="relative aspect-[21/9] overflow-hidden rounded-xl border border-border shadow-sm">
+        <div className="relative mx-auto max-w-6xl px-6 pb-14">
+          <div className="relative aspect-[21/9] overflow-hidden rounded-2xl border border-border/55 shadow-luxury-sm ring-1 ring-foreground/[0.04]">
             <Image
               src={MARKETING_IMAGES.lojaBanner}
               alt="Vitrine com roupas clássicas em cabides"
@@ -73,18 +74,19 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
               sizes="(max-width: 1200px) 100vw, 1152px"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/15 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-transparent md:from-background/25" />
           </div>
         </div>
       </section>
 
-      <section id="destaque" className="mx-auto max-w-6xl scroll-mt-28 px-6 py-16">
-        <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <section id="destaque" className="mx-auto max-w-6xl scroll-mt-28 px-6 py-20">
+        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-serif text-2xl font-medium tracking-tight md:text-3xl">
+            <h2 className="font-serif text-2xl font-medium tracking-tight md:text-3xl md:tracking-[-0.02em]">
               Em destaque
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground md:text-base">
               {query ? (
                 <>
                   {rows.length} resultado{rows.length === 1 ? "" : "s"} para “{query}”
@@ -113,15 +115,15 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
             )}
           </p>
         ) : (
-          <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map(({ listing, product }) => (
               <li key={listing.id}>
                 <Link
                   href={`/loja/produto/${product.slug}`}
-                  className="block h-full rounded-xl outline-none ring-offset-background focus-visible:ring-[3px] focus-visible:ring-ring"
+                  className="block h-full rounded-2xl outline-none ring-offset-background focus-visible:ring-[3px] focus-visible:ring-ring"
                 >
-                  <Card className="h-full overflow-hidden border-border/80 bg-card shadow-sm transition-shadow hover:shadow-md">
-                    <div className="relative aspect-[4/5] border-b border-border">
+                  <Card className="h-full overflow-hidden border-border/55 bg-card/95 transition-[box-shadow,transform] duration-500 hover:-translate-y-1">
+                    <div className="relative aspect-[4/5] border-b border-border/60">
                       <Image
                         src={product.imagem_url}
                         alt={product.nome}
