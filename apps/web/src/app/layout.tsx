@@ -74,6 +74,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  /** Caminhos relativos ao domínio atual — evitam conflito com `favicon.ico` antigo e hosts errados em `metadataBase`. */
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "any" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+  },
 };
 
 export default function RootLayout({
@@ -83,6 +88,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <link rel="icon" href="/icon.png" type="image/png" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} min-h-screen font-sans text-base text-foreground antialiased selection:bg-accent/20 selection:text-foreground`}
       >

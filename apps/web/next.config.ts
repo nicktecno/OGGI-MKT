@@ -20,6 +20,10 @@ if (r2Base) {
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  /** Muitos browsers pedem `/favicon.ico` por defeito; servimos o mesmo ícone PNG. */
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/icon.png", permanent: false }];
+  },
   images: {
     remotePatterns: [
       {

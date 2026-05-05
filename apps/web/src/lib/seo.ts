@@ -1,12 +1,24 @@
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
 
-/** Defina em produção para URLs canónicas e cartões sociais corretos. */
+/**
+ * Origem canónica (OG, sitemap, `metadataBase`).
+ * Em Vercel, se `NEXT_PUBLIC_APP_URL` não estiver definido, usa `VERCEL_URL` para não gerar links para localhost.
+ */
 export function getSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (raw) {
     try {
       return new URL(raw).origin;
+    } catch {
+      /* ignorar */
+    }
+  }
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    try {
+      const host = vercel.replace(/^https?:\/\//i, "");
+      return new URL(`https://${host}`).origin;
     } catch {
       /* ignorar */
     }
