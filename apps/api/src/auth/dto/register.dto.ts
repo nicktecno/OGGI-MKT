@@ -1,4 +1,6 @@
 import {
+  Equals,
+  IsBoolean,
   IsEmail,
   IsIn,
   IsOptional,
@@ -9,6 +11,10 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
+  @IsBoolean()
+  @Equals(true, { message: 'É necessário aceitar os termos de uso para criar a conta.' })
+  acceptTerms!: boolean;
+
   @IsEmail()
   email!: string;
 

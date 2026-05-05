@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LottieLoading } from "@/components/ui/lottie-loading";
 import {
@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  getAccountTerms,
+  resolveRegisterTermsRole,
+  type AccountTermsRole,
+} from "@/lib/account-terms";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +48,25 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
   const [executorStateUf, setExecutorStateUf] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const termsRole: AccountTermsRole = useMemo(
+    () => resolveRegisterTermsRole(accountPath, role),
+    [accountPath, role],
+  );
+  const termsBlock = useMemo(() => getAccountTerms(termsRole), [termsRole]);
+
+  useEffect(() => {
+    setAcceptTerms(false);
+  }, [termsRole]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!acceptTerms) {
+      setError("Marque a caixa para aceitar os termos de uso do seu tipo de conta.");
+      return;
+    }
     if (!apiEnabled) {
       setError("Cadastro público não está disponível (API não configurada).");
       return;
@@ -54,6 +74,7 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
+        acceptTerms: true,
         email: email.trim().toLowerCase(),
         password,
         name: name.trim(),
@@ -398,13 +419,55 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
             </div>
           ) : null}
 
+          <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+            <details className="group text-sm">
+              <summary className="cursor-pointer list-none font-medium text-foreground underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="inline-block size-2 rounded-full bg-primary/80 transition-transform group-open:rotate-90"
+                  />
+                  Ler na íntegra: {termsBlock.title}
+                </span>
+              </summary>
+              <p className="mt-3 text-muted-foreground leading-relaxed">{termsBlock.intro}</p>
+              <ul className="mt-3 space-y-3">
+                {termsBlock.sections.map((s) => (
+                  <li key={s.heading} className="border-t border-border/60 pt-3 first:border-t-0 first:pt-0">
+                    <p className="font-medium text-foreground">{s.heading}</p>
+                    <p className="mt-1 text-muted-foreground leading-relaxed">{s.body}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">Versão registrada: {termsBlock.version}</p>
+            </details>
+
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 size-4 shrink-0 rounded border-border accent-primary"
+              />
+              <span>
+                Li e aceito os termos acima ({termsRole === "CUSTOMER" ? "cliente" : termsRole === "SUPPLIER" ? "fornecedor" : "costureira"}). Entendo que a versão{" "}
+                <span className="font-mono text-xs">{termsBlock.version}</span> será associada ao meu cadastro.
+              </span>
+            </label>
+          </div>
+
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
           ) : null}
 
-          <Button type="submit" className="w-full gap-2" size="lg" disabled={loading || !apiEnabled}>
+          <Button
+            type="submit"
+            className="w-full gap-2"
+            size="lg"
+            disabled={loading || !apiEnabled || !acceptTerms}
+          >
             {loading ? (
               <>
                 <LottieLoading height={28} />

@@ -81,6 +81,8 @@ model PlatformAccount {
   reviewedByEmail          String?                @map("reviewed_by_email")
   rejectionReason          String?                @map("rejection_reason")
   createdAt                DateTime               @default(now()) @map("created_at")
+  termsAcceptedAt          DateTime?              @map("terms_accepted_at")
+  termsAcceptedVersion     String?                @map("terms_accepted_version")
 
   supplierProfile SupplierProfile?
   executorProfile ExecutorProfile?

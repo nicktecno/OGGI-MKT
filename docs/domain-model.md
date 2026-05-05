@@ -2,7 +2,7 @@
 
 Este documento implementa o item **domain-model** do plano.
 
-**Decisões consolidadas**: ver [decisoes-produto.md](./decisoes-produto.md). **Infra (Postgres + Neon, Nest no Koyeb, Next na Vercel)**: [infrastructure.md](./infrastructure.md).
+**Decisões consolidadas**: ver [decisoes-produto.md](./decisoes-produto.md). **Infra (Postgres + Neon, Nest no Render, Next na Vercel)**: [infrastructure.md](./infrastructure.md).
 
 ## Papéis (RBAC)
 

@@ -43,3 +43,34 @@ export async function fetchActiveExecutorPickerOptions(): Promise<ExecutorPicker
     displayName: String(e.displayName ?? "").trim(),
   }));
 }
+
+export type StripeAdminSummary = {
+  configured: boolean;
+  message?: string;
+  account?: {
+    id: string;
+    email: string | null;
+    country: string | null;
+    default_currency: string | null;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted: boolean;
+  };
+  metrics?: {
+    vendas_count: number;
+    total_vendas_centavos: number;
+    plataforma_comissao_centavos: number;
+    executores_receberam_centavos: number;
+    fornecedores_receberam_centavos: number;
+  };
+  notes?: {
+    comissao_source: string;
+  };
+};
+
+export async function fetchStripeAdminSummary(): Promise<StripeAdminSummary | null> {
+  if (!platformInternalConfigured()) return null;
+  const res = await platformInternalFetch("/internal/platform/stripe/admin-summary");
+  if (!res.ok) return null;
+  return (await res.json()) as StripeAdminSummary;
+}

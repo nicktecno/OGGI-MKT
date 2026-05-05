@@ -749,7 +749,7 @@ function PricingForm({
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium" htmlFor={`pac-a-${product.id}`}>
+            <Label className="min-h-8 text-xs font-medium leading-tight flex items-end" htmlFor={`pac-a-${product.id}`}>
               Altura (cm)
             </Label>
             <Input
@@ -761,7 +761,7 @@ function PricingForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium" htmlFor={`pac-l-${product.id}`}>
+            <Label className="min-h-8 text-xs font-medium leading-tight flex items-end" htmlFor={`pac-l-${product.id}`}>
               Largura (cm)
             </Label>
             <Input
@@ -773,7 +773,7 @@ function PricingForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium" htmlFor={`pac-c-${product.id}`}>
+            <Label className="min-h-8 text-xs font-medium leading-tight flex items-end" htmlFor={`pac-c-${product.id}`}>
               Comprimento (cm)
             </Label>
             <Input
@@ -785,7 +785,7 @@ function PricingForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium" htmlFor={`pac-p-${product.id}`}>
+            <Label className="min-h-8 text-xs font-medium leading-tight flex items-end" htmlFor={`pac-p-${product.id}`}>
               Peso (kg)
             </Label>
             <Input

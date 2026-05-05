@@ -1,5 +1,6 @@
 import { PrismaClient, SupplyQuantityKind } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { TERMS_ACCEPTANCE_VERSION } from '../src/legal/terms-acceptance-version';
 import { pickShipmentPackFromSupplies, stubFreteB2B } from '../src/supply/package-shipping.util';
 
 const prisma = new PrismaClient();
@@ -26,6 +27,8 @@ async function main() {
       name: 'Ana Runway',
       role: 'ADMIN',
       status: 'ACTIVE',
+      termsAcceptedAt: new Date('2026-01-01T12:00:00.000Z'),
+      termsAcceptedVersion: 'seed-admin-demo',
     },
   });
 
@@ -37,6 +40,8 @@ async function main() {
       name: 'Bruno Tecidos',
       role: 'SUPPLIER',
       status: 'ACTIVE',
+      termsAcceptedAt: new Date('2026-01-01T12:00:00.000Z'),
+      termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.SUPPLIER,
       supplierProfile: {
         create: {
           businessName: 'Bruno Tecidos Ltda',
@@ -59,6 +64,8 @@ async function main() {
       name: 'Carla Mendes',
       role: 'EXECUTOR',
       status: 'ACTIVE',
+      termsAcceptedAt: new Date('2026-01-01T12:00:00.000Z'),
+      termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.EXECUTOR,
       executorProfile: {
         create: {
           displayName: 'Carla Mendes — Atelier',
@@ -80,6 +87,8 @@ async function main() {
       name: 'Dana Oliveira',
       role: 'CUSTOMER',
       status: 'ACTIVE',
+      termsAcceptedAt: new Date('2026-01-01T12:00:00.000Z'),
+      termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.CUSTOMER,
     },
   });
 

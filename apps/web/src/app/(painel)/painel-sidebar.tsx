@@ -32,12 +32,14 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
   if (role === "ADMIN" && adminNavCounts) {
     type AdminNavItem =
       | { href: "/painel/admin/pecas"; label: "Peças e preços" }
+      | { href: "/painel/admin/financeiro"; label: "Financeiro (Stripe)" }
       | { href: "/painel/admin/cadastros"; label: "Cadastros"; badge: number }
       | { href: "/painel/admin/pedidos"; label: "Pedidos das costureiras"; badge: number }
       | { href: "/painel/admin/combinacoes"; label: "Quem faz o quê"; badge: number };
 
     const items: AdminNavItem[] = [
       { href: "/painel/admin/pecas", label: "Peças e preços" },
+      { href: "/painel/admin/financeiro", label: "Financeiro (Stripe)" },
       {
         href: "/painel/admin/cadastros",
         label: "Cadastros",
@@ -56,7 +58,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     ];
 
     return (
-      <nav className="flex flex-row gap-1 md:flex-col md:gap-0">
+      <nav className="flex flex-row flex-wrap items-center gap-1.5">
         {items.map((item) => {
           const active = pathname === item.href;
           const badge = "badge" in item ? item.badge : 0;
@@ -87,7 +89,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
 
   return (
-    <nav className="flex flex-row gap-1 md:flex-col md:gap-0">
+    <nav className="flex flex-row flex-wrap items-center gap-1.5">
       <Link href={painelHome} className={linkClass(overviewActive)}>
         Visão geral
       </Link>

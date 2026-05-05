@@ -8,6 +8,7 @@ import * as bcrypt from 'bcryptjs';
 import type { PlatformAccount } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TERMS_ACCEPTANCE_VERSION } from '../legal/terms-acceptance-version';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 
@@ -46,6 +47,8 @@ export class AuthService {
           name: dto.name.trim(),
           role: 'CUSTOMER',
           status: 'ACTIVE',
+          termsAcceptedAt: new Date(),
+          termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.CUSTOMER,
         },
       });
       return { user: this.serializePublic(account) };
@@ -69,6 +72,8 @@ export class AuthService {
           name: dto.name.trim(),
           role: 'SUPPLIER',
           status: 'PENDING_ADMIN_REVIEW',
+          termsAcceptedAt: new Date(),
+          termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.SUPPLIER,
           supplierProfile: {
             create: {
               businessName: dto.businessName.trim(),
@@ -107,6 +112,8 @@ export class AuthService {
         name: dto.name.trim(),
         role: 'EXECUTOR',
         status: 'PENDING_ADMIN_REVIEW',
+        termsAcceptedAt: new Date(),
+        termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.EXECUTOR,
         executorProfile: {
           create: {
             displayName: dto.displayName.trim(),

@@ -10,7 +10,7 @@
 - **Não** usar `localStorage` nem `sessionStorage` para **access token**, **refresh token**, **session id** ou qualquer segredo de sessão — qualquer script na página (XSS) leria esses valores.
 - **Usar cookies** com: **`HttpOnly`**, **`Secure`** (HTTPS), **`SameSite`** adequado (`Lax` ou `Strict` conforme fluxo OAuth cross-site e domínio da API vs front).
 - Padrão recomendado: **refresh** só em cookie HttpOnly; **access** pode ser cookie HttpOnly de curta duração **ou** só emitido em respostas server-side (BFF) sem JavaScript no cliente ler o valor.
-- Domínio: alinhar cookie entre **Vercel** e **Koyeb** (subdomínio compartilhado `.seudominio.com` ou proxy `/api` no Next) para o browser enviar o cookie automaticamente; se API for origem diferente sem cookie compartilhado, usar **Route Handler** no Next como proxy autenticado.
+- Domínio: alinhar cookie entre **Vercel** e **Render** (subdomínio compartilhado `.seudominio.com` ou proxy `/api` no Next) para o browser enviar o cookie automaticamente; se API for origem diferente sem cookie compartilhado, usar **Route Handler** no Next como proxy autenticado.
 
 ## Fluxo resumido
 
