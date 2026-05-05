@@ -12,6 +12,10 @@ export type DemoSupplyItem = {
   custo_fornecedor: number;
   frete_ate_executor: number;
   ativo: boolean;
+  imagem_url?: string | null;
+  observacao?: string | null;
+  quantidade_kind?: "METRO" | "PECA";
+  quantidade?: number;
 };
 
 export type DemoCompositeLine = {
@@ -124,16 +128,21 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
     custo_fornecedor: 89.9,
     frete_ate_executor: 12.0,
     ativo: true,
+    quantidade_kind: "METRO",
+    quantidade: 1,
+    observacao: "Largura útil 1,40 m.",
   },
   {
     id: "supply-ziper-invisivel-40",
     supplierEmail: "fornecedor@demo.local",
     nome: "Zíper invisível 40 cm — preto",
     sku_interno: "AVI-ZIP-INV-040-BLK",
-    unidade: "un",
+    unidade: "pc",
     custo_fornecedor: 4.5,
     frete_ate_executor: 3.0,
     ativo: true,
+    quantidade_kind: "PECA",
+    quantidade: 1,
   },
 ];
 

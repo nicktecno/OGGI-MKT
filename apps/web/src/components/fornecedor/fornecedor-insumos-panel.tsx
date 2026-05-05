@@ -1,20 +1,24 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
+import {
+  createSupplyItemAction,
+  updateSupplyItemAction,
+  uploadSupplyItemImageAction,
+} from "@/app/(painel)/painel/fornecedor/fornecedor-actions";
 import { Button } from "@/components/ui/button";
+import { ImageUploadField } from "@/components/upload/image-upload-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DemoSupplyItem } from "@/lib/demo-seed";
 import { insumoCostTotal } from "@/lib/demo-seed";
 import { formatBrl } from "@/lib/utils";
-import {
-  createSupplyItemAction,
-  updateSupplyItemAction,
-} from "@/app/(painel)/painel/fornecedor/fornecedor-actions";
 
 type Props = {
   initialItems: DemoSupplyItem[];
   apiMode: boolean;
+  supplierEmail: string;
 };
 
 function parseMoney(s: string): number {
@@ -22,7 +26,12 @@ function parseMoney(s: string): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
-export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
+function parseQty(s: string): number {
+  const n = Number(s.replace(",", "."));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }: Props) {
   const items = initialItems;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -30,16 +39,22 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
 
   const [nome, setNome] = useState("");
   const [sku, setSku] = useState("");
-  const [unidade, setUnidade] = useState("m");
+  const [quantidadeKind, setQuantidadeKind] = useState<"METRO" | "PECA">("METRO");
+  const [quantidade, setQuantidade] = useState("1");
   const [custo, setCusto] = useState("");
-  const [frete, setFrete] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [pendingImageName, setPendingImageName] = useState<string | null>(null);
 
   function resetForm() {
     setNome("");
     setSku("");
-    setUnidade("m");
+    setQuantidadeKind("METRO");
+    setQuantidade("1");
     setCusto("");
-    setFrete("");
+    setObservacao("");
+    setPendingImageBlob(null);
+    setPendingImageName(null);
     setEditingId(null);
   }
 
@@ -47,21 +62,27 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
     if (!apiMode) return;
     setError(null);
     const c = parseMoney(custo);
-    const f = parseMoney(frete);
-    if (!nome.trim() || !sku.trim() || !unidade.trim() || c < 0 || f < 0 || Number.isNaN(c) || Number.isNaN(f)) {
-      setError("Preencha nome, SKU, unidade e valores numéricos válidos.");
+    const q = parseQty(quantidade);
+    if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
+      setError("Preencha nome, SKU, custo e quantidade válidos.");
       return;
     }
     setPending(true);
     try {
-      await createSupplyItemAction({
+      const created = await createSupplyItemAction({
         nome: nome.trim(),
         skuInterno: sku.trim(),
-        unidade: unidade.trim(),
+        quantidadeKind,
+        quantidade: q,
         custoFornecedor: c,
-        freteAteExecutor: f,
-        ativo: true,
+        freteAteExecutor: 0,
+        observacao: observacao.trim() || undefined,
       });
+      if (pendingImageBlob && created?.id) {
+        const fd = new FormData();
+        fd.append("file", pendingImageBlob, pendingImageName ?? "insumo.webp");
+        await uploadSupplyItemImageAction(created.id, fd);
+      }
       resetForm();
       window.location.reload();
     } catch (err) {
@@ -75,8 +96,8 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
     if (!apiMode) return;
     setError(null);
     const c = parseMoney(custo);
-    const f = parseMoney(frete);
-    if (!nome.trim() || !sku.trim() || !unidade.trim() || c < 0 || f < 0 || Number.isNaN(c) || Number.isNaN(f)) {
+    const q = parseQty(quantidade);
+    if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
       setError("Confira os campos antes de salvar.");
       return;
     }
@@ -85,10 +106,16 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
       await updateSupplyItemAction(row.id, {
         nome: nome.trim(),
         skuInterno: sku.trim(),
-        unidade: unidade.trim(),
+        quantidadeKind,
+        quantidade: q,
         custoFornecedor: c,
-        freteAteExecutor: f,
+        observacao: observacao.trim() || undefined,
       });
+      if (pendingImageBlob) {
+        const fd = new FormData();
+        fd.append("file", pendingImageBlob, pendingImageName ?? "insumo.webp");
+        await uploadSupplyItemImageAction(row.id, fd);
+      }
       resetForm();
       window.location.reload();
     } catch (err) {
@@ -102,10 +129,15 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
     setEditingId(row.id);
     setNome(row.nome);
     setSku(row.sku_interno);
-    setUnidade(row.unidade);
+    setQuantidadeKind(row.quantidade_kind ?? (row.unidade === "pc" ? "PECA" : "METRO"));
+    setQuantidade(String(row.quantidade ?? 1));
     setCusto(String(row.custo_fornecedor));
-    setFrete(String(row.frete_ate_executor));
+    setObservacao(row.observacao ?? "");
+    setPendingImageBlob(null);
+    setPendingImageName(null);
   }
+
+  const kindLabel = quantidadeKind === "METRO" ? "Metros" : "Peças";
 
   return (
     <div className="space-y-6">
@@ -126,9 +158,14 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
           <h3 className="text-sm font-medium text-foreground">
             {editingId ? "Editar insumo" : "Novo insumo"}
           </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            O frete até a costureira é cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a
+            peça a um executor. Abaixo você define custo, tipo de quantidade (metro ou peça) e a quantidade
+            do item no seu catálogo.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="ins-nome">Nome</Label>
+              <Label htmlFor="ins-nome">Título / nome do insumo</Label>
               <Input id="ins-nome" value={nome} onChange={(e) => setNome(e.target.value)} className="bg-background" />
             </div>
             <div className="space-y-2">
@@ -136,16 +173,59 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
               <Input id="ins-sku" value={sku} onChange={(e) => setSku(e.target.value)} className="bg-background" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ins-un">Unidade</Label>
-              <Input id="ins-un" value={unidade} onChange={(e) => setUnidade(e.target.value)} className="bg-background" />
+              <Label>Tipo de quantidade</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={quantidadeKind === "METRO" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQuantidadeKind("METRO")}
+                >
+                  Metros
+                </Button>
+                <Button
+                  type="button"
+                  variant={quantidadeKind === "PECA" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQuantidadeKind("PECA")}
+                >
+                  Peça
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ins-qtd">Quantidade ({kindLabel.toLowerCase()})</Label>
+              <Input
+                id="ins-qtd"
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+                className="bg-background"
+                inputMode="decimal"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ins-custo">Custo fornecedor (R$)</Label>
               <Input id="ins-custo" value={custo} onChange={(e) => setCusto(e.target.value)} className="bg-background" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="ins-frete">Frete até executor (R$)</Label>
-              <Input id="ins-frete" value={frete} onChange={(e) => setFrete(e.target.value)} className="bg-background" />
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="ins-obs">Observação (opcional)</Label>
+              <Input
+                id="ins-obs"
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Ex.: largura do rolo, cor, lote…"
+                className="bg-background"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Foto do insumo (opcional)"
+                description="WebP após compressão no navegador · máx. 1 MB · requer R2 configurado na API."
+                onPrepared={({ blob, filename }) => {
+                  setPendingImageBlob(blob);
+                  setPendingImageName(filename);
+                }}
+              />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -174,39 +254,55 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
         </form>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Modo demonstração: os insumos vêm do seed. Com a API ativada e sessão pela base de dados,
-          você cadastra e edita insumos aqui.
+          Modo demonstração: insumos de exemplo para <span className="text-foreground">{supplierEmail}</span>.
         </p>
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Nome</th>
-              <th className="px-4 py-3 font-medium">SKU</th>
-              <th className="px-4 py-3 font-medium">Unidade</th>
-              <th className="px-4 py-3 font-medium text-right">Custo</th>
-              <th className="px-4 py-3 font-medium text-right">Frete</th>
-              <th className="px-4 py-3 font-medium text-right">Total</th>
-              {apiMode ? <th className="px-4 py-3 font-medium text-right">Ações</th> : null}
+              <th className="px-3 py-3 font-medium"> </th>
+              <th className="px-3 py-3 font-medium">Nome</th>
+              <th className="px-3 py-3 font-medium">SKU</th>
+              <th className="px-3 py-3 font-medium">Tipo / qtd</th>
+              <th className="px-3 py-3 font-medium text-right">Custo</th>
+              <th className="px-3 py-3 font-medium text-right">Frete*</th>
+              <th className="px-3 py-3 font-medium text-right">Total</th>
+              {apiMode ? <th className="px-3 py-3 font-medium text-right">Ações</th> : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {items.map((row) => (
               <tr key={row.id} className="bg-card hover:bg-muted/20">
-                <td className="px-4 py-3 font-medium text-foreground">{row.nome}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{row.sku_interno}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.unidade}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{formatBrl(row.custo_fornecedor)}</td>
-                <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                <td className="px-3 py-2 w-14">
+                  {row.imagem_url ? (
+                    <div className="relative h-10 w-10 overflow-hidden rounded border border-border bg-muted">
+                      <Image src={row.imagem_url} alt="" fill className="object-cover" sizes="40px" unoptimized />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded border border-dashed border-border bg-muted/40" />
+                  )}
+                </td>
+                <td className="px-3 py-3 font-medium text-foreground">
+                  {row.nome}
+                  {row.observacao ? (
+                    <div className="mt-0.5 text-xs font-normal text-muted-foreground">{row.observacao}</div>
+                  ) : null}
+                </td>
+                <td className="px-3 py-3 font-mono text-xs text-muted-foreground">{row.sku_interno}</td>
+                <td className="px-3 py-3 text-muted-foreground">
+                  {row.quantidade_kind === "PECA" ? "Peça" : "Metro"} · {row.quantidade ?? 1}
+                </td>
+                <td className="px-3 py-3 text-right tabular-nums">{formatBrl(row.custo_fornecedor)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
                   {formatBrl(row.frete_ate_executor)}
                 </td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">
+                <td className="px-3 py-3 text-right font-medium tabular-nums text-foreground">
                   {formatBrl(insumoCostTotal(row))}
                 </td>
                 {apiMode ? (
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-3 py-3 text-right">
                     <Button type="button" variant="outline" size="sm" onClick={() => startEdit(row)}>
                       Editar
                     </Button>
@@ -217,6 +313,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode }: Props) {
           </tbody>
         </table>
       </div>
+      <p className="text-xs text-muted-foreground">
+        * Frete na tabela é valor legado ou estimativa; o fluxo alvo usa <strong>Melhor Envio</strong> após
+        atribuição ao executor (aba Entregas).
+      </p>
     </div>
   );
 }

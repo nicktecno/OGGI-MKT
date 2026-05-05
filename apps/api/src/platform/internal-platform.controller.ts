@@ -24,6 +24,10 @@ export class InternalPlatformController {
       custo_fornecedor: r.custoFornecedor,
       frete_ate_executor: r.freteAteExecutor,
       ativo: r.ativo,
+      imagem_url: r.imagemUrl,
+      observacao: r.observacao,
+      quantidade_kind: r.quantidadeKind,
+      quantidade: r.quantidade,
     }));
   }
 

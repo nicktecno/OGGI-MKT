@@ -7,12 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FornecedorImageUploadDemo } from "@/components/upload/fornecedor-image-upload-demo";
-import { FornecedorInsumosPanel } from "@/components/fornecedor/fornecedor-insumos-panel";
+import { FornecedorWorkspace } from "@/components/fornecedor/fornecedor-workspace";
 import { FornecedorProfileForm } from "@/components/fornecedor/fornecedor-profile-form";
 import { StripeConnectButton } from "@/components/platform/stripe-connect-button";
 import { DEMO_SUPPLY_ITEMS } from "@/lib/demo-seed";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
-import { fetchPlatformMe, fetchSupplyItemsForSession } from "@/lib/platform-account-server";
+import {
+  fetchPlatformMe,
+  fetchSupplierFulfillmentForSession,
+  fetchSupplyItemsForSession,
+} from "@/lib/platform-account-server";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -27,6 +31,10 @@ export default async function FornecedorPainelPage() {
     apiOn && session?.role === "SUPPLIER" && session?.sub
       ? await fetchSupplyItemsForSession()
       : null;
+  const fulfillmentLines =
+    apiOn && session?.role === "SUPPLIER" && session?.sub
+      ? (await fetchSupplierFulfillmentForSession()) ?? []
+      : [];
   const me = apiOn ? await fetchPlatformMe() : null;
 
   const useApiSupplies =
@@ -44,8 +52,9 @@ export default async function FornecedorPainelPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Fornecedor</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Insumos e custos para composição das peças. Com a API ativa e login pela base, você
-          cadastra e edita itens aqui; eles entram no catálogo usado pelo admin nas combinações.
+          Cadastre insumos (foto, tipo metro/peça, quantidade) para o admin montar as peças. Quando uma
+          combinação for atribuída a uma costureira, a aba <strong>Entregas aos executores</strong> mostra o
+          destino e, com o Melhor Envio ligado, a etiqueta de envio.
         </p>
       </div>
 
@@ -72,15 +81,19 @@ export default async function FornecedorPainelPage() {
 
       <Card className="max-w-4xl border-border">
         <CardHeader>
-          <CardTitle className="font-serif text-xl">Meus insumos</CardTitle>
+          <CardTitle className="font-serif text-xl">Insumos e entregas</CardTitle>
           <CardDescription>
-            {meusInsumos.length} item(ns) para{" "}
-            <span className="text-foreground">{email}</span>
-            {apiMode ? " (API)" : " (demonstração no navegador)"}.
+            {meusInsumos.length} item(ns) para <span className="text-foreground">{email}</span>
+            {apiMode ? " (API + banco)" : " (demonstração)"}.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FornecedorInsumosPanel initialItems={meusInsumos} apiMode={apiMode} />
+          <FornecedorWorkspace
+            apiMode={apiMode}
+            meusInsumos={meusInsumos}
+            fulfillmentLines={fulfillmentLines}
+            email={email}
+          />
         </CardContent>
       </Card>
 

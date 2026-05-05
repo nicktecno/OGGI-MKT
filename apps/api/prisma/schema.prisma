@@ -108,18 +108,52 @@ model ExecutorProfile {
   account           PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
+enum SupplyQuantityKind {
+  METRO
+  PECA
+}
+
 model SupplyItem {
-  id                  String          @id
-  supplierAccountId   String          @map("supplier_account_id")
+  id                  String              @id
+  supplierAccountId   String              @map("supplier_account_id")
   nome                String
-  skuInterno          String          @map("sku_interno")
+  skuInterno          String              @map("sku_interno")
   unidade             String
-  custoFornecedor     Float           @map("custo_fornecedor")
-  freteAteExecutor    Float           @map("frete_ate_executor")
-  ativo               Boolean         @default(true)
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-  supplier            PlatformAccount @relation(fields: [supplierAccountId], references: [id], onDelete: Cascade)
+  custoFornecedor     Float               @map("custo_fornecedor")
+  freteAteExecutor    Float               @map("frete_ate_executor")
+  imagemUrl           String?             @map("imagem_url")
+  observacao          String?
+  quantidadeKind      SupplyQuantityKind  @default(METRO) @map("quantidade_kind")
+  quantidade          Float               @default(1)
+  ativo               Boolean             @default(true)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  supplier            PlatformAccount     @relation(fields: [supplierAccountId], references: [id], onDelete: Cascade)
+  fulfillmentLines    SupplierFulfillmentLine[]
 
   @@index([supplierAccountId])
+}
+
+model SupplierFulfillmentLine {
+  id                      String   @id @default(cuid())
+  productionAssignmentId  String   @map("production_assignment_id")
+  supplyItemId            String   @map("supply_item_id")
+  supplierAccountId       String   @map("supplier_account_id")
+  compositeProductId      String   @map("composite_product_id")
+  productNome             String   @map("product_nome")
+  quantidadePorPeca       Float    @map("quantidade_por_peca")
+  executorNome            String   @map("executor_nome")
+  executorEmail           String   @map("executor_email")
+  executorCep             String   @map("executor_cep")
+  executorCidade          String   @map("executor_cidade")
+  executorEndereco        String   @map("executor_endereco")
+  melhorEnvioEtiquetaUrl  String?  @map("melhor_envio_etiqueta_url")
+  melhorEnvioPedidoId     String?  @map("melhor_envio_pedido_id")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  supplyItem SupplyItem @relation(fields: [supplyItemId], references: [id], onDelete: Cascade)
+
+  @@index([supplierAccountId])
+  @@index([productionAssignmentId])
 }

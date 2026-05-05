@@ -1,4 +1,5 @@
-import { IsBoolean, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { SupplyQuantityKind } from '@prisma/client';
+import { IsBoolean, IsEnum, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class CreateSupplyItemDto {
   @IsString()
@@ -9,15 +10,27 @@ export class CreateSupplyItemDto {
   @MinLength(1)
   skuInterno!: string;
 
-  @IsString()
-  @MinLength(1)
-  unidade!: string;
+  @IsEnum(SupplyQuantityKind)
+  quantidadeKind!: SupplyQuantityKind;
+
+  @Min(0.0001)
+  quantidade!: number;
 
   @Min(0)
   custoFornecedor!: number;
 
+  /** Opcional: antes da atribuição ao executor o frete costuma ser estimado pelo Melhor Envio. */
+  @IsOptional()
   @Min(0)
-  freteAteExecutor!: number;
+  freteAteExecutor?: number;
+
+  @IsOptional()
+  @IsString()
+  observacao?: string;
+
+  @IsOptional()
+  @IsString()
+  imagemUrl?: string;
 
   @IsOptional()
   @IsBoolean()

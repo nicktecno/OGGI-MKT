@@ -9,6 +9,7 @@ import type { CompositeProduct, ExecutionRequest, ProductionAssignment } from '@
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { R2StorageService } from '../storage/r2-storage.service';
+import { SupplierFulfillmentService } from '../supply/supplier-fulfillment.service';
 
 /** Resposta alinhada a `DemoCommerceState` do app web (snake_case). */
 export type CommerceStateDto = {
@@ -23,6 +24,7 @@ export class CommerceService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly r2: R2StorageService,
+    private readonly supplierFulfillment: SupplierFulfillmentService,
   ) {}
 
   async getState(): Promise<CommerceStateDto> {
@@ -214,6 +216,7 @@ export class CommerceService {
       });
       return created.id;
     });
+    await this.supplierFulfillment.syncFromAssignment(assignmentId);
     this.notifications.fireAndForgetAssignment(assignmentId);
   }
 
@@ -287,6 +290,7 @@ export class CommerceService {
         executionRequestId: null,
       },
     });
+    await this.supplierFulfillment.syncFromAssignment(created.id);
     this.notifications.fireAndForgetAssignment(created.id);
   }
 
@@ -297,6 +301,7 @@ export class CommerceService {
       where: { id: assignmentId },
       data: { status: 'ARCHIVED' },
     });
+    await this.supplierFulfillment.deleteForAssignment(assignmentId);
   }
 
   /** Costureira libera a oferta na vitrine (estado PUBLISHED + estoque vendável). */

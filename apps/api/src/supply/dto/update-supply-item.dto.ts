@@ -1,4 +1,5 @@
-import { IsBoolean, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { SupplyQuantityKind } from '@prisma/client';
+import { IsBoolean, IsEnum, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class UpdateSupplyItemDto {
   @IsOptional()
@@ -12,9 +13,12 @@ export class UpdateSupplyItemDto {
   skuInterno?: string;
 
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  unidade?: string;
+  @IsEnum(SupplyQuantityKind)
+  quantidadeKind?: SupplyQuantityKind;
+
+  @IsOptional()
+  @Min(0.0001)
+  quantidade?: number;
 
   @IsOptional()
   @Min(0)
@@ -23,6 +27,14 @@ export class UpdateSupplyItemDto {
   @IsOptional()
   @Min(0)
   freteAteExecutor?: number;
+
+  @IsOptional()
+  @IsString()
+  observacao?: string;
+
+  @IsOptional()
+  @IsString()
+  imagemUrl?: string;
 
   @IsOptional()
   @IsBoolean()

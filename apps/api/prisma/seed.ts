@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SupplyQuantityKind } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'Demo#2026';
 
 async function main() {
+  await prisma.supplierFulfillmentLine.deleteMany();
   await prisma.supplyItem.deleteMany();
   await prisma.executionRequest.deleteMany();
   await prisma.productionAssignment.deleteMany();
@@ -82,8 +83,37 @@ async function main() {
   });
 
   void admin;
-  void fornecedor;
   void executor;
+
+  await prisma.supplyItem.createMany({
+    data: [
+      {
+        id: 'supply-linho-offwhite',
+        supplierAccountId: fornecedor.id,
+        nome: 'Linho premium off-white',
+        skuInterno: 'TEC-LIN-OW-240',
+        unidade: 'm',
+        quantidadeKind: SupplyQuantityKind.METRO,
+        quantidade: 1,
+        custoFornecedor: 89.9,
+        freteAteExecutor: 12.0,
+        observacao: 'Largura útil 1,40 m.',
+        ativo: true,
+      },
+      {
+        id: 'supply-ziper-invisivel-40',
+        supplierAccountId: fornecedor.id,
+        nome: 'Zíper invisível 40 cm — preto',
+        skuInterno: 'AVI-ZIP-INV-040-BLK',
+        unidade: 'pc',
+        quantidadeKind: SupplyQuantityKind.PECA,
+        quantidade: 1,
+        custoFornecedor: 4.5,
+        freteAteExecutor: 3.0,
+        ativo: true,
+      },
+    ],
+  });
 
   await prisma.compositeProduct.create({
     data: {
@@ -171,27 +201,35 @@ async function main() {
     },
   });
 
-  await prisma.supplyItem.createMany({
+  await prisma.supplierFulfillmentLine.createMany({
     data: [
       {
-        id: 'supply-linho-offwhite',
+        id: 'fulf-seed-linho',
+        productionAssignmentId: 'asg-vestido-carla',
+        supplyItemId: 'supply-linho-offwhite',
         supplierAccountId: fornecedor.id,
-        nome: 'Linho premium off-white',
-        skuInterno: 'TEC-LIN-OW-240',
-        unidade: 'm',
-        custoFornecedor: 89.9,
-        freteAteExecutor: 12.0,
-        ativo: true,
+        compositeProductId: 'cp-vestido-linho-classico',
+        productNome: 'Vestido midi em linho — silhueta clássica',
+        quantidadePorPeca: 2.2,
+        executorNome: 'Carla Mendes — Atelier',
+        executorEmail: 'executor@demo.local',
+        executorCep: '01310-100',
+        executorCidade: 'São Paulo',
+        executorEndereco: 'Av. Paulista, 800',
       },
       {
-        id: 'supply-ziper-invisivel-40',
+        id: 'fulf-seed-ziper',
+        productionAssignmentId: 'asg-vestido-carla',
+        supplyItemId: 'supply-ziper-invisivel-40',
         supplierAccountId: fornecedor.id,
-        nome: 'Zíper invisível 40 cm — preto',
-        skuInterno: 'AVI-ZIP-INV-040-BLK',
-        unidade: 'un',
-        custoFornecedor: 4.5,
-        freteAteExecutor: 3.0,
-        ativo: true,
+        compositeProductId: 'cp-vestido-linho-classico',
+        productNome: 'Vestido midi em linho — silhueta clássica',
+        quantidadePorPeca: 1,
+        executorNome: 'Carla Mendes — Atelier',
+        executorEmail: 'executor@demo.local',
+        executorCep: '01310-100',
+        executorCidade: 'São Paulo',
+        executorEndereco: 'Av. Paulista, 800',
       },
     ],
   });
