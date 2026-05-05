@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -237,6 +238,8 @@ function InsumoThumb({ url, className }: { url?: string | null; className?: stri
   );
 }
 
+type MenuCoords = { top: number; left: number; width: number; maxH: number };
+
 function InsumoPicker({
   supplies,
   value,
@@ -251,21 +254,125 @@ function InsumoPicker({
   ariaLabel: string;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 280, maxH: 280 });
+
+  const updateMenuPosition = () => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const btn = wrap.querySelector("button[type='button']");
+    if (!(btn instanceof HTMLElement)) return;
+    const r = btn.getBoundingClientRect();
+    const gap = 6;
+    const margin = 10;
+    const vh = window.innerHeight;
+    const spaceBelow = vh - r.bottom - margin;
+    const spaceAbove = r.top - margin;
+    const openDown = spaceBelow >= 120 || spaceBelow >= spaceAbove;
+    const rawMax = openDown ? spaceBelow - gap : spaceAbove - gap;
+    const maxH = Math.min(320, Math.max(120, rawMax));
+    const top = openDown ? r.bottom + gap : r.top - maxH - gap;
+    setMenu({
+      top,
+      left: r.left,
+      width: Math.max(r.width, 220),
+      maxH,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updateMenuPosition();
+    const onReposition = () => updateMenuPosition();
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+    return () => {
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      if (listRef.current?.contains(t)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const selected = value ? supplies.find((s) => s.id === value) : undefined;
 
+  const listbox =
+    open && typeof document !== "undefined" ? (
+      <ul
+        ref={listRef}
+        role="listbox"
+        style={{
+          position: "fixed",
+          top: menu.top,
+          left: menu.left,
+          width: menu.width,
+          maxHeight: menu.maxH,
+          zIndex: 200,
+        }}
+        className="overflow-y-auto overscroll-contain rounded-md border border-border bg-popover py-1 text-sm shadow-lg"
+      >
+        <li className="px-1">
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-muted-foreground hover:bg-muted/80"
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+          >
+            <span className="pl-1">Limpar seleção</span>
+          </button>
+        </li>
+        {supplies.map((s) => (
+          <li key={s.id} className="px-1">
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === s.id}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
+                value === s.id && "bg-accent/15",
+              )}
+              onClick={() => {
+                onChange(s.id);
+                setOpen(false);
+              }}
+            >
+              <InsumoThumb url={s.imagem_url} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-foreground">{s.nome}</span>
+                <span className="block truncate text-xs text-muted-foreground">{s.sku_interno}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : null;
+
   return (
-    <div ref={ref} className="relative min-w-[220px] flex-1">
+    <div ref={wrapRef} className="relative min-w-[220px] flex-1">
       <button
         type="button"
         aria-haspopup="listbox"
@@ -295,50 +402,7 @@ function InsumoPicker({
           aria-hidden
         />
       </button>
-      {open ? (
-        <ul
-          role="listbox"
-          className="absolute z-[60] mt-1 max-h-64 w-full min-w-[min(100%,320px)] overflow-auto rounded-md border border-border bg-popover py-1 text-sm shadow-lg"
-        >
-          <li className="px-1">
-            <button
-              type="button"
-              role="option"
-              aria-selected={!value}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-muted-foreground hover:bg-muted/80"
-              onClick={() => {
-                onChange("");
-                setOpen(false);
-              }}
-            >
-              <span className="pl-1">Limpar seleção</span>
-            </button>
-          </li>
-          {supplies.map((s) => (
-            <li key={s.id} className="px-1">
-              <button
-                type="button"
-                role="option"
-                aria-selected={value === s.id}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
-                  value === s.id && "bg-accent/15",
-                )}
-                onClick={() => {
-                  onChange(s.id);
-                  setOpen(false);
-                }}
-              >
-                <InsumoThumb url={s.imagem_url} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-foreground">{s.nome}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{s.sku_interno}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {listbox ? createPortal(listbox, document.body) : null}
     </div>
   );
 }
