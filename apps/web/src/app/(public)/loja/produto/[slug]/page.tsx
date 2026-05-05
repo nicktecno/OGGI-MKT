@@ -18,6 +18,7 @@ import {
   productImageSlides,
 } from "@/lib/demo-seed";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { normalizeVariacoesTamanho } from "@/lib/product-sizes";
 import { clipForSerp, toAbsoluteUrl } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
 import { formatBrl } from "@/lib/utils";
@@ -40,7 +41,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Produto", robots: { index: false, follow: false } };
   }
   const galleryUrls = productImageSlides(product);
-  const desc = clipForSerp(product.descricao_curta || product.nome);
+  const tamMeta = normalizeVariacoesTamanho(product.variacoes_tamanho);
+  const desc = clipForSerp(
+    tamMeta.length
+      ? `${product.descricao_curta || product.nome} Tamanhos: ${tamMeta.join(", ")}.`
+      : product.descricao_curta || product.nome,
+  );
   const path = `/loja/produto/${product.slug}`;
   const ogImages = galleryUrls.map((u) => ({
     url: toAbsoluteUrl(u),
@@ -76,6 +82,7 @@ export default async function ProdutoLojaPage({ params }: Props) {
   if (!listing) notFound();
 
   const galleryUrls = productImageSlides(product);
+  const tamanhosVitrine = normalizeVariacoesTamanho(product.variacoes_tamanho);
 
   return (
     <main className="pb-20">
@@ -115,6 +122,23 @@ export default async function ProdutoLojaPage({ params }: Props) {
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
               {product.descricao_curta}
             </p>
+            {tamanhosVitrine.length > 0 ? (
+              <div className="mt-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  Tamanhos
+                </p>
+                <ul className="mt-2 flex flex-wrap gap-2" aria-label="Tamanhos disponíveis">
+                  {tamanhosVitrine.map((t) => (
+                    <li
+                      key={t}
+                      className="rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm font-medium tabular-nums text-foreground"
+                    >
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <p className="mt-8 font-serif text-3xl font-medium tabular-nums text-foreground">
               {formatBrl(product.preco_venda_publico)}
             </p>

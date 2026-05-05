@@ -46,6 +46,8 @@ export type DemoCompositeProduct = {
   imagem_url: string;
   /** URLs extra (galeria na página do produto); a capa é `imagem_url`. */
   galeria_imagens?: string[];
+  /** Tamanhos de roupa oferecidos (P, M, G, GG, XG). */
+  variacoes_tamanho?: string[];
   /** Pacote peça pronta → cliente (costureira posta). */
   pacote_altura_cm: number;
   pacote_largura_cm: number;
@@ -201,6 +203,7 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     imagem_url:
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88",
     galeria_imagens: [],
+    variacoes_tamanho: ["P", "M", "G", "GG", "XG"],
   },
   {
     id: "cp-cachecol",
@@ -233,6 +236,7 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     imagem_url:
       "https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88",
     galeria_imagens: [],
+    variacoes_tamanho: ["P", "M", "G"],
   },
 ];
 

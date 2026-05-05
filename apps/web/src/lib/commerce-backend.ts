@@ -11,6 +11,7 @@ import {
   getSupplyItemById,
 } from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
+import { normalizeVariacoesTamanho } from "./product-sizes";
 import { serverApiConfigured, serverApiUrl } from "./server-api-url";
 
 function internalSecret(): string {
@@ -572,6 +573,7 @@ export async function persistCreateCompositeProduct(input: {
   sku: string;
   descricao_curta: string;
   linhas: { supply_item_id: string; quantidade: number }[];
+  variacoes_tamanho: string[];
   preco_venda_publico?: number;
   executor_fee_planejada?: number;
   platform_fee_planejada?: number;
@@ -583,6 +585,10 @@ export async function persistCreateCompositeProduct(input: {
   if (!sku) throw new Error("SKU é obrigatório.");
   if (desc.length < 4) throw new Error("Descrição muito curta.");
   if (!input.linhas?.length) throw new Error("Inclua pelo menos um insumo.");
+  const variacoes_tamanho = normalizeVariacoesTamanho(input.variacoes_tamanho);
+  if (variacoes_tamanho.length === 0) {
+    throw new Error("Escolha pelo menos um tamanho (P, M, G, GG ou XG).");
+  }
 
   if (commerceUsesDatabase()) {
     const res = await internalFetch("/internal/commerce/products", {
@@ -596,6 +602,7 @@ export async function persistCreateCompositeProduct(input: {
           supply_item_id: l.supply_item_id,
           quantidade: l.quantidade,
         })),
+        variacoes_tamanho,
         preco_venda_publico: input.preco_venda_publico ?? 0,
         executor_fee_planejada: input.executor_fee_planejada ?? 0,
         platform_fee_planejada: input.platform_fee_planejada ?? 0,
@@ -653,6 +660,7 @@ export async function persistCreateCompositeProduct(input: {
     pacote_largura_cm: 18,
     pacote_comprimento_cm: 8,
     pacote_peso_kg: 0.55,
+    variacoes_tamanho,
   };
 
   await updateCommerceDelta((d) => ({

@@ -20,6 +20,9 @@ export type CommerceStateDto = {
   productionAssignments: Record<string, unknown>[];
 };
 
+const ROUPA_TAMANHOS = ['P', 'M', 'G', 'GG', 'XG'] as const;
+const ROUPA_SET = new Set<string>(ROUPA_TAMANHOS);
+
 @Injectable()
 export class CommerceService {
   constructor(
@@ -28,6 +31,40 @@ export class CommerceService {
     private readonly r2: R2StorageService,
     private readonly supplierFulfillment: SupplierFulfillmentService,
   ) {}
+
+  private parseVariacoesTamanhoInput(raw: unknown): string[] {
+    if (!Array.isArray(raw)) {
+      throw new BadRequestException(
+        'Informe variacoes_tamanho: lista de tamanhos, ex.: ["P","M","G"].',
+      );
+    }
+    const seen = new Set<string>();
+    for (const x of raw) {
+      if (typeof x !== 'string') continue;
+      const t = x.trim().toUpperCase();
+      if (!ROUPA_SET.has(t)) {
+        throw new BadRequestException(
+          `Tamanho inválido: "${x}". Use apenas: ${[...ROUPA_TAMANHOS].join(', ')}.`,
+        );
+      }
+      seen.add(t);
+    }
+    if (seen.size === 0) {
+      throw new BadRequestException('Escolha pelo menos um tamanho (P, M, G, GG ou XG).');
+    }
+    return [...ROUPA_TAMANHOS].filter((t) => seen.has(t));
+  }
+
+  private parseVariacoesTamanhoStored(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set<string>();
+    for (const x of value) {
+      if (typeof x !== 'string') continue;
+      const t = x.trim().toUpperCase();
+      if (ROUPA_SET.has(t)) seen.add(t);
+    }
+    return [...ROUPA_TAMANHOS].filter((t) => seen.has(t));
+  }
 
   async getState(): Promise<CommerceStateDto> {
     const [products, executionRequests, productionAssignments] = await Promise.all([
@@ -167,6 +204,7 @@ export class CommerceService {
     sku: string;
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
+    variacoes_tamanho: string[];
     preco_venda_publico?: number;
     executor_fee_planejada?: number;
     platform_fee_planejada?: number;
@@ -180,6 +218,8 @@ export class CommerceService {
     if (!body.linhas?.length) {
       throw new BadRequestException('Inclua pelo menos um insumo na montagem.');
     }
+
+    const variacoesTamanho = this.parseVariacoesTamanhoInput(body.variacoes_tamanho);
 
     let baseSlug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
     if (!baseSlug) {
@@ -236,6 +276,7 @@ export class CommerceService {
         imagemUrl:
           'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
         galeriaImagens: [] as unknown as Prisma.InputJsonValue,
+        variacoesTamanho: variacoesTamanho as unknown as Prisma.InputJsonValue,
         pacoteAlturaCm: 22,
         pacoteLarguraCm: 18,
         pacoteComprimentoCm: 8,
@@ -586,6 +627,7 @@ export class CommerceService {
       pacote_largura_cm: p.pacoteLarguraCm,
       pacote_comprimento_cm: p.pacoteComprimentoCm,
       pacote_peso_kg: p.pacotePesoKg,
+      variacoes_tamanho: this.parseVariacoesTamanhoStored(p.variacoesTamanho),
     };
   }
 

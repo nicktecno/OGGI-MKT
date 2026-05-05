@@ -22,6 +22,8 @@ model CompositeProduct {
   imagemUrl              String  @map("imagem_url")
   /// URLs extra (WebP) para galeria na página do produto; a capa continua em `imagem_url`.
   galeriaImagens         Json    @default("[]") @map("galeria_imagens")
+  /// Tamanhos de roupa oferecidos (ex.: ["P","M","G"]); valores fixos P, M, G, GG, XG.
+  variacoesTamanho       Json    @default("[]") @map("variacoes_tamanho")
   // Pacote peça pronta → cliente (admin); cotação ME na postagem da costureira.
   pacoteAlturaCm         Float   @map("pacote_altura_cm")
   pacoteLarguraCm        Float   @map("pacote_largura_cm")

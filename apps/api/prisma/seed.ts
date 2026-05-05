@@ -165,6 +165,7 @@ async function main() {
       imagemUrl:
         'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88',
       galeriaImagens: [] as unknown as Prisma.InputJsonValue,
+      variacoesTamanho: ['P', 'M', 'G', 'GG', 'XG'] as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -200,6 +201,7 @@ async function main() {
       imagemUrl:
         'https://images.unsplash.com/photo-1520903920243-bd6f951d1a37?auto=format&fit=crop&w=1200&q=88',
       galeriaImagens: [] as unknown as Prisma.InputJsonValue,
+      variacoesTamanho: ['P', 'M', 'G'] as unknown as Prisma.InputJsonValue,
     },
   });
 

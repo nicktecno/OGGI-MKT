@@ -47,6 +47,7 @@ export async function createCompositeProductAction(input: {
   sku: string;
   descricao_curta: string;
   linhas: { supply_item_id: string; quantidade: number }[];
+  variacoes_tamanho: string[];
   preco_venda_publico?: number;
   executor_fee_planejada?: number;
   platform_fee_planejada?: number;

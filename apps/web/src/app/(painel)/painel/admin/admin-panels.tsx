@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/upload/image-upload-field";
 import { IMAGE_UPLOAD_LIMITS } from "@/lib/image-upload-limits";
+import { formatVariacoesTamanhosLabel, ROUPA_TAMANHOS } from "@/lib/product-sizes";
 import {
   compositeInsumosTotal,
   mergeSupplyCatalog,
@@ -66,6 +67,10 @@ function labelTrabalho(status: string): string {
     default:
       return status;
   }
+}
+
+function sortTamanhosSelecionados(selected: string[]): string[] {
+  return ROUPA_TAMANHOS.filter((t) => selected.includes(t));
 }
 
 function labelComoEntrou(origem: string): string {
@@ -163,6 +168,45 @@ function pacoteDefaults(p: DemoCompositeProduct) {
   };
 }
 
+const MAX_IMAGENS_NOVA_PECA = 5;
+
+type NovaPecaImagePrep = {
+  id: string;
+  blob: Blob;
+  filename: string;
+  mimeType: "image/webp" | "image/jpeg";
+};
+
+function NovaPecaImagemPrepRow({
+  prep,
+  index,
+  disabled,
+  onRemove,
+}: {
+  prep: NovaPecaImagePrep;
+  index: number;
+  disabled: boolean;
+  onRemove: () => void;
+}) {
+  const url = useMemo(() => URL.createObjectURL(prep.blob), [prep.blob]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+      {/* eslint-disable-next-line @next/next/no-img-element -- pré-visualização local */}
+      <img src={url} alt="" className="h-16 w-16 shrink-0 rounded-md border border-border object-cover" />
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="font-medium text-foreground">
+          {index === 0 ? "Capa da vitrine" : `Galeria · foto ${index + 1}`}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{prep.filename}</p>
+      </div>
+      <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={disabled} onClick={onRemove}>
+        Remover
+      </Button>
+    </div>
+  );
+}
+
 function AdminNovaPecaCard({
   supplies,
   pending,
@@ -178,15 +222,13 @@ function AdminNovaPecaCard({
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
   const [desc, setDesc] = useState("");
-  const [coverPrep, setCoverPrep] = useState<{
-    blob: Blob;
-    filename: string;
-    mimeType: "image/webp" | "image/jpeg";
-  } | null>(null);
-  const [coverFieldKey, setCoverFieldKey] = useState(0);
+  const [imagensPrep, setImagensPrep] = useState<NovaPecaImagePrep[]>([]);
+  const [novaImagemFieldKey, setNovaImagemFieldKey] = useState(0);
   const [lines, setLines] = useState<Array<{ supplyItemId: string; quantidade: string }>>(() =>
     supplies[0] ? [{ supplyItemId: supplies[0].id, quantidade: "1" }] : [{ supplyItemId: "", quantidade: "1" }],
   );
+  const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>(() => ["P", "M", "G"]);
+  const [tamanhosError, setTamanhosError] = useState<string | null>(null);
 
   useEffect(() => {
     if (supplies.length === 0) return;
@@ -216,10 +258,10 @@ function AdminNovaPecaCard({
       <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
-          Crie o desenho do produto: insumos e quantidades.
+          Crie o desenho do produto: insumos, quantidades e tamanhos (P a XG) que a peça pode ter.
           {marketplaceImagesEnabled
-            ? " Pode já escolher a foto da vitrine abaixo (opcional). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
-            : " Depois ajuste preço e pacote nos cartões (envio de foto da vitrine após configurar API e R2); para vincular costureiras use "}
+            ? " Pode já enviar até 5 fotos (a 1.ª é a capa da vitrine; as outras entram na galeria da ficha). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
+            : " Depois ajuste preço e pacote nos cartões (fotos após configurar API e R2); para vincular costureiras use "}
           <strong className="text-foreground">Quem faz o quê</strong>.
         </CardDescription>
       </CardHeader>
@@ -236,7 +278,13 @@ function AdminNovaPecaCard({
               }));
             if (!nome.trim() || !sku.trim() || !desc.trim() || linhasParsed.length === 0) return;
             if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) return;
-            const prep = coverPrep;
+            const variacoes_tamanho = sortTamanhosSelecionados(tamanhosSelecionados);
+            if (variacoes_tamanho.length === 0) {
+              setTamanhosError("Marque pelo menos um tamanho (P, M, G, GG ou XG).");
+              return;
+            }
+            setTamanhosError(null);
+            const imagens = imagensPrep;
             run(async () => {
               const result = await createCompositeProductAction({
                 nome: nome.trim(),
@@ -244,20 +292,29 @@ function AdminNovaPecaCard({
                 sku: sku.trim(),
                 descricao_curta: desc.trim(),
                 linhas: linhasParsed,
+                variacoes_tamanho,
               });
-              if (marketplaceImagesEnabled && prep) {
-                const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
-                const fd = new FormData();
-                fd.append("file", f);
-                await uploadMarketplaceProductImage(result.id, fd, result.slug);
+              if (marketplaceImagesEnabled && imagens.length > 0) {
+                for (let i = 0; i < imagens.length; i++) {
+                  const prep = imagens[i];
+                  const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
+                  const fd = new FormData();
+                  fd.append("file", f);
+                  if (i === 0) {
+                    await uploadMarketplaceProductImage(result.id, fd, result.slug);
+                  } else {
+                    await uploadMarketplaceProductGalleryImage(result.id, result.slug, fd);
+                  }
+                }
               }
               setNome("");
               setSlug("");
               setSku("");
               setDesc("");
-              setCoverPrep(null);
-              setCoverFieldKey((k) => k + 1);
+              setImagensPrep([]);
+              setNovaImagemFieldKey((k) => k + 1);
               setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
+              setTamanhosSelecionados(["P", "M", "G"]);
             });
           }}
         >
@@ -290,18 +347,92 @@ function AdminNovaPecaCard({
                 disabled={pending}
               />
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <p className="text-sm font-medium leading-snug">Tamanhos disponíveis</p>
+              <p className="text-xs text-muted-foreground">
+                Indique em que variações de tamanho esta peça pode ser oferecida (vitrine e ficha do produto).
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {ROUPA_TAMANHOS.map((t) => (
+                  <label
+                    key={t}
+                    className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 rounded border border-input accent-primary"
+                      checked={tamanhosSelecionados.includes(t)}
+                      onChange={() => {
+                        setTamanhosError(null);
+                        setTamanhosSelecionados((prev) => {
+                          if (prev.includes(t)) return prev.filter((x) => x !== t);
+                          return sortTamanhosSelecionados([...prev, t]);
+                        });
+                      }}
+                      disabled={pending}
+                    />
+                    {t}
+                  </label>
+                ))}
+              </div>
+              {tamanhosError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {tamanhosError}
+                </p>
+              ) : null}
+            </div>
           </div>
           {marketplaceImagesEnabled ? (
-            <ImageUploadField
-              key={coverFieldKey}
-              label="Foto da vitrine (opcional)"
-              description={`Enviada após criar a peça · WebP até ${Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB · Cloudflare R2.`}
-              disabled={pending}
-              onPrepared={(p) =>
-                setCoverPrep({ blob: p.blob, filename: p.filename, mimeType: p.mimeType })
-              }
-              onCleared={() => setCoverPrep(null)}
-            />
+            <div className="space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Fotos da nova peça (opcional)</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Até {MAX_IMAGENS_NOVA_PECA} imagens · a <strong className="text-foreground">primeira</strong> é a
+                  capa da vitrine; as seguintes aparecem na galeria da ficha do produto. Envio após criar a peça · até{" "}
+                  {Math.round(IMAGE_UPLOAD_LIMITS.maxOutputFileBytes / (1024 * 1024))} MB cada · R2.
+                </p>
+              </div>
+              <div className="space-y-2">
+                {imagensPrep.map((prep, idx) => (
+                  <NovaPecaImagemPrepRow
+                    key={prep.id}
+                    prep={prep}
+                    index={idx}
+                    disabled={pending}
+                    onRemove={() => setImagensPrep((prev) => prev.filter((p) => p.id !== prep.id))}
+                  />
+                ))}
+              </div>
+              {imagensPrep.length < MAX_IMAGENS_NOVA_PECA ? (
+                <ImageUploadField
+                  key={novaImagemFieldKey}
+                  label={
+                    imagensPrep.length === 0
+                      ? "Adicionar capa da vitrine (opcional)"
+                      : `Adicionar foto ${imagensPrep.length + 1} de ${MAX_IMAGENS_NOVA_PECA} (galeria)`
+                  }
+                  description="JPEG, PNG ou WebP — comprimimos no navegador antes do envio."
+                  disabled={pending}
+                  onPrepared={(p) => {
+                    setImagensPrep((prev) => {
+                      if (prev.length >= MAX_IMAGENS_NOVA_PECA) return prev;
+                      return [
+                        ...prev,
+                        {
+                          id: crypto.randomUUID(),
+                          blob: p.blob,
+                          filename: p.filename,
+                          mimeType: p.mimeType,
+                        },
+                      ];
+                    });
+                    setNovaImagemFieldKey((k) => k + 1);
+                  }}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">Limite de {MAX_IMAGENS_NOVA_PECA} fotos atingido.</p>
+              )}
+            </div>
           ) : null}
           <div className="space-y-3">
             <Label>Insumos e quantidades</Label>
@@ -431,6 +562,12 @@ export function AdminPecasPanel({
                     </CardTitle>
                     <CardDescription className="text-sm text-muted-foreground">
                       Código da peça: {product.sku}
+                      {product.variacoes_tamanho?.length ? (
+                        <>
+                          <span className="mx-1.5 text-border">·</span>
+                          Tamanhos: {formatVariacoesTamanhosLabel(product.variacoes_tamanho)}
+                        </>
+                      ) : null}
                     </CardDescription>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">

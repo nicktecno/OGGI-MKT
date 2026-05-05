@@ -23,6 +23,7 @@ export type DemoProductPatch = Partial<
     | "pacote_comprimento_cm"
     | "pacote_peso_kg"
     | "galeria_imagens"
+    | "variacoes_tamanho"
   >
 >;
 
