@@ -20,6 +20,7 @@ import {
   type ExecutorPickerOption,
 } from "@/lib/demo-seed";
 import { ChevronDown, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { cn, formatBrl } from "@/lib/utils";
 import {
@@ -332,13 +333,21 @@ function AdminNovaPecaCard({
                 },
                 capa,
               );
+              toast.success("Modelo criado", { description: `Slug: ${result.slug}` });
               if (marketplaceImagesEnabled && imagens.length > 1) {
                 for (let i = 1; i < imagens.length; i++) {
                   const prep = imagens[i];
                   const f = new File([prep.blob], prep.filename, { type: prep.mimeType });
                   const fd = new FormData();
                   fd.append("file", f);
-                  await uploadMarketplaceProductGalleryImage(result.id, result.slug, fd);
+                  try {
+                    await uploadMarketplaceProductGalleryImage(result.id, result.slug, fd);
+                  } catch (e) {
+                    toast.error(
+                      e instanceof Error ? e.message : "Não foi possível enviar uma foto da galeria.",
+                      { description: `Foto ${i + 1} de ${imagens.length} · confira R2 / Cloudflare na API` },
+                    );
+                  }
                 }
               }
               setNome("");

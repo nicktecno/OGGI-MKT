@@ -27,18 +27,28 @@ async function requireAdmin() {
   return session;
 }
 
+/** Evita 500 na Server Action se a invalidação de cache falhar (ex.: pressão no edge). */
+function safeRevalidatePath(path: string, type?: "layout" | "page") {
+  try {
+    if (type) revalidatePath(path, type);
+    else revalidatePath(path);
+  } catch (e) {
+    console.error("[admin actions] revalidatePath:", path, e);
+  }
+}
+
 function revalidateStorefront() {
-  revalidatePath("/");
-  revalidatePath("/loja");
-  revalidatePath("/painel/admin", "layout");
-  revalidatePath("/painel/executor");
+  safeRevalidatePath("/");
+  safeRevalidatePath("/loja");
+  safeRevalidatePath("/painel/admin", "layout");
+  safeRevalidatePath("/painel/executor");
   for (const p of DEMO_COMPOSITE_PRODUCTS) {
-    revalidatePath(`/loja/produto/${p.slug}`);
+    safeRevalidatePath(`/loja/produto/${p.slug}`);
   }
 }
 
 function revalidateProductPage(slug: string) {
-  revalidatePath(`/loja/produto/${slug}`);
+  safeRevalidatePath(`/loja/produto/${slug}`);
 }
 
 export async function createCompositeProductAction(
@@ -61,10 +71,10 @@ export async function createCompositeProductAction(
     input,
     coverFile && coverFile.size > 0 ? coverFile : undefined,
   );
-  revalidatePath(`/loja/produto/${result.slug}`);
-  revalidatePath("/loja");
-  revalidatePath("/painel/admin", "layout");
-  revalidatePath("/painel/executor");
+  safeRevalidatePath(`/loja/produto/${result.slug}`);
+  safeRevalidatePath("/loja");
+  safeRevalidatePath("/painel/admin", "layout");
+  safeRevalidatePath("/painel/executor");
   return result;
 }
 

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
@@ -26,6 +27,8 @@ const ROUPA_LETTER_SET = new Set<string>(ROUPA_LETTERS);
 
 @Injectable()
 export class CommerceService {
+  private readonly log = new Logger(CommerceService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
@@ -316,7 +319,14 @@ export class CommerceService {
     });
 
     if (cover && cover.buffer.length > 0) {
-      await this.saveMarketplaceCoverImage(id, cover.buffer, cover.mimeType);
+      try {
+        await this.saveMarketplaceCoverImage(id, cover.buffer, cover.mimeType);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.log.warn(
+          `Capa não enviada ao R2 para peça ${id} (${slug}); mantida imagem por omissão. Causa: ${msg}`,
+        );
+      }
     }
 
     return { id, slug };
