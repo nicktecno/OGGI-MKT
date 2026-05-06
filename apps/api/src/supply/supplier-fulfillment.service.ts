@@ -1,7 +1,6 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { SupplyItem } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import type { PlatformJwtUser } from '../auth/platform-jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { pickShipmentPackFromSupplies, stubFreteB2B } from './package-shipping.util';
 
@@ -17,24 +16,27 @@ export class SupplierFulfillmentService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Recria linhas de entrega quando uma atribuição produto+executor nasce (ou re-sincroniza). */
-  async syncFromAssignment(assignmentId: string): Promise<void> {
+  /**
+   * Recria linhas de entrega quando uma atribuição produto+executor nasce (ou re-sincroniza).
+   * Devolve a soma dos fretes B2B (um valor por fornecedor, pacote de maior volume entre os insumos dele).
+   */
+  async syncFromAssignment(assignmentId: string): Promise<{ freteTotal: number }> {
     const assignment = await this.prisma.productionAssignment.findUnique({
       where: { id: assignmentId },
     });
     if (!assignment) {
       this.log.warn(`syncFromAssignment: assignment ${assignmentId} não encontrada`);
-      return;
+      return { freteTotal: 0 };
     }
     if (assignment.status === 'ARCHIVED') {
       await this.deleteForAssignment(assignmentId);
-      return;
+      return { freteTotal: 0 };
     }
 
     const product = await this.prisma.compositeProduct.findUnique({
       where: { id: assignment.compositeProductId },
     });
-    if (!product) return;
+    if (!product) return { freteTotal: 0 };
 
     const executorAcc = await this.prisma.platformAccount.findFirst({
       where: { email: assignment.executorEmail.trim().toLowerCase() },
@@ -87,6 +89,7 @@ export class SupplierFulfillmentService {
       freteCotadoReais: number;
     }[] = [];
 
+    let freteTotal = 0;
     for (const [supplierAccountId, pending] of bySupplier) {
       const ship = pickShipmentPackFromSupplies(
         pending.map((p) => ({
@@ -114,6 +117,7 @@ export class SupplierFulfillmentService {
         comprimentoCm: ship.comprimentoCm,
         pesoKg: ship.pesoKg,
       });
+      freteTotal += frete;
 
       for (const { line } of pending) {
         rows.push({
@@ -141,84 +145,13 @@ export class SupplierFulfillmentService {
     if (rows.length) {
       await this.prisma.supplierFulfillmentLine.createMany({ data: rows });
     }
+    return { freteTotal };
   }
 
   async deleteForAssignment(assignmentId: string): Promise<void> {
     await this.prisma.supplierFulfillmentLine.deleteMany({
       where: { productionAssignmentId: assignmentId },
     });
-  }
-
-  /**
-   * Fornecedor ajusta o pacote do envio ao executor (mesmo para todos os insumos daquela atribuição)
-   * e recalcula o frete (stub até Melhor Envio).
-   */
-  async recalculateFreteForAssignment(
-    user: PlatformJwtUser,
-    productionAssignmentId: string,
-    dims: {
-      alturaCm: number;
-      larguraCm: number;
-      comprimentoCm: number;
-      pesoKg: number;
-    },
-  ) {
-    if (user.role !== 'SUPPLIER') {
-      throw new ForbiddenException('Apenas fornecedores podem recalcular este frete.');
-    }
-    const { alturaCm, larguraCm, comprimentoCm, pesoKg } = dims;
-    if (
-      !Number.isFinite(alturaCm) ||
-      !Number.isFinite(larguraCm) ||
-      !Number.isFinite(comprimentoCm) ||
-      !Number.isFinite(pesoKg) ||
-      alturaCm < 0.1 ||
-      larguraCm < 0.1 ||
-      comprimentoCm < 0.1 ||
-      pesoKg < 0.01
-    ) {
-      throw new BadRequestException('Use dimensões (cm) ≥ 0,1 e peso (kg) ≥ 0,01.');
-    }
-
-    const lines = await this.prisma.supplierFulfillmentLine.findMany({
-      where: {
-        productionAssignmentId,
-        supplierAccountId: user.sub,
-      },
-    });
-    if (lines.length === 0) {
-      throw new NotFoundException('Nenhuma entrega encontrada para esta atribuição.');
-    }
-
-    const first = lines[0];
-    const sup = await this.prisma.supplierProfile.findUnique({
-      where: { accountId: user.sub },
-    });
-    const cepOrigem = sup?.cep?.trim() || '01001000';
-    const frete = stubFreteB2B({
-      cepOrigem,
-      cepDestino: first.executorCep,
-      alturaCm,
-      larguraCm,
-      comprimentoCm,
-      pesoKg,
-    });
-
-    await this.prisma.supplierFulfillmentLine.updateMany({
-      where: {
-        productionAssignmentId,
-        supplierAccountId: user.sub,
-      },
-      data: {
-        envioPacoteAlturaCm: alturaCm,
-        envioPacoteLarguraCm: larguraCm,
-        envioPacoteComprimentoCm: comprimentoCm,
-        envioPacotePesoKg: pesoKg,
-        freteCotadoReais: frete,
-      },
-    });
-
-    return this.listForSupplier(user.sub);
   }
 
   async listForSupplier(supplierAccountId: string) {

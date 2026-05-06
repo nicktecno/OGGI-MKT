@@ -101,6 +101,24 @@ export class CommerceService {
     };
   }
 
+  /** Após criar linhas de fulfillment: grava frete B2B total no produto, recalcula preço ao cliente e congela taxas/preço. */
+  private async applyFreightLockAfterAssignment(
+    productId: string,
+    freteTotal: number,
+  ): Promise<void> {
+    const product = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
+    if (!product || product.precoVendaCongelado) return;
+    const materials = this.sumMateriaisFromLinhasJson(product.linhas);
+    await this.prisma.compositeProduct.update({
+      where: { id: productId },
+      data: {
+        precoVendaPublico: materials + freteTotal + product.executorFeePlanejada + product.platformFeePlanejada,
+        freteInsumosAtribuicaoReais: freteTotal,
+        precoVendaCongelado: true,
+      },
+    });
+  }
+
   /** Soma quantidade × snapshot por linha na montagem (JSON em `linhas`). */
   private sumMateriaisFromLinhasJson(linhas: unknown): number {
     if (!Array.isArray(linhas)) return 0;
@@ -180,10 +198,22 @@ export class CommerceService {
     const existing = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
     if (!existing) throw new NotFoundException('Peça não encontrada.');
 
-    const pricingTouched =
-      body.executor_fee_planejada !== undefined ||
-      body.platform_fee_planejada !== undefined ||
-      body.preco_venda_publico !== undefined;
+    const execChanges =
+      body.executor_fee_planejada !== undefined &&
+      body.executor_fee_planejada !== existing.executorFeePlanejada;
+    const platChanges =
+      body.platform_fee_planejada !== undefined &&
+      body.platform_fee_planejada !== existing.platformFeePlanejada;
+    const precoChanges =
+      body.preco_venda_publico !== undefined &&
+      body.preco_venda_publico !== existing.precoVendaPublico;
+    const pricingTouched = execChanges || platChanges || precoChanges;
+
+    if (existing.precoVendaCongelado && pricingTouched) {
+      throw new BadRequestException(
+        'O preço ao cliente desta peça foi fixado ao vincular costureira e fretes dos insumos; não é possível alterar taxas ou preço por aqui.',
+      );
+    }
 
     const nextExec =
       body.executor_fee_planejada !== undefined
@@ -194,10 +224,16 @@ export class CommerceService {
         ? body.platform_fee_planejada
         : existing.platformFeePlanejada;
 
+    const feeFieldsInBody =
+      body.executor_fee_planejada !== undefined ||
+      body.platform_fee_planejada !== undefined ||
+      body.preco_venda_publico !== undefined;
+
     let precoComputed: number | undefined;
-    if (pricingTouched) {
+    if (!existing.precoVendaCongelado && feeFieldsInBody) {
       const materials = this.sumMateriaisFromLinhasJson(existing.linhas);
-      precoComputed = materials + nextExec + nextPlat;
+      const fretePlanejado = existing.freteInsumosAtribuicaoReais ?? 0;
+      precoComputed = materials + fretePlanejado + nextExec + nextPlat;
     }
 
     await this.prisma.compositeProduct.update({
@@ -424,7 +460,7 @@ export class CommerceService {
   }
 
   async approveExecutionRequest(requestId: string): Promise<void> {
-    const assignmentId = await this.prisma.$transaction(async (tx) => {
+    const { assignmentId, compositeProductId } = await this.prisma.$transaction(async (tx) => {
       const req = await tx.executionRequest.findUnique({ where: { id: requestId } });
       if (!req) throw new NotFoundException('Pedido não encontrado.');
       if (req.status !== 'PENDING') {
@@ -465,9 +501,10 @@ export class CommerceService {
           executionRequestId: req.id,
         },
       });
-      return created.id;
+      return { assignmentId: created.id, compositeProductId: req.compositeProductId };
     });
-    await this.supplierFulfillment.syncFromAssignment(assignmentId);
+    const { freteTotal } = await this.supplierFulfillment.syncFromAssignment(assignmentId);
+    await this.applyFreightLockAfterAssignment(compositeProductId, freteTotal);
     this.notifications.fireAndForgetAssignment(assignmentId);
   }
 
@@ -541,7 +578,8 @@ export class CommerceService {
         executionRequestId: null,
       },
     });
-    await this.supplierFulfillment.syncFromAssignment(created.id);
+    const { freteTotal } = await this.supplierFulfillment.syncFromAssignment(created.id);
+    await this.applyFreightLockAfterAssignment(input.compositeProductId, freteTotal);
     this.notifications.fireAndForgetAssignment(created.id);
   }
 
@@ -699,6 +737,8 @@ export class CommerceService {
       executor_fee_planejada: p.executorFeePlanejada,
       platform_fee_planejada: p.platformFeePlanejada,
       preco_venda_publico: p.precoVendaPublico,
+      frete_insumos_atribuicao_reais: p.freteInsumosAtribuicaoReais ?? null,
+      preco_venda_congelado: p.precoVendaCongelado,
       ativo: p.ativo,
       admin_pausado: p.adminPausado,
       imagem_url: p.imagemUrl,

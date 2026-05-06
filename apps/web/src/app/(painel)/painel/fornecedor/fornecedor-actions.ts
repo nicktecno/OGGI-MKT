@@ -150,36 +150,3 @@ export async function uploadSupplyItemImageAction(supplyItemId: string, formData
   revalidatePath("/painel/fornecedor");
   return (await res.json()) as { url: string };
 }
-
-export async function recalculateFulfillmentFreteAction(input: {
-  productionAssignmentId: string;
-  alturaCm: number;
-  larguraCm: number;
-  comprimentoCm: number;
-  pesoKg: number;
-}) {
-  if (!commerceUsesDatabase()) {
-    throw new Error("Recálculo de frete exige API ativa.");
-  }
-  const token = await bearer();
-  if (!token) throw new Error("Sessão expirada. Entre novamente.");
-  const res = await fetch(`${serverApiUrl()}/supply-items/fulfillment-lines/recalculate-frete`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      productionAssignmentId: input.productionAssignmentId,
-      alturaCm: input.alturaCm,
-      larguraCm: input.larguraCm,
-      comprimentoCm: input.comprimentoCm,
-      pesoKg: input.pesoKg,
-    }),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(t || `Erro ${res.status}`);
-  }
-  revalidatePath("/painel/fornecedor");
-}

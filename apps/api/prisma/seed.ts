@@ -340,6 +340,16 @@ async function main() {
       },
     ],
   });
+
+  const materiaisVestido = 2.2 * 89.9 + 4.5;
+  await prisma.compositeProduct.update({
+    where: { id: 'cp-vestido-linho-classico' },
+    data: {
+      freteInsumosAtribuicaoReais: demoFrete,
+      precoVendaCongelado: true,
+      precoVendaPublico: materiaisVestido + demoFrete + 85 + 45,
+    },
+  });
 }
 
 main()

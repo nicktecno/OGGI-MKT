@@ -17,6 +17,10 @@ model CompositeProduct {
   executorFeePlanejada   Float   @map("executor_fee_planejada")
   platformFeePlanejada   Float   @map("platform_fee_planejada")
   precoVendaPublico      Float   @map("preco_venda_publico")
+  /// Soma do frete fornecedor→costureira (um frete por fornecedor, pacote maior) incluída em `precoVendaPublico` após vínculo.
+  freteInsumosAtribuicaoReais Float?  @map("frete_insumos_atribuicao_reais")
+  /// Quando true, taxas e preço ao cliente não podem ser alterados pelo admin (fixado na primeira atribuição ativa).
+  precoVendaCongelado    Boolean @default(false) @map("preco_venda_congelado")
   ativo                  Boolean
   adminPausado           Boolean @map("admin_pausado")
   imagemUrl              String  @map("imagem_url")
@@ -167,7 +171,7 @@ model SupplierFulfillmentLine {
   executorEndereco        String   @map("executor_endereco")
   melhorEnvioEtiquetaUrl  String?  @map("melhor_envio_etiqueta_url")
   melhorEnvioPedidoId     String?  @map("melhor_envio_pedido_id")
-  // Pacote efetivo B2B; vários insumos → maior volume; fornecedor pode ajustar.
+  // Pacote efetivo B2B; vários insumos → maior volume (um frete por fornecedor, cotado na atribuição).
   envioPacoteAlturaCm      Float?   @map("envio_pacote_altura_cm")
   envioPacoteLarguraCm     Float?   @map("envio_pacote_largura_cm")
   envioPacoteComprimentoCm Float?   @map("envio_pacote_comprimento_cm")

@@ -45,6 +45,10 @@ export type DemoCompositeProduct = {
   executor_fee_planejada: number;
   platform_fee_planejada: number;
   preco_venda_publico: number;
+  /** Um frete B2B por fornecedor (pacote maior do envio), gravado na primeira atribuição ativa. */
+  frete_insumos_atribuicao_reais?: number | null;
+  /** Quando true, taxas e preço ao cliente não podem ser alterados pelo admin. */
+  preco_venda_congelado?: boolean;
   ativo: boolean;
   admin_pausado: boolean;
   imagem_url: string;
@@ -263,8 +267,10 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     ],
     executor_fee_planejada: 85,
     platform_fee_planejada: 45,
-    /** materiais + costureira + loja (2,2×89,9 + 4,5 + 85 + 45) */
-    preco_venda_publico: 332.28,
+    /** materiais + frete B2B insumos + costureira + loja (atribuição demo já aplicada). */
+    preco_venda_publico: 360.75,
+    frete_insumos_atribuicao_reais: 28.47,
+    preco_venda_congelado: true,
     ativo: true,
     admin_pausado: false,
     pacote_altura_cm: 24,
@@ -297,8 +303,10 @@ export const DEMO_COMPOSITE_PRODUCTS: DemoCompositeProduct[] = [
     ],
     executor_fee_planejada: 35,
     platform_fee_planejada: 22,
-    /** materiais + costureira + loja */
-    preco_venda_publico: 92.97,
+    /** materiais + frete B2B + costureira + loja (atribuição demo). */
+    preco_venda_publico: 121.44,
+    frete_insumos_atribuicao_reais: 28.47,
+    preco_venda_congelado: true,
     ativo: true,
     admin_pausado: false,
     pacote_altura_cm: 18,
@@ -507,14 +515,15 @@ export function compositeInsumosTotal(product: DemoCompositeProduct): number {
   return product.linhas.reduce((acc, line) => acc + lineTotal(line), 0);
 }
 
-/** Soma de custos de materiais + repasse costureira + margem loja (preço ao cliente planejado). */
+/** Soma de custos de materiais + frete B2B (se já cotado na atribuição) + repasse costureira + margem loja. */
 export function compositePrecoFromLinhasAndFees(
   linhas: DemoCompositeLine[],
   executor_fee_planejada: number,
   platform_fee_planejada: number,
+  frete_insumos_atribuicao_reais = 0,
 ): number {
   const materiais = linhas.reduce((acc, line) => acc + lineTotal(line), 0);
-  return materiais + executor_fee_planejada + platform_fee_planejada;
+  return materiais + frete_insumos_atribuicao_reais + executor_fee_planejada + platform_fee_planejada;
 }
 
 export function compositePrecoLojaPlanejado(product: DemoCompositeProduct): number {
@@ -522,6 +531,7 @@ export function compositePrecoLojaPlanejado(product: DemoCompositeProduct): numb
     product.linhas,
     product.executor_fee_planejada,
     product.platform_fee_planejada,
+    product.frete_insumos_atribuicao_reais ?? 0,
   );
 }
 
@@ -538,5 +548,74 @@ export function resolveCompositeLines(
       throw new Error(`Insumo ausente: ${line.supplyItemId}`);
     }
     return { ...line, insumo };
+  });
+}
+
+/** Igual ao stub da API até existir Melhor Envio (CEP + volume + peso). */
+function demoVolumeCm3(alturaCm: number, larguraCm: number, comprimentoCm: number): number {
+  return Math.max(0, alturaCm) * Math.max(0, larguraCm) * Math.max(0, comprimentoCm);
+}
+
+function demoPickShipmentPackFromSupplies(
+  items: { alturaCm: number; larguraCm: number; comprimentoCm: number; pesoKg: number }[],
+): { alturaCm: number; larguraCm: number; comprimentoCm: number; pesoKg: number } {
+  if (items.length === 0) {
+    return { alturaCm: 14, larguraCm: 12, comprimentoCm: 5, pesoKg: 0.4 };
+  }
+  let best = items[0];
+  let bestV = demoVolumeCm3(best.alturaCm, best.larguraCm, best.comprimentoCm);
+  for (let i = 1; i < items.length; i++) {
+    const cur = items[i];
+    const v = demoVolumeCm3(cur.alturaCm, cur.larguraCm, cur.comprimentoCm);
+    if (v > bestV) {
+      bestV = v;
+      best = cur;
+    }
+  }
+  const pesoKg = Math.max(...items.map((x) => x.pesoKg));
+  return {
+    alturaCm: best.alturaCm,
+    larguraCm: best.larguraCm,
+    comprimentoCm: best.comprimentoCm,
+    pesoKg,
+  };
+}
+
+function demoStubFreteB2B(params: {
+  cepOrigem: string;
+  cepDestino: string;
+  alturaCm: number;
+  larguraCm: number;
+  comprimentoCm: number;
+  pesoKg: number;
+}): number {
+  const vol = demoVolumeCm3(params.alturaCm, params.larguraCm, params.comprimentoCm);
+  const o = parseInt(params.cepOrigem.replace(/\D/g, "").slice(0, 5), 10) || 10000;
+  const d = parseInt(params.cepDestino.replace(/\D/g, "").slice(0, 5), 10) || 10000;
+  const dist = Math.abs(o - d) / 1000;
+  const base = 14.9 + dist * 8.5 + (vol / 8000) * 3.2 + params.pesoKg * 7.4;
+  return Math.round(Math.max(0, base) * 100) / 100;
+}
+
+/**
+ * Estimativa B2B fornecedor → costureira no modo cookie (mesma regra que a API: maior pacote entre insumos).
+ */
+export function demoFreteB2BForCompositeProduct(
+  product: DemoCompositeProduct,
+  opts?: { cepOrigem?: string; cepDestino?: string },
+  extraCatalog: DemoSupplyItem[] = [],
+): number {
+  const resolved = resolveCompositeLines(product, extraCatalog);
+  const packs = resolved.map((row) => ({
+    alturaCm: row.insumo.pacote_altura_cm ?? 14,
+    larguraCm: row.insumo.pacote_largura_cm ?? 12,
+    comprimentoCm: row.insumo.pacote_comprimento_cm ?? 5,
+    pesoKg: row.insumo.pacote_peso_kg ?? 0.4,
+  }));
+  const ship = demoPickShipmentPackFromSupplies(packs);
+  return demoStubFreteB2B({
+    cepOrigem: opts?.cepOrigem ?? "01310-100",
+    cepDestino: opts?.cepDestino ?? "01310-100",
+    ...ship,
   });
 }

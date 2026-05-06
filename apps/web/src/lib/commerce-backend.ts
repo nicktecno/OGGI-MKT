@@ -8,7 +8,9 @@ import type {
 import {
   DEMO_ASSIGNMENTS_INITIAL,
   DEMO_EXECUTION_REQUESTS_INITIAL,
+  compositeInsumosTotal,
   compositePrecoFromLinhasAndFees,
+  demoFreteB2BForCompositeProduct,
   getSupplyItemById,
 } from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
@@ -141,10 +143,12 @@ export async function persistCompositeProductPricing(input: {
   const state = await getCommerceStateFromCookies();
   const product = state.products.find((p) => p.id === input.productId);
   if (!product) throw new Error("Peça não encontrada.");
+  const frete = product.frete_insumos_atribuicao_reais ?? 0;
   const preco_venda_publico = compositePrecoFromLinhasAndFees(
     product.linhas,
     input.executor_fee_planejada,
     input.platform_fee_planejada,
+    frete,
   );
   await updateCommerceDelta((d) => ({
     ...d,
@@ -207,11 +211,31 @@ export async function persistApproveExecutionRequest(requestId: string) {
     assignment_source: "REQUEST_APPROVED",
     execution_request_id: req.id,
   };
-  await updateCommerceDelta((d) => ({
-    ...d,
-    executionRequests: nextRequests,
-    assignments: [...state.productionAssignments, assignment],
-  }));
+  const product = state.products.find((p) => p.id === req.compositeProductId);
+  await updateCommerceDelta((d) => {
+    const patch = d.productPatch ?? {};
+    let nextPatch = patch;
+    if (product && !product.preco_venda_congelado) {
+      const frete = demoFreteB2BForCompositeProduct(product);
+      const materiais = compositeInsumosTotal(product);
+      nextPatch = {
+        ...patch,
+        [product.id]: {
+          ...patch[product.id],
+          frete_insumos_atribuicao_reais: frete,
+          preco_venda_congelado: true,
+          preco_venda_publico:
+            materiais + frete + product.executor_fee_planejada + product.platform_fee_planejada,
+        },
+      };
+    }
+    return {
+      ...d,
+      executionRequests: nextRequests,
+      assignments: [...state.productionAssignments, assignment],
+      productPatch: nextPatch,
+    };
+  });
 }
 
 export async function persistCreateExecutionRequest(input: {
@@ -343,10 +367,34 @@ export async function persistCreateDirectAssignment(input: {
     assignment_source: "ADMIN_DIRECT",
     execution_request_id: null,
   };
-  await updateCommerceDelta((d) => ({
-    ...d,
-    assignments: [...state.productionAssignments, assignment],
-  }));
+  const product = state.products.find((p) => p.id === input.compositeProductId);
+  const cep = input.cep_origem.trim();
+  await updateCommerceDelta((d) => {
+    const patch = d.productPatch ?? {};
+    let nextPatch = patch;
+    if (product && !product.preco_venda_congelado) {
+      const frete = demoFreteB2BForCompositeProduct(product, {
+        cepOrigem: cep,
+        cepDestino: cep,
+      });
+      const materiais = compositeInsumosTotal(product);
+      nextPatch = {
+        ...patch,
+        [product.id]: {
+          ...patch[product.id],
+          frete_insumos_atribuicao_reais: frete,
+          preco_venda_congelado: true,
+          preco_venda_publico:
+            materiais + frete + product.executor_fee_planejada + product.platform_fee_planejada,
+        },
+      };
+    }
+    return {
+      ...d,
+      assignments: [...state.productionAssignments, assignment],
+      productPatch: nextPatch,
+    };
+  });
 }
 
 export async function persistArchiveAssignment(assignmentId: string) {
@@ -677,6 +725,7 @@ export async function persistCreateCompositeProduct(
       linhas,
       input.executor_fee_planejada ?? 0,
       input.platform_fee_planejada ?? 0,
+      0,
     ),
     ativo: true,
     admin_pausado: false,

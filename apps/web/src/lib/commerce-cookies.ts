@@ -16,6 +16,8 @@ export type DemoProductPatch = Partial<
     | "preco_venda_publico"
     | "executor_fee_planejada"
     | "platform_fee_planejada"
+    | "frete_insumos_atribuicao_reais"
+    | "preco_venda_congelado"
     | "ativo"
     | "admin_pausado"
     | "pacote_altura_cm"

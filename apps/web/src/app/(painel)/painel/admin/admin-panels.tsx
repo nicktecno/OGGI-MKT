@@ -1001,6 +1001,9 @@ function AdminPecaProductCard({
   const [open, setOpen] = useState(false);
   const lines = resolveCompositeLines(product, supplyCatalog);
   const insumoTotal = compositeInsumosTotal(product);
+  const freteB2B = product.frete_insumos_atribuicao_reais ?? null;
+  const materiaisMaisFrete =
+    freteB2B != null ? insumoTotal + freteB2B : null;
   const sPause = `peca-${product.id}-pause`;
   const sActive = `peca-${product.id}-active`;
   const sDelete = `peca-${product.id}-delete`;
@@ -1229,8 +1232,29 @@ function AdminPecaProductCard({
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-right text-sm text-muted-foreground">
-                Soma dos materiais: <span className="font-medium text-foreground">{formatBrl(insumoTotal)}</span>
+              <p className="mt-2 space-y-1 text-right text-sm text-muted-foreground">
+                <span className="block">
+                  Soma dos materiais (montagem):{" "}
+                  <span className="font-medium text-foreground">{formatBrl(insumoTotal)}</span>
+                </span>
+                {freteB2B != null ? (
+                  <>
+                    <span className="block">
+                      Frete dos insumos à costureira (B2B, um envio por fornecedor — pacote maior):{" "}
+                      <span className="font-medium text-foreground">{formatBrl(freteB2B)}</span>
+                    </span>
+                    <span className="block text-foreground">
+                      Materiais + frete B2B:{" "}
+                      <span className="font-semibold tabular-nums">
+                        {materiaisMaisFrete != null ? formatBrl(materiaisMaisFrete) : "—"}
+                      </span>
+                    </span>
+                  </>
+                ) : (
+                  <span className="block text-xs">
+                    Frete B2B dos insumos aparece após vincular uma costureira (cotação na atribuição).
+                  </span>
+                )}
               </p>
             </div>
 
@@ -1613,12 +1637,14 @@ function PricingForm({
     setPacPeso(String(pd.pacote_peso_kg));
   }, [product]);
 
+  const frozen = product.preco_venda_congelado === true;
   const execParsed = Number(execFee.replace(",", "."));
   const platParsed = Number(platFee.replace(",", "."));
   const materiaisRef = compositeInsumosTotal(product);
+  const freteRef = product.frete_insumos_atribuicao_reais ?? 0;
   const precoLojaCalculado =
     Number.isFinite(execParsed) && Number.isFinite(platParsed)
-      ? compositePrecoFromLinhasAndFees(product.linhas, execParsed, platParsed)
+      ? compositePrecoFromLinhasAndFees(product.linhas, execParsed, platParsed, freteRef)
       : null;
 
   return (
@@ -1626,6 +1652,7 @@ function PricingForm({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
+        if (frozen) return;
         run(
           () =>
             updateCompositeProductPricing({
@@ -1641,6 +1668,12 @@ function PricingForm({
         );
       }}
     >
+      {frozen ? (
+        <p className="rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-sm text-muted-foreground">
+          O preço ao cliente desta peça foi <strong className="text-foreground">fixado</strong> ao vincular
+          costureira e cotar o frete B2B dos insumos; taxas e preço não podem ser alterados por aqui.
+        </p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
         <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preço na loja (R$)</p>
@@ -1648,7 +1681,14 @@ function PricingForm({
             {precoLojaCalculado !== null ? formatBrl(precoLojaCalculado) : "—"}
           </p>
           <p className="text-[0.7rem] leading-snug text-muted-foreground">
-            Materiais ({formatBrl(materiaisRef)}) + costureira + margem loja
+            Materiais ({formatBrl(materiaisRef)})
+            {freteRef > 0 ? (
+              <>
+                {" "}
+                + frete insumos ({formatBrl(freteRef)})
+              </>
+            ) : null}{" "}
+            + costureira + margem loja
           </p>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -1659,7 +1699,7 @@ function PricingForm({
             id={`exec-${product.id}`}
             value={execFee}
             onChange={(e) => setExecFee(e.target.value)}
-            disabled={pending}
+            disabled={pending || frozen}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -1670,7 +1710,7 @@ function PricingForm({
             id={`plat-${product.id}`}
             value={platFee}
             onChange={(e) => setPlatFee(e.target.value)}
-            disabled={pending}
+            disabled={pending || frozen}
           />
         </div>
       </div>
@@ -1734,11 +1774,18 @@ function PricingForm({
       <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <Button type="submit" size="sm" disabled={pending}>
           {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          Salvar valores
+          {frozen ? "Salvar pacote (envio ao cliente)" : "Salvar valores"}
         </Button>
         <p className="text-sm text-muted-foreground">
           Materiais na montagem:{" "}
           <span className="font-medium tabular-nums text-foreground">{formatBrl(materiaisRef)}</span>
+          {freteRef > 0 ? (
+            <>
+              {" "}
+              · Frete B2B insumos:{" "}
+              <span className="font-medium tabular-nums text-foreground">{formatBrl(freteRef)}</span>
+            </>
+          ) : null}
           {precoLojaCalculado !== null ? (
             <>
               {" "}
