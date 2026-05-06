@@ -378,9 +378,16 @@ export class CommerceService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<{ url: string }> {
-    const count = await this.prisma.compositeProduct.count({ where: { id: productId } });
-    if (count === 0) throw new NotFoundException('Peça não encontrada.');
+    const existing = await this.prisma.compositeProduct.findUnique({
+      where: { id: productId },
+      select: { imagemUrl: true },
+    });
+    if (!existing) throw new NotFoundException('Peça não encontrada.');
+    const previousCover = existing.imagemUrl?.trim() ?? '';
     const url = await this.saveMarketplaceCoverImage(productId, buffer, mimeType);
+    if (previousCover && previousCover !== url.trim()) {
+      await this.r2.deletePublicObjectByUrlBestEffort(previousCover);
+    }
     return { url };
   }
 
@@ -787,12 +794,20 @@ export class CommerceService {
       where: { id: productId },
       data: { galeriaImagens: next as unknown as Prisma.InputJsonValue },
     });
+    await this.r2.deletePublicObjectByUrlBestEffort(u);
   }
 
   /** Remove a peça, atribuições, pedidos de execução e linhas de cumprimento ligadas. */
   async deleteCompositeProduct(productId: string): Promise<void> {
     const product = await this.prisma.compositeProduct.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundException('Peça não encontrada.');
+
+    const imageUrlsToPurge = new Set<string>();
+    const cover = product.imagemUrl?.trim();
+    if (cover) imageUrlsToPurge.add(cover);
+    for (const g of this.parseProductGallery(product.galeriaImagens)) {
+      imageUrlsToPurge.add(g);
+    }
 
     await this.prisma.$transaction(async (tx) => {
       const assignmentIds = (
@@ -811,6 +826,10 @@ export class CommerceService {
       await tx.executionRequest.deleteMany({ where: { compositeProductId: productId } });
       await tx.compositeProduct.delete({ where: { id: productId } });
     });
+
+    for (const url of imageUrlsToPurge) {
+      await this.r2.deletePublicObjectByUrlBestEffort(url);
+    }
   }
 
   private toProductDto(p: CompositeProduct) {

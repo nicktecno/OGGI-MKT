@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 
 /** Cloudflare R2 (API compatível com S3). Plano gratuito: ver documentação R2. */
@@ -63,7 +63,44 @@ export class R2StorageService {
     return url;
   }
 
-  /** Caminho estável por produto + arquivo único (substituições não apagam o antigo; você pode configurar lifecycle no R2). */
+  /**
+   * Se a URL pública começar por `R2_PUBLIC_BASE_URL`, devolve a chave do objeto no bucket; caso contrário null
+   * (ex.: Unsplash ou outro CDN — não apagamos).
+   */
+  publicUrlToObjectKeyIfOwned(publicUrl: string): string | null {
+    if (!this.isConfigured()) return null;
+    const base = process.env.R2_PUBLIC_BASE_URL!.trim().replace(/\/$/, '');
+    const u = publicUrl.trim();
+    if (!u.startsWith(`${base}/`)) return null;
+    let key = u.slice(base.length).replace(/^\//, '');
+    const q = key.indexOf('?');
+    if (q !== -1) key = key.slice(0, q);
+    const h = key.indexOf('#');
+    if (h !== -1) key = key.slice(0, h);
+    try {
+      key = decodeURIComponent(key);
+    } catch {
+      /* ignore */
+    }
+    if (!key || key.includes('..')) return null;
+    return key;
+  }
+
+  /** Apaga objeto no R2; ignora se não configurado, URL não é nossa, ou objeto já não existe. */
+  async deletePublicObjectByUrlBestEffort(publicUrl: string): Promise<void> {
+    const key = this.publicUrlToObjectKeyIfOwned(publicUrl);
+    if (!key) return;
+    const bucket = process.env.R2_BUCKET_NAME!.trim();
+    try {
+      await this.client().send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      this.log.log(`R2 DeleteObject ok: ${key}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`R2 DeleteObject falhou (${key}): ${msg}`);
+    }
+  }
+
+  /** Caminho por produto + ficheiro único. A capa antiga no mesmo bucket é apagada ao substituir (ver `CommerceService.uploadProductImage`). */
   marketplaceProductImageKey(productId: string): string {
     const safeId = productId.replace(/[^a-zA-Z0-9_-]/g, '');
     return `marketplace/products/${safeId}/${randomUUID()}.webp`;

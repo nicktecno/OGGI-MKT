@@ -29,6 +29,7 @@ import {
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
+import { SupplyItemDetailModal } from "@/components/admin/supply-item-detail-modal";
 import { cn, formatBrl } from "@/lib/utils";
 import {
   approveExecutionRequest,
@@ -606,6 +607,10 @@ export function AdminNovaPecaCard({
   const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>(() => ["P", "M", "G"]);
   const [tamanhosError, setTamanhosError] = useState<string | null>(null);
   const [novaPecaFormError, setNovaPecaFormError] = useState<string | null>(null);
+  const [insumoDetail, setInsumoDetail] = useState<{
+    item: DemoSupplyItem;
+    qtd?: number;
+  } | null>(null);
 
   useEffect(() => {
     if (supplies.length === 0) return;
@@ -619,6 +624,7 @@ export function AdminNovaPecaCard({
 
   if (supplies.length === 0) {
     return (
+      <>
       <Card className="border-amber-500/40 bg-amber-500/[0.08] ring-1 ring-amber-500/15">
         <CardHeader>
           <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
@@ -628,10 +634,12 @@ export function AdminNovaPecaCard({
           </CardDescription>
         </CardHeader>
       </Card>
+      </>
     );
   }
 
   return (
+    <>
     <Card className={ADMIN_CARD}>
       <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Cadastro da peça (sem preços)</CardTitle>
@@ -924,17 +932,37 @@ export function AdminNovaPecaCard({
                   disabled={pending || rowSupplies.length === 0}
                   ariaLabel={`Insumo na linha ${idx + 1}`}
                 />
-                <Input
-                  className="w-28"
-                  inputMode="decimal"
-                  value={line.quantidade}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, quantidade: v } : x)));
-                  }}
-                  disabled={pending}
-                  aria-label={`Quantidade linha ${idx + 1}`}
-                />
+                <div className="flex flex-wrap items-end gap-2">
+                  <Input
+                    className="w-28"
+                    inputMode="decimal"
+                    value={line.quantidade}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, quantidade: v } : x)));
+                    }}
+                    disabled={pending}
+                    aria-label={`Quantidade linha ${idx + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={pending || !line.supplyItemId.trim()}
+                    onClick={() => {
+                      const s = rowSupplies.find((x) => x.id === line.supplyItemId);
+                      if (!s) return;
+                      const q = Number(line.quantidade.replace(",", "."));
+                      setInsumoDetail({
+                        item: s,
+                        qtd: Number.isFinite(q) && q > 0 ? q : undefined,
+                      });
+                    }}
+                  >
+                    Ver detalhes
+                  </Button>
+                </div>
                 {lines.length > 1 ? (
                   <Button
                     type="button"
@@ -982,6 +1010,15 @@ export function AdminNovaPecaCard({
         </form>
       </CardContent>
     </Card>
+    <SupplyItemDetailModal
+      open={insumoDetail !== null}
+      onOpenChange={(o) => {
+        if (!o) setInsumoDetail(null);
+      }}
+      item={insumoDetail?.item ?? null}
+      quantidadeNaMontagem={insumoDetail?.qtd}
+    />
+    </>
   );
 }
 
@@ -1015,6 +1052,11 @@ function AdminPecaProductCard({
   run: AdminMutationRun;
 }) {
   const [open, setOpen] = useState(false);
+  const [insumoMontagemDetail, setInsumoMontagemDetail] = useState<{
+    item: DemoSupplyItem;
+    quantidadeNaMontagem: number;
+    custoUnitarioMontagem: number;
+  } | null>(null);
   const freteB2B = product.frete_insumos_atribuicao_reais ?? null;
   const freteBreakdown = useMemo(
     () => demoFreteB2BBreakdownForCompositeProduct(product, undefined, supplyCatalog),
@@ -1052,6 +1094,7 @@ function AdminPecaProductCard({
   };
 
   return (
+    <>
     <Card className={cn(ADMIN_CARD, "h-min w-full self-start shadow-none hover:shadow-lg")}>
       <button
         type="button"
@@ -1278,15 +1321,32 @@ function AdminPecaProductCard({
                       {slice.lines.map((row) => (
                         <li
                           key={`${row.supplyItemId}-${row.montagemIndex}`}
-                          className="flex flex-col gap-1 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-2 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
                             <p className="font-medium text-foreground">{row.insumo.nome}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
-                              {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por{" "}
-                              {row.insumo.unidade}
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <p className="text-sm text-muted-foreground">
+                                {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
+                                {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por{" "}
+                                {row.insumo.unidade}
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 shrink-0 text-xs"
+                                onClick={() =>
+                                  setInsumoMontagemDetail({
+                                    item: row.insumo,
+                                    quantidadeNaMontagem: row.quantidade,
+                                    custoUnitarioMontagem: row.snapshot_custo_unitario,
+                                  })
+                                }
+                              >
+                                Ver detalhes
+                              </Button>
+                            </div>
                           </div>
                           <p className="shrink-0 text-base tabular-nums text-foreground">
                             {formatBrl(row.quantidade * row.snapshot_custo_unitario)}
@@ -1357,6 +1417,16 @@ function AdminPecaProductCard({
         </div>
       ) : null}
     </Card>
+    <SupplyItemDetailModal
+      open={insumoMontagemDetail !== null}
+      onOpenChange={(o) => {
+        if (!o) setInsumoMontagemDetail(null);
+      }}
+      item={insumoMontagemDetail?.item ?? null}
+      quantidadeNaMontagem={insumoMontagemDetail?.quantidadeNaMontagem}
+      custoUnitarioMontagem={insumoMontagemDetail?.custoUnitarioMontagem}
+    />
+    </>
   );
 }
 
@@ -1719,6 +1789,11 @@ function PricingForm({
   const [pacComp, setPacComp] = useState(String(pd0.pacote_comprimento_cm));
   const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
   const [lineCosts, setLineCosts] = useState<string[]>(() => pricingLineCostsInitial(product, supplyCatalog));
+  const [insumoPricingDetail, setInsumoPricingDetail] = useState<{
+    item: DemoSupplyItem;
+    quantidadeNaMontagem: number;
+    custoUnitarioMontagem: number;
+  } | null>(null);
 
   const montagemPorFornecedor = useMemo(
     () => demoFreteB2BBreakdownForCompositeProduct(product, undefined, supplyCatalog).slices,
@@ -1769,6 +1844,7 @@ function PricingForm({
       : null;
 
   return (
+    <>
     <form
       className="grid gap-4"
       onSubmit={(e) => {
@@ -1843,10 +1919,29 @@ function PricingForm({
                     >
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <p className="text-sm font-medium leading-snug text-foreground">{row.insumo.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Qtd. na peça:{" "}
-                          <span className="font-medium tabular-nums text-foreground">{row.quantidade}</span>
-                        </p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <p className="text-xs text-muted-foreground">
+                            Qtd. na peça:{" "}
+                            <span className="font-medium tabular-nums text-foreground">{row.quantidade}</span>
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => {
+                              const parsed = Number((lineCosts[idx] ?? "0").replace(",", "."));
+                              setInsumoPricingDetail({
+                                item: row.insumo,
+                                quantidadeNaMontagem: row.quantidade,
+                                custoUnitarioMontagem:
+                                  Number.isFinite(parsed) && parsed >= 0 ? parsed : row.snapshot_custo_unitario,
+                              });
+                            }}
+                          >
+                            Ver detalhes
+                          </Button>
+                        </div>
                       </div>
                       <div className="flex w-full flex-col gap-1.5 sm:w-40 sm:shrink-0">
                         <Label htmlFor={`custo-linha-${product.id}-${idx}`} className="text-xs font-medium">
@@ -2003,6 +2098,16 @@ function PricingForm({
         </p>
       </div>
     </form>
+    <SupplyItemDetailModal
+      open={insumoPricingDetail !== null}
+      onOpenChange={(o) => {
+        if (!o) setInsumoPricingDetail(null);
+      }}
+      item={insumoPricingDetail?.item ?? null}
+      quantidadeNaMontagem={insumoPricingDetail?.quantidadeNaMontagem}
+      custoUnitarioMontagem={insumoPricingDetail?.custoUnitarioMontagem}
+    />
+    </>
   );
 }
 

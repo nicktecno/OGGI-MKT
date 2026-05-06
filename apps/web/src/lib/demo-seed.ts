@@ -146,7 +146,7 @@ export function executorOptionsFromDemoCommerce(state: {
 
 export type SupplierPickerOption = { email: string; label: string };
 
-function supplierDisplayLabelForInsumoRow(s: DemoSupplyItem): string {
+export function supplierDisplayLabelForInsumoRow(s: DemoSupplyItem): string {
   const email = s.supplierEmail?.trim() ?? "";
   const fromApi = s.supplier_name?.trim();
   if (fromApi) return fromApi;
