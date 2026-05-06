@@ -437,12 +437,19 @@ export class CommerceService {
       if (!Number.isFinite(q) || q <= 0) {
         throw new BadRequestException('Quantidade por linha deve ser maior que zero.');
       }
+      const custoUnit =
+        Math.max(0, (item.custoFornecedor ?? 0) + (item.freteAteExecutor ?? 0));
       linhasPayload.push({
         supplyItemId: item.id,
         quantidade: q,
-        snapshot_custo_unitario: 0,
+        snapshot_custo_unitario: custoUnit,
       });
     }
+
+    const materiaisSoma = linhasPayload.reduce(
+      (acc, row) => acc + row.quantidade * row.snapshot_custo_unitario,
+      0,
+    );
 
     const id = `cp-${randomUUID().slice(0, 12)}`;
     await this.prisma.compositeProduct.create({
@@ -455,7 +462,7 @@ export class CommerceService {
         linhas: linhasPayload as unknown as Prisma.InputJsonValue,
         executorFeePlanejada: 0,
         platformFeePlanejada: 0,
-        precoVendaPublico: 0,
+        precoVendaPublico: materiaisSoma,
         ativo: true,
         adminPausado: false,
         imagemUrl:

@@ -1,12 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { quantidadeFromCompositeLineJson, supplyItemIdFromCompositeLineJson } from '../commerce/composite-line-json.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
-
-type CompositeLine = {
-  supplyItemId: string;
-  quantidade: number;
-  snapshot_custo_unitario: number;
-};
 
 @Injectable()
 export class NotificationsService {
@@ -49,7 +44,7 @@ export class NotificationsService {
     if (!product) return;
 
     const base = this.baseUrl();
-    const linhas = (product.linhas as unknown as CompositeLine[]) ?? [];
+    const linhasRaw = Array.isArray(product.linhas) ? product.linhas : [];
     const linesWithSupply: {
       quantidade: number;
       unidade: string;
@@ -58,17 +53,20 @@ export class NotificationsService {
       supplierEmail: string;
     }[] = [];
 
-    for (const line of linhas) {
+    for (const raw of linhasRaw) {
+      const supplyId = supplyItemIdFromCompositeLineJson(raw);
+      const q = quantidadeFromCompositeLineJson(raw);
+      if (!supplyId || q == null) continue;
       const item = await this.prisma.supplyItem.findUnique({
-        where: { id: line.supplyItemId },
+        where: { id: supplyId },
         include: { supplier: { select: { email: true } } },
       });
       if (!item) {
-        this.logger.warn(`Insumo ${line.supplyItemId} não encontrado no catálogo (e-mail não enviado para esta linha).`);
+        this.logger.warn(`Insumo ${supplyId} não encontrado no catálogo (e-mail não enviado para esta linha).`);
         continue;
       }
       linesWithSupply.push({
-        quantidade: line.quantidade,
+        quantidade: q,
         unidade: item.unidade,
         nome: item.nome,
         sku: item.skuInterno,

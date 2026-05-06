@@ -12,6 +12,7 @@ import {
   compositePrecoFromLinhasAndFees,
   demoFreteB2BForCompositeProduct,
   getSupplyItemById,
+  insumoCostTotal,
 } from "./demo-seed";
 import { getCommerceStateFromCookies, updateCommerceDelta } from "./commerce-cookies";
 import { normalizeVariacoesTamanho } from "./product-sizes";
@@ -817,7 +818,7 @@ export async function persistCreateCompositeProduct(
     linhas.push({
       supplyItemId: item.id,
       quantidade: q,
-      snapshot_custo_unitario: 0,
+      snapshot_custo_unitario: insumoCostTotal(item),
     });
   }
 

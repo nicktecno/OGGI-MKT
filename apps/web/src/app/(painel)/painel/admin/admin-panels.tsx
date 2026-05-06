@@ -15,6 +15,7 @@ import {
   compositePrecoFromLinhasAndFees,
   compositePrecoLojaPlanejado,
   compositePrecoPreviaSemFreteB2B,
+  insumoCostTotal,
   mergeSupplyCatalog,
   resolveCompositeLines,
   supplierOptionsFromCatalog,
@@ -650,12 +651,10 @@ export function AdminNovaPecaCard({
           onSubmit={(e) => {
             e.preventDefault();
             setNovaPecaFormError(null);
-            const linhasParsed = lines
-              .filter((l) => l.supplyItemId.trim())
-              .map((l) => ({
-                supply_item_id: l.supplyItemId.trim(),
-                quantidade: Number(l.quantidade.replace(",", ".")),
-              }));
+            const linhasParsed = lines.map((l) => ({
+              supply_item_id: l.supplyItemId.trim(),
+              quantidade: Number(l.quantidade.replace(",", ".")),
+            }));
             if (!nome.trim()) {
               setNovaPecaFormError("Indique o nome da peça.");
               return;
@@ -670,6 +669,17 @@ export function AdminNovaPecaCard({
             }
             if (linhasParsed.length === 0) {
               setNovaPecaFormError("Inclua pelo menos uma linha de insumo com quantidade.");
+              return;
+            }
+            const linhaSemInsumo = lines.findIndex((l) => !l.supplyItemId.trim());
+            if (linhaSemInsumo !== -1) {
+              setNovaPecaFormError(
+                `Linha ${linhaSemInsumo + 1}: escolha o insumo desse fornecedor (cada linha precisa de um item).`,
+              );
+              return;
+            }
+            if (linhasParsed.some((l) => !l.supply_item_id)) {
+              setNovaPecaFormError("Cada linha precisa de um insumo selecionado.");
               return;
             }
             if (linhasParsed.some((l) => !Number.isFinite(l.quantidade) || l.quantidade <= 0)) {
@@ -877,8 +887,9 @@ export function AdminNovaPecaCard({
             <Label>Insumos e quantidades na montagem</Label>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Escolha o <strong className="text-foreground">fornecedor</strong> e o{" "}
-              <strong className="text-foreground">insumo</strong> dele. Os preços unitários você define na aba{" "}
-              <strong className="text-foreground">Preços</strong>.
+              <strong className="text-foreground">insumo</strong> dele. O custo unitário na montagem vem do cadastro
+              do insumo (fornecedor + frete até o executor, quando informados) e pode ser ajustado na aba{" "}
+              <strong className="text-foreground">Peças e preços</strong>.
             </p>
             {lines.map((line, idx) => {
               const rowSupplies = suppliesForSupplier(supplies, line.supplierEmail);
@@ -1643,6 +1654,14 @@ export function AdminCombinacoesPanel({
   );
 }
 
+function pricingLineCostsInitial(product: DemoCompositeProduct, catalog: DemoSupplyItem[]): string[] {
+  return product.linhas.map((l) => {
+    if (l.snapshot_custo_unitario > 0) return String(l.snapshot_custo_unitario);
+    const ins = catalog.find((s) => s.id === l.supplyItemId);
+    return String(ins ? insumoCostTotal(ins) : 0);
+  });
+}
+
 function PricingForm({
   product,
   supplyCatalog,
@@ -1665,9 +1684,7 @@ function PricingForm({
   const [pacLar, setPacLar] = useState(String(pd0.pacote_largura_cm));
   const [pacComp, setPacComp] = useState(String(pd0.pacote_comprimento_cm));
   const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
-  const [lineCosts, setLineCosts] = useState<string[]>(() =>
-    product.linhas.map((l) => String(l.snapshot_custo_unitario)),
-  );
+  const [lineCosts, setLineCosts] = useState<string[]>(() => pricingLineCostsInitial(product, supplyCatalog));
 
   const resolvedMontagem = useMemo(
     () => resolveCompositeLines(product, supplyCatalog),
@@ -1682,8 +1699,15 @@ function PricingForm({
     setPacLar(String(pd.pacote_largura_cm));
     setPacComp(String(pd.pacote_comprimento_cm));
     setPacPeso(String(pd.pacote_peso_kg));
-    setLineCosts(product.linhas.map((l) => String(l.snapshot_custo_unitario)));
-  }, [product]);
+    setLineCosts(
+      product.linhas.map((l) => {
+        if (l.snapshot_custo_unitario > 0) return String(l.snapshot_custo_unitario);
+        const ins = supplyCatalog.find((s) => s.id === l.supplyItemId);
+        const fallback = ins ? insumoCostTotal(ins) : 0;
+        return String(fallback);
+      }),
+    );
+  }, [product, supplyCatalog]);
 
   const frozen = product.preco_venda_congelado === true;
   const execParsed = Number(execFee.replace(",", "."));

@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { SupplyItem } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import {
+  quantidadeFromCompositeLineJson,
+  snapshotCustoFromCompositeLineJson,
+  supplyItemIdFromCompositeLineJson,
+} from '../commerce/composite-line-json.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { pickShipmentPackFromSupplies, stubFreteB2B } from './package-shipping.util';
 
@@ -47,7 +52,7 @@ export class SupplierFulfillmentService {
       ? [profile.addressLine1, profile.addressComplement].filter(Boolean).join(', ')
       : '— (complete o endereço no perfil da costureira)';
 
-    const linhas = (product.linhas as unknown as CompositeLine[]) ?? [];
+    const linhasRaw = Array.isArray(product.linhas) ? product.linhas : [];
 
     await this.prisma.supplierFulfillmentLine.deleteMany({
       where: { productionAssignmentId: assignmentId },
@@ -56,14 +61,27 @@ export class SupplierFulfillmentService {
     type Pending = { line: CompositeLine; item: SupplyItem };
     const bySupplier = new Map<string, Pending[]>();
 
-    for (const line of linhas) {
+    for (const rawRow of linhasRaw) {
+      const sid = supplyItemIdFromCompositeLineJson(rawRow);
+      const q = quantidadeFromCompositeLineJson(rawRow);
+      if (!sid || q == null) {
+        this.log.warn(
+          `syncFromAssignment: linha de montagem ignorada (insumo ou quantidade inválidos) na peça ${product.id}`,
+        );
+        continue;
+      }
+      const line: CompositeLine = {
+        supplyItemId: sid,
+        quantidade: q,
+        snapshot_custo_unitario: snapshotCustoFromCompositeLineJson(rawRow),
+      };
       const item = await this.prisma.supplyItem.findUnique({
-        where: { id: line.supplyItemId },
+        where: { id: sid },
       });
       if (!item) continue;
-      const sid = item.supplierAccountId;
-      if (!bySupplier.has(sid)) bySupplier.set(sid, []);
-      bySupplier.get(sid)!.push({ line, item });
+      const supplierKey = item.supplierAccountId;
+      if (!bySupplier.has(supplierKey)) bySupplier.set(supplierKey, []);
+      bySupplier.get(supplierKey)!.push({ line, item });
     }
 
     const supplierCepCache = new Map<string, string>();
