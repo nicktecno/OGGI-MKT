@@ -55,6 +55,41 @@ export async function internalFetch(path: string, init?: RequestInit): Promise<R
   }
 }
 
+/** Cota frete B2C (público, sem segredo interno). Só quando `COMMERCE_API_URL` está definido. */
+export async function fetchCheckoutShippingQuotePublic(
+  cepDestino: string,
+  lines: { listing_id: string; quantity: number }[],
+): Promise<{ total_frete_brl: number; lines: { listing_id: string; frete_brl: number }[] }> {
+  const base = serverApiUrl().trim().replace(/\/$/, "");
+  if (!base) {
+    throw new Error("Defina COMMERCE_API_URL para cotar o frete.");
+  }
+  const cep = cepDestino.replace(/\D/g, "").slice(0, 8);
+  const res = await fetch(`${base}/public/commerce/shipping-quote`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ cep_destino: cep, lines }),
+    cache: "no-store",
+  });
+  const text = await res.text();
+  let json: { total_frete_brl?: number; lines?: { listing_id: string; frete_brl: number }[]; message?: string | string[] };
+  try {
+    json = JSON.parse(text) as typeof json;
+  } catch {
+    throw new Error(text || `Erro ${res.status}`);
+  }
+  if (!res.ok) {
+    const m = json.message;
+    const msg =
+      typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : text || `Erro ${res.status}`;
+    throw new Error(msg);
+  }
+  if (typeof json.total_frete_brl !== "number" || !Array.isArray(json.lines)) {
+    throw new Error("Resposta de cotação inválida.");
+  }
+  return { total_frete_brl: json.total_frete_brl, lines: json.lines };
+}
+
 export async function readApiError(res: Response): Promise<string> {
   try {
     const j = (await res.json()) as { message?: string | string[] };
@@ -1026,6 +1061,8 @@ export type StoreOrderNotifyPayload = {
   };
   stripeSessionId?: string;
   totalBrl?: number;
+  /** Frete entrega (costureira → cliente), em BRL. */
+  shippingBrl?: number;
 };
 
 /** Notifica cliente e admins por e-mail (só com API + `RESEND_API_KEY` / SMTP na Nest). */

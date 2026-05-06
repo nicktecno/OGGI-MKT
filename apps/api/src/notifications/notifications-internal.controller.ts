@@ -31,6 +31,7 @@ export class NotificationsInternalController {
       };
       stripeSessionId?: string;
       totalBrl?: number;
+      shippingBrl?: number;
     },
   ) {
     this.notifications.fireAndForgetStoreOrder(body);

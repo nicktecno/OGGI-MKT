@@ -14,6 +14,13 @@ type ApiLoginUser = {
   status: string;
 };
 
+function messageFromApiJson(json: { message?: string | string[] }, fallback: string): string {
+  const m = json.message;
+  if (typeof m === "string" && m.trim()) return m.trim();
+  if (Array.isArray(m) && m.length) return m.map(String).join(", ");
+  return fallback;
+}
+
 export async function POST(req: Request) {
   let body: { email?: string; password?: string; next?: string };
   try {
@@ -41,37 +48,71 @@ export async function POST(req: Request) {
 
   if (commerceUsesDatabase()) {
     const base = serverApiUrl();
+    let apiRes: Response;
     try {
-      const apiRes = await fetch(`${base}/public/auth/login`, {
+      apiRes = await fetch(`${base}/public/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, password }),
         cache: "no-store",
       });
-      if (apiRes.ok) {
-        const data = (await apiRes.json()) as { user?: ApiLoginUser };
-        const u = data.user;
-        if (u && isRole(u.role)) {
-          const st = u.status;
-          const accountStatus: AccountStatus | undefined =
-            st === "PENDING_ADMIN_REVIEW" || st === "ACTIVE" || st === "REJECTED" ? st : undefined;
-          if (accountStatus) {
-            tokenPayload = {
-              email: u.email.trim().toLowerCase(),
-              role: u.role,
-              name: u.name,
-              sub: u.id,
-              accountStatus,
-            };
-          }
-        }
-      }
-    } catch {
-      /* fallback mock */
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "Erro de rede";
+      return NextResponse.json(
+        {
+          error: `Não foi possível contactar o servidor de contas (${base}). ${detail}`,
+        },
+        { status: 503 },
+      );
     }
-  }
 
-  if (!tokenPayload) {
+    const text = await apiRes.text();
+    let data: { user?: ApiLoginUser; message?: string | string[] };
+    try {
+      data = JSON.parse(text) as typeof data;
+    } catch {
+      return NextResponse.json(
+        { error: "Resposta inválida do servidor de autenticação." },
+        { status: 502 },
+      );
+    }
+
+    if (!apiRes.ok) {
+      return NextResponse.json(
+        {
+          error: messageFromApiJson(
+            data,
+            apiRes.status === 401 ? "E-mail ou senha incorretos." : "Não foi possível entrar.",
+          ),
+        },
+        { status: apiRes.status >= 400 && apiRes.status < 600 ? apiRes.status : 400 },
+      );
+    }
+
+    const u = data.user;
+    if (!u || !isRole(u.role)) {
+      return NextResponse.json(
+        { error: "Conta inválida retornada pela API." },
+        { status: 502 },
+      );
+    }
+    const st = u.status;
+    const accountStatus: AccountStatus | undefined =
+      st === "PENDING_ADMIN_REVIEW" || st === "ACTIVE" || st === "REJECTED" ? st : undefined;
+    if (!accountStatus) {
+      return NextResponse.json(
+        { error: "Estado da conta não reconhecido. Contacte o suporte." },
+        { status: 502 },
+      );
+    }
+    tokenPayload = {
+      email: u.email.trim().toLowerCase(),
+      role: u.role,
+      name: u.name,
+      sub: u.id,
+      accountStatus,
+    };
+  } else {
     const user = authenticateMockUser(email, password);
     if (!user) {
       return NextResponse.json(

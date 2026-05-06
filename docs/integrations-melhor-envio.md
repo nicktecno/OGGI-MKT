@@ -76,7 +76,7 @@ Cadastre no painel **Área Dev** da Melhor Envio (mesmo host que `MELHOR_ENVIO_A
 
 Variáveis: `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET`, `MELHOR_ENVIO_REDIRECT_URI` (idêntica à do painel), `MELHOR_ENVIO_API_BASE` (`https://melhorenvio.com.br` ou sandbox), `MELHOR_ENVIO_USER_AGENT` (app + e-mail). Ver `apps/api/.env.example`.
 
-Após autorizar, o utilizador volta para `FRONTEND_URL` → `/painel/admin?me_oauth=ok` ou `me_oauth_error=…`. Os tokens são registados em log no servidor até existir persistência em BD.
+Após autorizar, o utilizador volta para `FRONTEND_URL` → `/painel/admin?me_oauth=ok` ou `me_oauth_error=…`. Os tokens OAuth são **gravados na tabela** `melhor_envio_oauth_tokens` (Prisma) e renovados automaticamente; alternativa em CI: `MELHOR_ENVIO_ACCESS_TOKEN` no `.env` da API.
 
 ## Documentação oficial
 

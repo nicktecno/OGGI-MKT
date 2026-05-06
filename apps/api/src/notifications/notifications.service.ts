@@ -366,16 +366,24 @@ export class NotificationsService {
     };
     stripeSessionId?: string;
     totalBrl?: number;
+    shippingBrl?: number;
   }): Promise<void> {
     const base = this.baseUrl();
     const modo = input.channel === 'stripe' ? 'Pagamento Stripe (teste ou live)' : 'Confirmação demo (sem gateway)';
     const lista = input.lines
       .map((l) => `• ${l.productName} × ${l.quantity} — ${l.unitPriceBrl.toFixed(2)} BRL / un.`)
       .join('\n');
+    const subProd = input.lines.reduce((s, l) => s + l.quantity * l.unitPriceBrl, 0);
+    const ship =
+      typeof input.shippingBrl === 'number' && Number.isFinite(input.shippingBrl) && input.shippingBrl > 0
+        ? input.shippingBrl
+        : null;
     const total =
       typeof input.totalBrl === 'number' && Number.isFinite(input.totalBrl)
         ? input.totalBrl.toFixed(2)
-        : input.lines.reduce((s, l) => s + l.quantity * l.unitPriceBrl, 0).toFixed(2);
+        : (subProd + (ship ?? 0)).toFixed(2);
+    const freteLinha =
+      ship != null ? `\nFrete (entrega estimada): R$ ${ship.toFixed(2)}\n` : '';
     let entrega = '';
     if (input.delivery) {
       const d = input.delivery;
@@ -391,8 +399,9 @@ export class NotificationsService {
     const textCliente =
       `Olá${input.customerName ? `, ${input.customerName}` : ''},\n\n` +
       `Recebemos o seu pedido na loja (${modo}).\n\n` +
-      `Itens:\n${lista}\n\n` +
-      `Total aproximado: R$ ${total}\n` +
+      `Itens:\n${lista}\n` +
+      freteLinha +
+      `\nTotal aproximado: R$ ${total}\n` +
       entrega +
       (input.stripeSessionId ? `\nReferência: ${input.stripeSessionId}\n` : '') +
       `\nLoja: ${base}/loja\n`;
@@ -408,8 +417,9 @@ export class NotificationsService {
     const textAdmin =
       `Novo pedido na loja (${modo}).\n\n` +
       `Cliente: ${input.customerEmail}${input.customerName ? ` (${input.customerName})` : ''}\n\n` +
-      `Itens:\n${lista}\n\n` +
-      `Total: R$ ${total}\n` +
+      `Itens:\n${lista}\n` +
+      freteLinha +
+      `\nTotal: R$ ${total}\n` +
       entrega +
       (input.stripeSessionId ? `\nStripe session: ${input.stripeSessionId}\n` : '') +
       `\nPainel: ${base}/painel/admin\n`;

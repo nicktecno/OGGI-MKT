@@ -11,7 +11,9 @@ import type { CompositeProduct, ExecutionRequest, ProductionAssignment } from '@
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { marketplaceUploadContentType } from '../storage/marketplace-upload-mime';
+import { MelhorEnvioService } from '../melhor-envio/melhor-envio.service';
 import { R2StorageService } from '../storage/r2-storage.service';
+import { stubFreteB2B } from '../supply/package-shipping.util';
 import { SupplierFulfillmentService } from '../supply/supplier-fulfillment.service';
 
 /** Resposta alinhada a `DemoCommerceState` do app web (snake_case). */
@@ -34,6 +36,7 @@ export class CommerceService {
     private readonly notifications: NotificationsService,
     private readonly r2: R2StorageService,
     private readonly supplierFulfillment: SupplierFulfillmentService,
+    private readonly melhorEnvio: MelhorEnvioService,
   ) {}
 
   private parseVariacoesTamanhoInput(raw: unknown): string[] {
@@ -730,6 +733,82 @@ export class CommerceService {
         unitsProduced: nextUnits,
       },
     });
+  }
+
+  /**
+   * Frete B2C estimado: CEP da oferta (postagem) → CEP do cliente.
+   * Mesma estimativa stub que o B2B até integrar Melhor Envio no checkout.
+   */
+  async checkoutShippingQuote(
+    cepDestinoRaw: string,
+    lines: { listing_id: string; quantity: number }[],
+  ): Promise<{
+    total_frete_brl: number;
+    lines: { listing_id: string; frete_brl: number }[];
+  }> {
+    const cepDest = cepDestinoRaw.replace(/\D/g, '').slice(0, 8);
+    if (cepDest.length !== 8) {
+      throw new BadRequestException('CEP de destino inválido.');
+    }
+    if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
+      throw new BadRequestException('Lista de linhas inválida.');
+    }
+    const useMelhorEnvio = await this.melhorEnvio.hasShippingCredentials();
+    let total = 0;
+    const out: { listing_id: string; frete_brl: number }[] = [];
+    for (const row of lines) {
+      const listingId = String(row.listing_id ?? '').trim();
+      const q = row.quantity;
+      if (!listingId || !Number.isInteger(q) || q < 1 || q > 99) {
+        throw new BadRequestException('Linha de carrinho inválida.');
+      }
+      const assignment = await this.prisma.productionAssignment.findUnique({
+        where: { id: listingId },
+      });
+      if (!assignment || assignment.status !== 'PUBLISHED') {
+        throw new NotFoundException('Oferta não disponível para cotação.');
+      }
+      const product = await this.prisma.compositeProduct.findUnique({
+        where: { id: assignment.compositeProductId },
+      });
+      if (!product || !product.ativo || product.adminPausado) {
+        throw new NotFoundException('Produto não disponível para cotação.');
+      }
+      const cepOrig = assignment.cepOrigem.replace(/\D/g, '').slice(0, 8) || '01001000';
+      let frete: number;
+      if (useMelhorEnvio) {
+        try {
+          frete = await this.melhorEnvio.quoteCheapestProductShipping({
+            fromPostalCode: cepOrig,
+            toPostalCode: cepDest,
+            productId: `${listingId}-${product.slug}`,
+            widthCm: product.pacoteLarguraCm,
+            heightCm: product.pacoteAlturaCm,
+            lengthCm: product.pacoteComprimentoCm,
+            weightKg: Math.max(0.01, product.pacotePesoKg) * q,
+            insuranceValueBrl: product.precoVendaPublico,
+            quantity: q,
+          });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          this.log.warn(`Melhor Envio falhou para linha ${listingId}: ${msg}`);
+          throw e;
+        }
+      } else {
+        frete = stubFreteB2B({
+          cepOrigem: cepOrig,
+          cepDestino: cepDest,
+          alturaCm: product.pacoteAlturaCm,
+          larguraCm: product.pacoteLarguraCm,
+          comprimentoCm: product.pacoteComprimentoCm,
+          pesoKg: Math.max(0.01, product.pacotePesoKg) * q,
+        });
+      }
+      total += frete;
+      out.push({ listing_id: listingId, frete_brl: frete });
+    }
+    const rounded = Math.round(total * 100) / 100;
+    return { total_frete_brl: rounded, lines: out };
   }
 
   /**

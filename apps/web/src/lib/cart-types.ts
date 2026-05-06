@@ -1,4 +1,4 @@
-/** Carrinho guest/cliente (MVP em localStorage). */
+/** Carrinho do cliente persistido em `localStorage` neste navegador. */
 
 export type CartLine = {
   listingId: string;

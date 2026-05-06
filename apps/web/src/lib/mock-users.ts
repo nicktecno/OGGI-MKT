@@ -1,6 +1,6 @@
 import type { Role } from "./auth-types";
 
-/** Credenciais só para MVP / desenvolvimento — substituir por Nest + OAuth. */
+/** Credenciais de exemplo para desenvolvimento e demonstração — trocar por auth real em produção. */
 export const MOCK_USERS: Record<
   string,
   { password: string; role: Role; label: string; displayName: string }

@@ -55,8 +55,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       <CardHeader className="space-y-1">
         <CardTitle className="font-serif text-2xl tracking-tight">Entrar</CardTitle>
         <CardDescription>
-          {SITE_NAME} — sessão em cookie HttpOnly. O carrinho fica no navegador até você concluir o
-          checkout.
+          {SITE_NAME} — sessão segura. O carrinho permanece neste navegador até você concluir a compra.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -120,12 +119,13 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           </Link>
         </p>
         <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-          Contas demo (senha <code className="rounded bg-muted px-1">Demo#2026</code>): Ana
-          Admin <code className="rounded bg-muted px-1">admin@demo.local</code> · Bruno
-          Fornecedor <code className="rounded bg-muted px-1">fornecedor@demo.local</code> · Maria
-          Fornecedor <code className="rounded bg-muted px-1">aviamentos@demo.local</code> · Carla
-          Executor <code className="rounded bg-muted px-1">executor@demo.local</code> · Dana Cliente{" "}
-          <code className="rounded bg-muted px-1">cliente@demo.local</code>
+          <span className="font-medium text-foreground">Ambiente de exemplo:</span> várias contas de
+          teste usam a senha <code className="rounded bg-muted px-1">Demo#2026</code> — Admin{" "}
+          <code className="rounded bg-muted px-1">admin@demo.local</code>, fornecedores{" "}
+          <code className="rounded bg-muted px-1">fornecedor@demo.local</code> e{" "}
+          <code className="rounded bg-muted px-1">aviamentos@demo.local</code>, executor{" "}
+          <code className="rounded bg-muted px-1">executor@demo.local</code>, cliente loja{" "}
+          <code className="rounded bg-muted px-1">cliente@demo.local</code>.
         </p>
       </CardContent>
     </Card>

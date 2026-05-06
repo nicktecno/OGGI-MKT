@@ -73,8 +73,8 @@ export function AddToCartActions({ item, className }: Props) {
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          No checkout você informa entrega, revisa o carrinho e paga (Stripe teste) ou confirma em modo
-          demo — com conta cliente e estoque atualizado no servidor.
+          No checkout você informa a entrega, vê o frete e conclui com cartão (quando disponível) ou
+          com a opção de confirmação sem pagamento para testes — sempre logado como cliente.
         </p>
       )}
     </div>

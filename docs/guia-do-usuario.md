@@ -25,7 +25,7 @@ Para o detalhe técnico de negócio, ver [decisoes-produto.md](./decisoes-produt
 
 1. **Endereço do site** (URL), por exemplo `https://www.modastore.com.br` — o dono do projeto passa-te este link.
 2. **Navegador atualizado** (Chrome, Firefox, Safari ou Edge).
-3. **E-mail** válido para criar conta ou recuperar acesso (quando o registo estiver ligado à base de dados em produção).
+3. **E-mail** válido para criar conta e para receber instruções de recuperação de acesso, quando o site tiver envio de e-mail configurado.
 
 Se o projeto ainda estiver em **demonstração** (sem API real), o login pode usar contas de teste descritas na secção 8.
 
@@ -47,7 +47,7 @@ Se o projeto ainda estiver em **demonstração** (sem API real), o login pode us
 2. Introduz **e-mail** e **palavra-passe**.
 3. O site pode redirecionar-te automaticamente para a **área certa** (loja ou painel), consoante o teu papel.
 
-Se esqueceres a palavra-passe, usa a opção de **recuperação** se existir no site; caso contrário, contacta o **suporte** do projeto.
+Se esqueceres a palavra-passe, abre a página **“Esqueci a senha”** no site (por exemplo a partir do link no ecrã de login). O formulário envia instruções se o e-mail existir e o servidor de e-mail estiver configurado; se não receberes nada, confirma o spam ou contacta o **suporte** do projeto.
 
 ---
 
@@ -57,7 +57,7 @@ Se esqueceres a palavra-passe, usa a opção de **recuperação** se existir no 
 2. **Navega** pelos produtos e abre um artigo para ver detalhes.
 3. **Adiciona ao carrinho** o que quiseres comprar.
 4. Abre o **carrinho** e segue para **checkout** (finalizar compra).
-5. Podes ver opção de **pagamento de teste (demo)** ou **pagamento com Stripe em modo teste**, conforme a configuração do site — em teste **não** uses cartão real.
+5. Conforme a configuração do site, podes ver **pagamento com cartão (Stripe)** e/ou **confirmar o pedido sem cartão** (só para ambiente de testes ou demonstração). Quando o site indicar modo de testes da Stripe, **não** uses cartão bancário real.
 6. Após concluir, podes ser levado a uma página de **“Obrigado”** ou confirmação de pedido.
 
 **Ideia importante:** em produção, a regra de negócio prevista é que **só há pagamento** quando houver **stock disponível** na oferta publicada pelo executor (ver decisões de produto). Na prática do site, segue sempre as mensagens e botões que aparecem no ecrã.

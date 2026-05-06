@@ -57,7 +57,7 @@ export class MelhorEnvioController {
 
     try {
       const tokens = await this.me.exchangeAuthorizationCode(code);
-      this.me.logTokenReceived(tokens);
+      await this.me.persistOAuthTokens(tokens);
       return res.redirect(
         302,
         `${base}?me_oauth=ok&me_state=${encodeURIComponent(state ?? '')}`,

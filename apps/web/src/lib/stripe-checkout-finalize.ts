@@ -123,6 +123,17 @@ export async function finalizeStripePaidCheckoutInventory(
     return { ok: false, message: msg };
   }
 
+  const meta = stripeCheckoutSession.metadata ?? {};
+  const shippingMeta = meta.shipping_brl;
+  const shippingBrl =
+    typeof shippingMeta === "string" && shippingMeta.trim() !== ""
+      ? Number.parseFloat(shippingMeta)
+      : undefined;
+  const shippingBrlClean =
+    shippingBrl !== undefined && Number.isFinite(shippingBrl) && shippingBrl >= 0
+      ? shippingBrl
+      : undefined;
+
   if (customerEmail && emailLines.length > 0) {
     await notifyStoreOrderCompleted({
       channel: "stripe",
@@ -131,6 +142,7 @@ export async function finalizeStripePaidCheckoutInventory(
       lines: emailLines,
       stripeSessionId: checkoutSessionId,
       totalBrl: totalBrlPaid,
+      ...(shippingBrlClean !== undefined ? { shippingBrl: shippingBrlClean } : {}),
     });
   }
 
@@ -141,7 +153,7 @@ export async function finalizeStripePaidCheckoutInventory(
         metadata: { ...pi.metadata, [META_KEY]: "true" },
       });
     } catch {
-      // estoque já foi baixado; falha ao marcar idempotência é aceitável no MVP
+      // estoque já foi baixado; falha ao marcar idempotência não deve bloquear o utilizador
     }
   }
 

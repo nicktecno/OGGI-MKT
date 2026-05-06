@@ -73,8 +73,8 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
           <CheckoutClearAfterPayment />
           <h1 className="font-serif text-2xl font-medium text-foreground">Pagamento recebido</h1>
           <p className="mt-3 text-muted-foreground leading-relaxed">
-            Obrigado pela compra no modo teste do Stripe. {amountDisplay ? `Total: ${amountDisplay}.` : null}{" "}
-            O carrinho deste aparelho foi esvaziado e o estoque da vitrine foi atualizado.
+            Obrigado pela compra. {amountDisplay ? `Total: ${amountDisplay}.` : null}{" "}
+            O carrinho neste navegador foi esvaziado e o estoque da oferta foi atualizado.
           </p>
           {inventoryMessage ? (
             <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -83,8 +83,8 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
             </p>
           ) : null}
           <p className="mt-2 text-sm text-muted-foreground">
-            Em produção, acrescente e-mail de confirmação e rastreamento; o fluxo de baixa de estoque
-            já corre nesta página após o Stripe marcar a sessão como paga.
+            Se o site estiver com e-mail configurado, você pode receber uma confirmação na caixa de
+            entrada (confira também o spam).
           </p>
         </>
       ) : (

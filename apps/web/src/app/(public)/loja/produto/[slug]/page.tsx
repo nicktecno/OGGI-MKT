@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AddToCartActions } from "@/components/loja/add-to-cart";
+import { ProductShippingQuote } from "@/components/loja/product-shipping-quote";
 import { ProductPageGallery } from "@/components/loja/product-page-gallery";
 import {
   DEMO_COMPOSITE_PRODUCTS,
@@ -159,6 +160,11 @@ export default async function ProdutoLojaPage({ params }: Props) {
                 executorNome: listing.executorNome,
                 imageUrl: galleryUrls[0] ?? product.imagem_url,
               }}
+            />
+            <ProductShippingQuote
+              className="mt-8 border-border/80"
+              listingId={listing.id}
+              maxQuantity={listing.available_quantity}
             />
             <div className="mt-4">
               <Link href="/loja" className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">

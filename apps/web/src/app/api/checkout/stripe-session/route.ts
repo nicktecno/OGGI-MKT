@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import type { CartLine } from "@/lib/cart-types";
+import { resolvePublicRedirectOrigin } from "@/lib/public-redirect-origin";
 import { getStripeServer } from "@/lib/stripe-server";
+import {
+  commerceUsesDatabase,
+  fetchCheckoutShippingQuotePublic,
+  getCommerceState,
+} from "@/lib/commerce-backend";
+import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
 
 const MAX_LINES = 20;
 
@@ -17,12 +24,6 @@ function isCartLine(x: unknown): x is CartLine {
     typeof l.maxQuantity === "number" &&
     typeof l.executorNome === "string"
   );
-}
-
-function requestOrigin(req: Request): string {
-  const env = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  if (env) return env;
-  return new URL(req.url).origin;
 }
 
 export async function POST(req: Request) {
@@ -76,6 +77,33 @@ export async function POST(req: Request) {
     lines.push(row);
   }
 
+  const cepRaw =
+    typeof body === "object" && body !== null && "cep_destino" in body
+      ? (body as { cep_destino?: unknown }).cep_destino
+      : null;
+  const cepDestino =
+    typeof cepRaw === "string" ? cepRaw.replace(/\D/g, "").slice(0, 8) : "";
+  if (cepDestino.length !== 8) {
+    return NextResponse.json(
+      { error: "Informe o CEP de entrega (8 dígitos) para calcular o frete." },
+      { status: 400 },
+    );
+  }
+
+  const reserveLines = lines.map((l) => ({ listing_id: l.listingId, quantity: l.quantity }));
+  let freightBrl = 0;
+  try {
+    if (commerceUsesDatabase()) {
+      freightBrl = (await fetchCheckoutShippingQuotePublic(cepDestino, reserveLines)).total_frete_brl;
+    } else {
+      const state = await getCommerceState();
+      freightBrl = quoteCheckoutShippingFromState(state, reserveLines, cepDestino).total_frete_brl;
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Não foi possível cotar o frete.";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
   const lineItems = lines.map((l) => ({
     quantity: l.quantity,
     price_data: {
@@ -97,7 +125,23 @@ export async function POST(req: Request) {
     }
   }
 
-  const origin = requestOrigin(req);
+  const freightCents =
+    freightBrl > 0 ? Math.max(50, Math.round(freightBrl * 100)) : 0;
+  if (freightCents > 0) {
+    lineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: "brl" as const,
+        unit_amount: freightCents,
+        product_data: {
+          name: "Frete (entrega estimada)",
+          metadata: { listingId: "", slug: "frete" },
+        },
+      },
+    });
+  }
+
+  const origin = resolvePublicRedirectOrigin(req);
   try {
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -107,6 +151,8 @@ export async function POST(req: Request) {
       cancel_url: `${origin}/checkout`,
       metadata: {
         customer_email: session.email,
+        cep_destino: cepDestino,
+        shipping_brl: String(freightBrl),
         listing_ids: lines
           .map((l) => l.listingId)
           .join(",")

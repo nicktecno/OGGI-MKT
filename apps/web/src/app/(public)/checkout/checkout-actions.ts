@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import {
   commerceUsesDatabase,
+  fetchCheckoutShippingQuotePublic,
   getCommerceState,
   notifyStoreOrderCompleted,
   persistCheckoutReserve,
 } from "@/lib/commerce-backend";
+import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
 import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
 import { getSession } from "@/lib/session";
@@ -47,7 +49,27 @@ export async function confirmCheckoutDemoAction(
   }
 
   const deliveryNorm = normalizeCheckoutDelivery(d);
-  const totalBrl = validated.cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+  const productsSubtotal = validated.cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+
+  let freightBrl = 0;
+  try {
+    if (commerceUsesDatabase()) {
+      freightBrl = (
+        await fetchCheckoutShippingQuotePublic(deliveryNorm.cep, validated.reserveLines)
+      ).total_frete_brl;
+    } else {
+      freightBrl = quoteCheckoutShippingFromState(
+        state,
+        validated.reserveLines,
+        deliveryNorm.cep,
+      ).total_frete_brl;
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Não foi possível cotar o frete.";
+    return { ok: false, error: msg };
+  }
+
+  const totalBrl = Math.round((productsSubtotal + freightBrl) * 100) / 100;
 
   const customerOrder =
     session.sub && commerceUsesDatabase()
@@ -99,6 +121,7 @@ export async function confirmCheckoutDemoAction(
       uf: deliveryNorm.uf,
     },
     totalBrl,
+    shippingBrl: freightBrl,
   });
 
   revalidatePath("/loja");

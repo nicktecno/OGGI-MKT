@@ -238,3 +238,14 @@ model SupplierFulfillmentLine {
   @@index([supplierAccountId])
   @@index([productionAssignmentId])
 }
+
+/// Tokens OAuth da Melhor Envio (gravados após GET /integrations/melhor-envio/start → callback).
+model MelhorEnvioOAuthToken {
+  id           String   @id @default("default")
+  accessToken  String   @map("access_token")
+  refreshToken String   @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("melhor_envio_oauth_tokens")
+}

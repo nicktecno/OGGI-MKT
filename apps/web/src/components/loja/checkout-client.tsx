@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { confirmCheckoutDemoAction } from "@/app/(public)/checkout/checkout-actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -67,6 +67,18 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
   const [demoError, setDemoError] = useState<string | null>(null);
   const [step, setStep] = useState<"address" | "pay">("address");
   const [delivery, setDelivery] = useState<Partial<CheckoutDelivery>>(emptyDelivery);
+  const [payTotals, setPayTotals] = useState<{
+    subtotal: number;
+    freight: number;
+    total: number;
+  } | null>(null);
+  const [payQuoteLoading, setPayQuoteLoading] = useState(false);
+  const [payQuoteError, setPayQuoteError] = useState<string | null>(null);
+
+  const cartFingerprint = useMemo(
+    () => cart.lines.map((l) => `${l.listingId}:${l.quantity}`).join("|"),
+    [cart.lines],
+  );
 
   useEffect(() => {
     function sync() {
@@ -85,8 +97,82 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
       setStep("pay");
     } else {
       setStep("address");
+      setPayTotals(null);
+      setPayQuoteError(null);
     }
   }, [session]);
+
+  useEffect(() => {
+    if (step !== "pay" || !session || cart.lines.length === 0) return;
+    const d = readCheckoutDeliveryComplete();
+    if (!d) {
+      setPayTotals(null);
+      setPayQuoteLoading(false);
+      return;
+    }
+    const cep = onlyCepDigits(d.cep);
+    if (cep.length !== 8) {
+      setPayQuoteError("CEP de entrega inválido.");
+      setPayTotals(null);
+      setPayQuoteLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPayQuoteLoading(true);
+    setPayQuoteError(null);
+    void (async () => {
+      try {
+        const res = await fetch("/api/checkout/shipping-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cep_destino: cep,
+            lines: cart.lines.map((l) => ({
+              listing_id: l.listingId,
+              quantity: l.quantity,
+            })),
+          }),
+        });
+        const data = (await res.json()) as {
+          total_frete_brl?: number;
+          message?: string;
+        };
+        if (!res.ok) {
+          const msg =
+            typeof data.message === "string" ? data.message : "Não foi possível cotar o frete.";
+          if (!cancelled) {
+            setPayQuoteError(msg);
+            setPayTotals(null);
+          }
+          return;
+        }
+        if (typeof data.total_frete_brl !== "number" || !Number.isFinite(data.total_frete_brl)) {
+          if (!cancelled) {
+            setPayQuoteError("Resposta de frete inválida.");
+            setPayTotals(null);
+          }
+          return;
+        }
+        const subtotal = cartTotal(cart);
+        const freight = data.total_frete_brl;
+        const total = Math.round((subtotal + freight) * 100) / 100;
+        if (!cancelled) {
+          setPayTotals({ subtotal, freight, total });
+          setPayQuoteError(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setPayQuoteError("Erro de rede ao cotar frete.");
+          setPayTotals(null);
+        }
+      } finally {
+        if (!cancelled) setPayQuoteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, session, cartFingerprint, cart]);
 
   if (done) {
     return (
@@ -144,8 +230,8 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
           <CardHeader>
             <CardTitle className="font-serif text-xl">Resumo do pedido</CardTitle>
             <CardDescription>
-              Você pode revisar os itens à esquerda. Para vincular o pedido à sua conta, entre
-              abaixo — após o login você continua no checkout (entrega e pagamento).
+              Revise os itens à esquerda. Faça login abaixo para seguir com endereço, frete e
+              pagamento — o carrinho permanece neste aparelho após entrar.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -178,15 +264,18 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
             </Link>
           </p>
           <div
-            id="conta-demo"
+            id="conta-exemplo-checkout"
             className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground"
           >
-            <p className="font-medium text-foreground">Primeira compra / conta demo</p>
+            <p className="font-medium text-foreground">Comprar sem cadastro próprio (exemplo)</p>
             <p className="mt-2">
-              Não há cadastro separado neste MVP: use a conta cliente{" "}
-              <code className="rounded bg-muted px-1 font-mono text-xs">cliente@demo.local</code>{" "}
-              e a senha <code className="rounded bg-muted px-1">Demo#2026</code>. O carrinho no
-              navegador é mantido após entrar.
+              Você pode{" "}
+              <Link href="/registrar" className="font-medium text-foreground underline-offset-4 hover:underline">
+                criar conta
+              </Link>{" "}
+              ou, neste ambiente, entrar com o cliente de exemplo{" "}
+              <code className="rounded bg-muted px-1 font-mono text-xs">cliente@demo.local</code> e a
+              senha <code className="rounded bg-muted px-1">Demo#2026</code>.
             </p>
           </div>
         </div>
@@ -205,6 +294,8 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
       return;
     }
     writeCheckoutDelivery(delivery);
+    setPayTotals(null);
+    setPayQuoteError(null);
     setStep("pay");
   }
 
@@ -356,8 +447,10 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                   <span className="shrink-0 font-mono tabular-nums">{formatBrl(l.unitPrice * l.quantity)}</span>
                 </div>
               ))}
-              <p className="border-t border-border pt-2 text-right font-serif text-lg font-medium tabular-nums">
-                {formatBrl(total)}
+              <p className="text-xs text-muted-foreground">Produtos</p>
+              <p className="text-right font-serif text-lg font-medium tabular-nums">{formatBrl(total)}</p>
+              <p className="pt-1 text-xs text-muted-foreground">
+                O frete será calculado no passo seguinte com base no CEP.
               </p>
             </CardContent>
           </Card>
@@ -372,7 +465,16 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                   {deliveryComplete?.recipientName} · {deliveryComplete?.phone}
                 </CardDescription>
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => setStep("address")}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPayTotals(null);
+                  setPayQuoteError(null);
+                  setStep("address");
+                }}
+              >
                 Editar entrega
               </Button>
             </CardHeader>
@@ -407,14 +509,37 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                   </li>
                 ))}
               </ul>
-              <p className="text-right font-serif text-xl font-medium tabular-nums">Total {formatBrl(total)}</p>
+              {payQuoteLoading ? (
+                <p className="text-sm text-muted-foreground">Calculando frete…</p>
+              ) : payQuoteError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {payQuoteError}
+                </p>
+              ) : payTotals ? (
+                <div className="space-y-1 text-right text-sm tabular-nums">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Subtotal (produtos)</span>
+                    <span className="font-mono">{formatBrl(payTotals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Frete estimado</span>
+                    <span className="font-mono">{formatBrl(payTotals.freight)}</span>
+                  </div>
+                  <p className="border-t border-border pt-2 font-serif text-xl font-medium">
+                    Total {formatBrl(payTotals.total)}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-right font-serif text-xl font-medium tabular-nums">Total {formatBrl(total)}</p>
+              )}
 
               {stripeSandbox && session.role === "CUSTOMER" ? (
                 <div className="space-y-2 rounded-lg border border-border/80 bg-muted/15 p-4">
-                  <p className="text-sm font-medium text-foreground">Pagar com Stripe (sandbox)</p>
+                  <p className="text-sm font-medium text-foreground">Pagar com cartão (Stripe)</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Abre o checkout seguro da Stripe em modo teste. Após o pagamento, o estoque é
-                    baixado automaticamente. Use cartões de teste (ex.: 4242…).
+                    Você será redirecionado para o pagamento seguro. Quando este site estiver em modo
+                    de testes da Stripe, use apenas cartões de exemplo (como 4242…). Após a confirmação,
+                    o estoque da oferta é atualizado.
                   </p>
                   {stripeError ? (
                     <p className="text-sm text-destructive" role="alert">
@@ -424,16 +549,27 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                   <Button
                     type="button"
                     size="lg"
-                    disabled={stripeLoading}
+                    disabled={
+                      stripeLoading ||
+                      payQuoteLoading ||
+                      !!payQuoteError ||
+                      !payTotals ||
+                      !readCheckoutDeliveryComplete()
+                    }
                     onClick={() => {
                       setStripeError(null);
                       setStripeLoading(true);
                       void (async () => {
                         try {
+                          const d = readCheckoutDeliveryComplete();
+                          const cep = d ? onlyCepDigits(d.cep) : "";
                           const res = await fetch("/api/checkout/stripe-session", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ lines: cart.lines }),
+                            body: JSON.stringify({
+                              lines: cart.lines,
+                              cep_destino: cep,
+                            }),
                           });
                           const data = (await res.json()) as { url?: string; error?: string };
                           if (!res.ok) {
@@ -453,7 +589,7 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                       })();
                     }}
                   >
-                    {stripeLoading ? "Redirecionando…" : "Pagar com Stripe (teste)"}
+                    {stripeLoading ? "Redirecionando…" : "Pagar com cartão"}
                   </Button>
                 </div>
               ) : null}
@@ -468,7 +604,12 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                 <Button
                   size="lg"
                   variant={stripeSandbox && session.role === "CUSTOMER" ? "outline" : "default"}
-                  disabled={demoLoading}
+                  disabled={
+                    demoLoading ||
+                    payQuoteLoading ||
+                    !!payQuoteError ||
+                    !payTotals
+                  }
                   onClick={() => {
                     setDemoError(null);
                     const d = readCheckoutDeliveryComplete();
@@ -496,16 +637,16 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                     })();
                   }}
                 >
-                  {demoLoading ? "Processando…" : "Confirmar pedido (demo, sem gateway)"}
+                  {demoLoading ? "Processando…" : "Confirmar sem cartão (teste)"}
                 </Button>
                 <Link href="/carrinho" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
                   Editar carrinho
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                O fluxo demo confirma o pedido no servidor, baixa o estoque da oferta e esvazia o
-                carrinho. O Stripe em teste faz o pagamento e, na página de obrigado, aplica a mesma
-                baixa de estoque.
+                “Confirmar sem cartão” grava o pedido e baixa o estoque como exercício, sem cobrança.
+                “Pagar com cartão” usa o Stripe; após o pagamento, a página de obrigado confirma e
+                aplica a mesma baixa de estoque.
               </p>
             </CardContent>
           </Card>
