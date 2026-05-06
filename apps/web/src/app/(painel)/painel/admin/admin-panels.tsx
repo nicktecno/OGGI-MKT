@@ -1052,17 +1052,16 @@ function AdminPecaProductCard({
   };
 
   return (
-    <Card className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
-      <div className="flex w-full items-stretch rounded-t-lg border-b border-border/40">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={`peca-detalhes-${product.id}`}
-          id={`peca-resumo-${product.id}`}
-          aria-label={open ? "Recolher detalhes da peça" : "Expandir detalhes da peça"}
-          onClick={() => setOpen((v) => !v)}
-          className="flex min-w-0 flex-1 items-start gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
+    <Card className={cn(ADMIN_CARD, "h-min w-full self-start shadow-none hover:shadow-lg")}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`peca-detalhes-${product.id}`}
+        id={`peca-resumo-${product.id}`}
+        aria-label={open ? "Recolher detalhes da peça" : "Expandir detalhes da peça"}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start gap-3 rounded-t-lg border-b border-border/40 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
           {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
           <img
             src={product.imagem_url}
@@ -1123,23 +1122,7 @@ function AdminPecaProductCard({
               className={cn("size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
             />
           </div>
-        </button>
-        <div className="flex w-[min-content] shrink-0 flex-col justify-center border-l border-border/30 px-2 py-3 sm:px-3">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="border-destructive/80"
-            disabled={pending}
-            onClick={confirmDeletePeca}
-          >
-            {adminActionLoading(pending, pendingScope, sDelete) ? (
-              <Loader2 className="animate-spin" aria-hidden />
-            ) : null}
-            Excluir
-          </Button>
-        </div>
-      </div>
+      </button>
 
       {open ? (
         <div id={`peca-detalhes-${product.id}`} role="region" aria-labelledby={`peca-resumo-${product.id}`}>
@@ -1410,7 +1393,7 @@ export function AdminPecasPanel({
         </p>
       </SectionIntro>
 
-      <div className="grid gap-8 xl:grid-cols-2">
+      <div className="grid gap-8 items-start xl:grid-cols-2">
         {products.map((product) => (
           <AdminPecaProductCard
             key={product.id}
