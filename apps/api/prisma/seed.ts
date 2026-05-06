@@ -56,6 +56,29 @@ async function main() {
     },
   });
 
+  const fornecedorAviamentos = await prisma.platformAccount.create({
+    data: {
+      id: 'acc-fornecedor-aviamentos-demo',
+      email: 'aviamentos@demo.local',
+      passwordHash: hash,
+      name: 'Maria Aviamentos',
+      role: 'SUPPLIER',
+      status: 'ACTIVE',
+      termsAcceptedAt: new Date('2026-01-01T12:00:00.000Z'),
+      termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.SUPPLIER,
+      supplierProfile: {
+        create: {
+          businessName: 'Maria Aviamentos ME',
+          cep: '04547-130',
+          phone: '+55 11 96666-0003',
+          addressLine1: 'Rua dos Pinheiros, 500',
+          city: 'São Paulo',
+          stateUf: 'SP',
+        },
+      },
+    },
+  });
+
   const executor = await prisma.platformAccount.create({
     data: {
       id: 'acc-executor-demo',
@@ -129,6 +152,39 @@ async function main() {
         pacoteLarguraCm: 12,
         pacoteComprimentoCm: 5,
         pacotePesoKg: 0.22,
+      },
+      {
+        id: 'supply-botoes-madreperola-18',
+        supplierAccountId: fornecedorAviamentos.id,
+        nome: 'Botões madrepérola 18 mm — branco',
+        skuInterno: 'AVI-BTN-MP-18-WHT',
+        unidade: 'pc',
+        quantidadeKind: SupplyQuantityKind.PECA,
+        quantidade: 1,
+        custoFornecedor: 0.85,
+        freteAteExecutor: 2.5,
+        observacao: 'Cartela com 6 unidades.',
+        ativo: true,
+        pacoteAlturaCm: 12,
+        pacoteLarguraCm: 10,
+        pacoteComprimentoCm: 3,
+        pacotePesoKg: 0.08,
+      },
+      {
+        id: 'supply-elastico-trancado-20',
+        supplierAccountId: fornecedorAviamentos.id,
+        nome: 'Elástico trançado 20 mm — preto',
+        skuInterno: 'AVI-ELA-T20-BLK',
+        unidade: 'm',
+        quantidadeKind: SupplyQuantityKind.METRO,
+        quantidade: 1,
+        custoFornecedor: 6.2,
+        freteAteExecutor: 4.0,
+        ativo: true,
+        pacoteAlturaCm: 14,
+        pacoteLarguraCm: 12,
+        pacoteComprimentoCm: 6,
+        pacotePesoKg: 0.18,
       },
     ],
   });

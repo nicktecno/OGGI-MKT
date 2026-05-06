@@ -17,6 +17,12 @@ export const MOCK_USERS: Record<
     label: "Fornecedor",
     displayName: "Bruno Tecidos",
   },
+  "aviamentos@demo.local": {
+    password: "Demo#2026",
+    role: "SUPPLIER",
+    label: "Fornecedor",
+    displayName: "Maria Aviamentos",
+  },
   "executor@demo.local": {
     password: "Demo#2026",
     role: "EXECUTOR",

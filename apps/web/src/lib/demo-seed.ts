@@ -3,10 +3,12 @@
  * E-mails coincidem com mock-users para login.
  */
 
+import { MOCK_USERS } from "./mock-users";
+
 export type DemoSupplyItem = {
   id: string;
   supplierEmail: string;
-  /** Razão social ou nome de conta — para UI (catálogo admin, pickers). */
+  /** Preenchido pela API (razão social / nome da conta); no demo sem API usa-se mock-users. */
   supplier_name?: string | null;
   nome: string;
   sku_interno: string;
@@ -139,15 +141,23 @@ export function executorOptionsFromDemoCommerce(state: {
 
 export type SupplierPickerOption = { email: string; label: string };
 
-/** Fornecedores distintos do catálogo com nome para exibição (fallback: e-mail). */
+function supplierDisplayLabelForInsumoRow(s: DemoSupplyItem): string {
+  const email = s.supplierEmail?.trim() ?? "";
+  const fromApi = s.supplier_name?.trim();
+  if (fromApi) return fromApi;
+  const mock = MOCK_USERS[email.toLowerCase()]?.displayName?.trim();
+  if (mock) return mock;
+  return email;
+}
+
+/** Fornecedores distintos do catálogo com nome para exibição (API ou contas demo; senão e-mail). */
 export function supplierOptionsFromCatalog(supplies: DemoSupplyItem[]): SupplierPickerOption[] {
   const byKey = new Map<string, { email: string; label: string }>();
   for (const s of supplies) {
     const email = s.supplierEmail?.trim();
     if (!email) continue;
     const k = email.toLowerCase();
-    const nameRow = s.supplier_name?.trim();
-    const labelCandidate = nameRow && nameRow.length > 0 ? nameRow : email;
+    const labelCandidate = supplierDisplayLabelForInsumoRow(s);
     const prev = byKey.get(k);
     if (!prev) {
       byKey.set(k, { email, label: labelCandidate });
@@ -166,7 +176,6 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-linho-offwhite",
     supplierEmail: "fornecedor@demo.local",
-    supplier_name: "Bruno Tecidos Ltda",
     nome: "Linho premium off-white",
     sku_interno: "TEC-LIN-OW-240",
     unidade: "m",
@@ -184,7 +193,6 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-ziper-invisivel-40",
     supplierEmail: "fornecedor@demo.local",
-    supplier_name: "Bruno Tecidos Ltda",
     nome: "Zíper invisível 40 cm — preto",
     sku_interno: "AVI-ZIP-INV-040-BLK",
     unidade: "pc",
@@ -197,6 +205,39 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
     pacote_largura_cm: 12,
     pacote_comprimento_cm: 5,
     pacote_peso_kg: 0.22,
+  },
+  {
+    id: "supply-botoes-madreperola-18",
+    supplierEmail: "aviamentos@demo.local",
+    nome: "Botões madrepérola 18 mm — branco",
+    sku_interno: "AVI-BTN-MP-18-WHT",
+    unidade: "pc",
+    custo_fornecedor: 0.85,
+    frete_ate_executor: 2.5,
+    ativo: true,
+    quantidade_kind: "PECA",
+    quantidade: 1,
+    observacao: "Cartela com 6 unidades.",
+    pacote_altura_cm: 12,
+    pacote_largura_cm: 10,
+    pacote_comprimento_cm: 3,
+    pacote_peso_kg: 0.08,
+  },
+  {
+    id: "supply-elastico-trancado-20",
+    supplierEmail: "aviamentos@demo.local",
+    nome: "Elástico trançado 20 mm — preto",
+    sku_interno: "AVI-ELA-T20-BLK",
+    unidade: "m",
+    custo_fornecedor: 6.2,
+    frete_ate_executor: 4.0,
+    ativo: true,
+    quantidade_kind: "METRO",
+    quantidade: 1,
+    pacote_altura_cm: 14,
+    pacote_largura_cm: 12,
+    pacote_comprimento_cm: 6,
+    pacote_peso_kg: 0.18,
   },
 ];
 
