@@ -1004,6 +1004,11 @@ function AdminPecaProductCard({
   const freteB2B = product.frete_insumos_atribuicao_reais ?? null;
   const materiaisMaisFrete =
     freteB2B != null ? insumoTotal + freteB2B : null;
+  /** Com atribuição, o preço gravado na API/cookie é o canônico. */
+  const precoLojaCard =
+    product.preco_venda_congelado === true
+      ? product.preco_venda_publico
+      : compositePrecoLojaPlanejado(product);
   const sPause = `peca-${product.id}-pause`;
   const sActive = `peca-${product.id}-active`;
   const sDelete = `peca-${product.id}-delete`;
@@ -1043,8 +1048,24 @@ function AdminPecaProductCard({
             ) : null}
           </p>
           <p className="text-sm font-medium tabular-nums text-foreground">
-            Preço na loja: {formatBrl(compositePrecoLojaPlanejado(product))}
+            Preço na loja: {formatBrl(precoLojaCard)}
           </p>
+          {freteB2B != null ? (
+            <p className="text-xs leading-snug text-muted-foreground">
+              Inclui frete dos insumos à costureira{" "}
+              <span className="font-medium tabular-nums text-foreground">{formatBrl(freteB2B)}</span>
+              {materiaisMaisFrete != null ? (
+                <>
+                  {" "}
+                  · Materiais + esse frete:{" "}
+                  <span className="font-medium tabular-nums text-foreground">
+                    {formatBrl(materiaisMaisFrete)}
+                  </span>{" "}
+                  (+ taxas no detalhe)
+                </>
+              ) : null}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
           <div className="flex flex-wrap justify-end gap-1.5">
