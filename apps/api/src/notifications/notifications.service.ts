@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { quantidadeFromCompositeLineJson, supplyItemIdFromCompositeLineJson } from '../commerce/composite-line-json.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -457,5 +457,50 @@ export class NotificationsService {
     void this.onPasswordResetRequested(input).catch((err) =>
       this.logger.error('onPasswordResetRequested', err),
     );
+  }
+
+  /** Formulário “Fale conosco” do site — e-mail aos admins ativos + ADMIN_NOTIFY_EMAILS. */
+  async onPublicContactMessage(input: {
+    name: string;
+    email: string;
+    subject?: string;
+    message: string;
+    clientIp?: string | null;
+  }): Promise<void> {
+    if (!this.mail.isConfigured()) {
+      this.logger.warn('Fale conosco: e-mail não configurado na API (Resend/SMTP + MAIL_FROM).');
+      throw new ServiceUnavailableException(
+        'O envio de mensagens está indisponível no momento. Tente mais tarde.',
+      );
+    }
+    const admins = await this.adminEmails();
+    if (admins.length === 0) {
+      this.logger.warn('Fale conosco: nenhum destinatário admin (contas ACTIVE ou ADMIN_NOTIFY_EMAILS).');
+      throw new ServiceUnavailableException(
+        'O envio de mensagens está indisponível no momento. Tente mais tarde.',
+      );
+    }
+    const base = this.baseUrl();
+    const subjLine = input.subject?.trim()
+      ? ` — ${input.subject.trim().slice(0, 120)}`
+      : '';
+    const subject = `[Site] Fale conosco${subjLine}`;
+    const ipLine = input.clientIp ? `\nIP (aprox.): ${input.clientIp}\n` : '';
+    const text =
+      `Nova mensagem pelo formulário “Fale conosco” do site.\n\n` +
+      `Nome: ${input.name}\n` +
+      `E-mail para resposta: ${input.email}\n` +
+      (input.subject?.trim() ? `Assunto: ${input.subject.trim()}\n` : '') +
+      ipLine +
+      `\nMensagem:\n${input.message}\n\n` +
+      `—\nResponder diretamente a: ${input.email}\n` +
+      `Painel: ${base}/painel/admin\n`;
+
+    try {
+      await this.mail.send({ to: admins, subject, text });
+    } catch (e) {
+      this.logger.error('Falha ao enviar e-mail (fale conosco)', e);
+      throw new ServiceUnavailableException('Não foi possível enviar a mensagem. Tente novamente em instantes.');
+    }
   }
 }

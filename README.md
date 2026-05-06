@@ -129,8 +129,8 @@ Detalhes: [docs/infrastructure.md](docs/infrastructure.md).
 
 ## E-mail (Resend) na API
 
-Na **`apps/api/.env`**: `RESEND_API_KEY=re_...` e `MAIL_FROM="Nome <onboarding@resend.dev>"` (ou domínio verificado na Resend). Sem isso, o servidor regista aviso em log e não envia. Cobertura: cadastro cliente (boas-vindas), cadastro parceiro pendente (admin), aprovação/recusa de parceiro, pedidos de costureira, atribuições/fornecedores, pedidos da loja (demo e Stripe).
+Na **`apps/api/.env`**: `RESEND_API_KEY=re_...` e `MAIL_FROM="Nome <onboarding@resend.dev>"` (ou domínio verificado na Resend). Sem isso, o servidor regista aviso em log e não envia. Cobertura: cadastro cliente (boas-vindas), cadastro parceiro pendente (admin), aprovação/recusa de parceiro, pedidos de costureira, atribuições/fornecedores, pedidos da loja (demo e Stripe), **fale conosco** (`POST /public/contact` a partir de `/contato` no Next).
 
 ## ViaCEP no front
 
-Formulários com CEP (checkout, cadastro, perfis fornecedor/costureira, combinação admin) incluem **“Buscar CEP (ViaCEP)”** — consulta pública `viacep.com.br`, sem chave.
+Formulários com CEP (checkout, cadastro, perfis fornecedor/costureira, combinação admin) consultam o **ViaCEP ao sair do campo** (`onBlur`) quando o CEP tem 8 dígitos — API pública `viacep.com.br`, sem chave.

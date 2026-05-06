@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CepLookupButton } from "@/components/address/cep-lookup-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,7 @@ import { toast } from "sonner";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { SupplyItemDetailModal } from "@/components/admin/supply-item-detail-modal";
 import { cn, formatBrl } from "@/lib/utils";
-import { onlyCepDigits } from "@/lib/viacep";
+import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import {
   approveExecutionRequest,
   archiveProductionAssignment,
@@ -2279,23 +2278,20 @@ function DirectAssignForm({
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="da-cep">CEP de postagem</Label>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-              <Input
-                id="da-cep"
-                className="max-w-[14rem]"
-                value={cep}
-                onChange={(e) => setCep(e.target.value)}
-                disabled={pending}
-              />
-              <CepLookupButton
-                cep={cep}
-                disabled={pending}
-                onFill={(v) => {
+            <Input
+              id="da-cep"
+              className="max-w-[14rem]"
+              value={cep}
+              onChange={(e) => setCep(e.target.value)}
+              onBlur={(e) =>
+                void applyViaCepOnBlur(e.currentTarget.value, (v) => {
                   setCep(onlyCepDigits(v.cep));
                   setCidade(`${v.localidade} — ${v.uf}`);
-                }}
-              />
-            </div>
+                })
+              }
+              disabled={pending}
+            />
+            <p className="text-xs text-muted-foreground">Com 8 dígitos, ViaCEP ao sair do campo.</p>
           </div>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={pending || !selectedExecutor || !productId}>

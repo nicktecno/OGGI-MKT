@@ -39,3 +39,19 @@ export async function fetchViaCepAddress(cepRaw: string): Promise<ViaCepAddress 
 
   return { cep: cepFmt, logradouro, bairro, localidade, uf, complemento };
 }
+
+/**
+ * Com 8 dígitos no CEP, consulta ViaCEP ao sair do campo (`onBlur`) e chama `onFill` se encontrar.
+ */
+export async function applyViaCepOnBlur(
+  cepRaw: string,
+  onFill: (data: ViaCepAddress) => void,
+): Promise<void> {
+  if (onlyCepDigits(cepRaw).length !== 8) return;
+  try {
+    const data = await fetchViaCepAddress(cepRaw);
+    if (data) onFill(data);
+  } catch {
+    /* rede ou CEP inválido: utilizador pode corrigir */
+  }
+}

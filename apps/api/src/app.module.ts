@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CommerceModule } from './commerce/commerce.module';
+import { ContactModule } from './contact/contact.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NotificationsInternalController } from './notifications/notifications-internal.controller';
 import { HealthController } from './health/health.controller';
@@ -20,6 +21,7 @@ import { SupplyModule } from './supply/supply.module';
     PrismaModule,
     NotificationsModule,
     AuthModule,
+    ContactModule,
     PlatformModule,
     SupplyModule,
     CommerceModule,

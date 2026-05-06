@@ -51,6 +51,12 @@ export default async function PublicLayout({ children }: { children: React.React
             >
               Loja
             </Link>
+            <Link
+              href="/contato"
+              className="hidden shrink-0 text-[0.8125rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent sm:inline"
+            >
+              Contato
+            </Link>
             <HeaderCartLink />
             {session && userInHeader ? (
               <>
@@ -96,6 +102,11 @@ export default async function PublicLayout({ children }: { children: React.React
               Peças selecionadas de artesãos independentes. Compra segura e suporte humano.
             </p>
           </div>
+          <p className="mt-6 text-center sm:mt-4 sm:text-left">
+            <Link href="/contato" className="text-sm font-medium text-foreground underline-offset-4 hover:underline">
+              Fale conosco
+            </Link>
+          </p>
           <div className="mx-auto mt-10 h-px max-w-xs bg-gradient-to-r from-transparent via-border to-transparent" />
           <p className="mt-8 text-center text-[0.625rem] uppercase tracking-[0.26em] text-muted-foreground">
             © {new Date().getFullYear()} {SITE_NAME}

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { CepLookupButton } from "@/components/address/cep-lookup-button";
 import { Button } from "@/components/ui/button";
 import { LottieLoading } from "@/components/ui/lottie-loading";
 import {
@@ -21,7 +20,7 @@ import {
   type AccountTermsRole,
 } from "@/lib/account-terms";
 import { SITE_NAME } from "@/lib/site";
-import { onlyCepDigits } from "@/lib/viacep";
+import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import { cn } from "@/lib/utils";
 
 type RoleChoice = "SUPPLIER" | "EXECUTOR";
@@ -315,26 +314,24 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label>CEP</Label>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                  <Input
-                    value={cep}
-                    onChange={(e) => setCep(e.target.value)}
-                    required
-                    className="max-w-[14rem] bg-background"
-                  />
-                  <CepLookupButton
-                    cep={cep}
-                    disabled={loading}
-                    onFill={(v) => {
+                <Input
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  onBlur={(e) =>
+                    void applyViaCepOnBlur(e.currentTarget.value, (v) => {
                       setCep(onlyCepDigits(v.cep));
                       if (v.logradouro) setAddressLine1(v.logradouro);
                       if (v.localidade) setCity(v.localidade);
                       if (v.uf) setStateUf(v.uf.slice(0, 2).toUpperCase());
                       const extra = [v.complemento, v.bairro ? `Bairro: ${v.bairro}` : ""].filter(Boolean).join(" · ");
                       if (extra) setAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
-                    }}
-                  />
-                </div>
+                    })
+                  }
+                  required
+                  disabled={loading}
+                  className="max-w-[14rem] bg-background"
+                />
+                <p className="text-xs text-muted-foreground">Com 8 dígitos, ViaCEP ao sair do campo.</p>
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
@@ -385,17 +382,11 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label>CEP</Label>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                  <Input
-                    value={executorCep}
-                    onChange={(e) => setExecutorCep(e.target.value)}
-                    required
-                    className="max-w-[14rem] bg-background"
-                  />
-                  <CepLookupButton
-                    cep={executorCep}
-                    disabled={loading}
-                    onFill={(v) => {
+                <Input
+                  value={executorCep}
+                  onChange={(e) => setExecutorCep(e.target.value)}
+                  onBlur={(e) =>
+                    void applyViaCepOnBlur(e.currentTarget.value, (v) => {
                       setExecutorCep(onlyCepDigits(v.cep));
                       if (v.logradouro) setExecutorAddressLine1(v.logradouro);
                       if (v.localidade) setExecutorCity(v.localidade);
@@ -404,9 +395,13 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
                       if (extra) {
                         setExecutorAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
                       }
-                    }}
-                  />
-                </div>
+                    })
+                  }
+                  required
+                  disabled={loading}
+                  className="max-w-[14rem] bg-background"
+                />
+                <p className="text-xs text-muted-foreground">Com 8 dígitos, ViaCEP ao sair do campo.</p>
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>

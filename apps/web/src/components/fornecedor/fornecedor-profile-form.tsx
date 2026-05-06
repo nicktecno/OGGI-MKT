@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { CepLookupButton } from "@/components/address/cep-lookup-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { patchSupplierProfileAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
 import type { PlatformMe } from "@/lib/platform-account-server";
-import { onlyCepDigits } from "@/lib/viacep";
+import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 
 type Props = { initial: NonNullable<PlatformMe["supplierProfile"]> };
 
@@ -53,25 +52,23 @@ export function FornecedorProfileForm({ initial }: Props) {
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>CEP</Label>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <Input
-              value={cep}
-              onChange={(e) => setCep(e.target.value)}
-              className="max-w-[14rem] bg-background"
-            />
-            <CepLookupButton
-              cep={cep}
-              disabled={pending}
-              onFill={(v) => {
+          <Input
+            value={cep}
+            onChange={(e) => setCep(e.target.value)}
+            onBlur={(e) =>
+              void applyViaCepOnBlur(e.currentTarget.value, (v) => {
                 setCep(onlyCepDigits(v.cep));
                 if (v.logradouro) setAddressLine1(v.logradouro);
                 if (v.localidade) setCity(v.localidade);
                 if (v.uf) setStateUf(v.uf.slice(0, 2).toUpperCase());
                 const extra = [v.complemento, v.bairro ? `Bairro: ${v.bairro}` : ""].filter(Boolean).join(" · ");
                 if (extra) setAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
-              }}
-            />
-          </div>
+              })
+            }
+            disabled={pending}
+            className="max-w-[14rem] bg-background"
+          />
+          <p className="text-xs text-muted-foreground">Com 8 dígitos, a busca no ViaCEP ocorre ao sair do campo.</p>
         </div>
         <div className="space-y-2">
           <Label>Telefone</Label>
