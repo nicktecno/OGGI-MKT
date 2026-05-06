@@ -51,5 +51,19 @@ if [ "${NODE_ENV}" = "production" ]; then
       ;;
   esac
 fi
+
+# Prisma Migrate usa pg_advisory_lock com timeout fixo de 10s (não configurável). No Neon (compute suspenso,
+# latência) isso falha com P1002 mesmo em ligação directa. Prisma suporta PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK.
+# Por defeito só para hosts *.neon.tech, se a variável ainda não estiver definida no ambiente.
+migrate_urls="${DATABASE_DIRECT_URL:-}${DATABASE_URL:-}"
+case "$migrate_urls" in
+  *neon.tech*)
+    if [ "${PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK+x}" = "" ]; then
+      export PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1
+      echo "PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 (Neon): evita timeout em pg_advisory_lock no migrate. Não correr dois migrate deploy em paralelo na mesma base." >&2
+    fi
+    ;;
+esac
+
 npx prisma migrate deploy
 exec node dist/src/main.js

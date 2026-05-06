@@ -32,6 +32,7 @@ Se `DATABASE_URL` usar o **host com `-pooler`** (PgBouncer), `prisma migrate dep
 
 - **Render (recomendado):** no dashboard Neon copie também a string **direct** e defina `DATABASE_DIRECT_URL` no serviço.
 - **Atalho:** se a `DATABASE_URL` for a pooled típica do Neon (hostname com `-pooler`), o `docker-entrypoint.sh` **deriva** `DATABASE_DIRECT_URL` removendo `-pooler` do host, para não ser obrigatório duplicar variáveis no Render.
+- **P1002 / `pg_advisory_lock`:** o Prisma usa timeout de 10s nesse lock; no Neon costuma falhar. O entrypoint define **`PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1`** por defeito quando o host contém `neon.tech` (podes desativar com `PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=0` se precisares do lock e garantires um único migrate). Não correr dois `migrate deploy` em paralelo na mesma base.
 - Em Postgres local, `DATABASE_DIRECT_URL` pode ser igual a `DATABASE_URL`.
 
 ## Variáveis de ambiente (visão)
