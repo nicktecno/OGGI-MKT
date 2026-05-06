@@ -103,6 +103,7 @@ Quando o site **não** está ligado à API e base de dados de produção (config
 |------------------------|-------------------|--------------------|
 | Ana Runway             | `admin@demo.local`     | Administradora     |
 | Bruno Tecidos          | `fornecedor@demo.local`| Fornecedor         |
+| Maria Aviamentos       | `aviamentos@demo.local`| Fornecedor         |
 | Carla Mendes           | `executor@demo.local`  | Executor           |
 | Dana Oliveira          | `cliente@demo.local`   | Cliente (loja)     |
 

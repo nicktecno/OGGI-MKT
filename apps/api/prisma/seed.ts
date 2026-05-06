@@ -69,9 +69,10 @@ async function main() {
       supplierProfile: {
         create: {
           businessName: 'Maria Aviamentos ME',
-          cep: '04547-130',
+          cep: '01310-100',
           phone: '+55 11 96666-0003',
           addressLine1: 'Rua dos Pinheiros, 500',
+          addressComplement: 'Loja 01',
           city: 'São Paulo',
           stateUf: 'SP',
         },

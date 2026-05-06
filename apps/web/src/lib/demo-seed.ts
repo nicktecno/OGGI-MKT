@@ -181,6 +181,7 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-linho-offwhite",
     supplierEmail: "fornecedor@demo.local",
+    supplier_name: "Bruno Tecidos Ltda",
     nome: "Linho premium off-white",
     sku_interno: "TEC-LIN-OW-240",
     unidade: "m",
@@ -198,6 +199,7 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-ziper-invisivel-40",
     supplierEmail: "fornecedor@demo.local",
+    supplier_name: "Bruno Tecidos Ltda",
     nome: "Zíper invisível 40 cm — preto",
     sku_interno: "AVI-ZIP-INV-040-BLK",
     unidade: "pc",
@@ -214,6 +216,7 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-botoes-madreperola-18",
     supplierEmail: "aviamentos@demo.local",
+    supplier_name: "Maria Aviamentos ME",
     nome: "Botões madrepérola 18 mm — branco",
     sku_interno: "AVI-BTN-MP-18-WHT",
     unidade: "pc",
@@ -231,6 +234,7 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-elastico-trancado-20",
     supplierEmail: "aviamentos@demo.local",
+    supplier_name: "Maria Aviamentos ME",
     nome: "Elástico trançado 20 mm — preto",
     sku_interno: "AVI-ELA-T20-BLK",
     unidade: "m",

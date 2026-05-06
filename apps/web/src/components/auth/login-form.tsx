@@ -114,9 +114,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
           Contas demo (senha <code className="rounded bg-muted px-1">Demo#2026</code>): Ana
           Admin <code className="rounded bg-muted px-1">admin@demo.local</code> · Bruno
-          Fornecedor <code className="rounded bg-muted px-1">fornecedor@demo.local</code> ·
-          Carla Executor <code className="rounded bg-muted px-1">executor@demo.local</code>{" "}
-          · Dana Cliente <code className="rounded bg-muted px-1">cliente@demo.local</code>
+          Fornecedor <code className="rounded bg-muted px-1">fornecedor@demo.local</code> · Maria
+          Fornecedor <code className="rounded bg-muted px-1">aviamentos@demo.local</code> · Carla
+          Executor <code className="rounded bg-muted px-1">executor@demo.local</code> · Dana Cliente{" "}
+          <code className="rounded bg-muted px-1">cliente@demo.local</code>
         </p>
       </CardContent>
     </Card>

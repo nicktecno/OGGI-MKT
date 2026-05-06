@@ -88,7 +88,7 @@ npm run dev:web
 
 Código em `apps/web/src/app/(public)/` e `apps/web/src/app/(painel)/` (route groups não aparecem na URL).
 
-**Login MVP (mock):** senha `Demo#2026` para todos — **Ana Runway** `admin@demo.local`, **Bruno Tecidos** `fornecedor@demo.local`, **Carla Mendes** `executor@demo.local`, **Dana Oliveira** `cliente@demo.local`. Redirecionamento por papel: admin / fornecedor / executor → painel correspondente; cliente → `/loja`. Dados de catálogo (2 insumos, 1 produto composto, 1 oferta publicada) estão em `apps/web/src/lib/demo-seed.ts` e aparecem em `/loja` e nos painéis. Defina `AUTH_SECRET` (32+ caracteres) em `apps/web/.env.local` para produção; em dev, um fallback inseguro é usado se estiver vazio.
+**Login MVP (mock):** senha `Demo#2026` para todos — **Ana Runway** `admin@demo.local`, **Bruno Tecidos** `fornecedor@demo.local`, **Maria Aviamentos** `aviamentos@demo.local`, **Carla Mendes** `executor@demo.local`, **Dana Oliveira** `cliente@demo.local`. Redirecionamento por papel: admin / fornecedor / executor → painel correspondente; cliente → `/loja`. Dados de catálogo (insumos dos dois fornecedores, produto composto, oferta publicada) estão em `apps/web/src/lib/demo-seed.ts` e no seed da API (`apps/api/prisma/seed.ts`) e aparecem em `/loja` e nos painéis. Defina `AUTH_SECRET` (32+ caracteres) em `apps/web/.env.local` para produção; em dev, um fallback inseguro é usado se estiver vazio.
 
 `FRONTEND_URL` na API deve listar a origem do Next (ex.: `http://localhost:3000`) para CORS com `credentials: true`.
 
