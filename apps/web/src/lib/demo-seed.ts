@@ -372,7 +372,10 @@ export function getSupplyItemById(id: string): DemoSupplyItem | undefined {
 export function mergeSupplyCatalog(extra: DemoSupplyItem[]): DemoSupplyItem[] {
   const map = new Map<string, DemoSupplyItem>();
   for (const s of DEMO_SUPPLY_ITEMS) map.set(s.id, s);
-  for (const s of extra) map.set(s.id, s);
+  if (!Array.isArray(extra)) return Array.from(map.values());
+  for (const s of extra) {
+    if (s && typeof s === "object" && typeof s.id === "string" && s.id.trim()) map.set(s.id, s);
+  }
   return Array.from(map.values());
 }
 

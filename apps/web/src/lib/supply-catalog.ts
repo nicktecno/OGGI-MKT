@@ -11,7 +11,12 @@ export async function fetchSupplyCatalogFromApi(): Promise<DemoSupplyItem[]> {
       cache: "no-store",
     });
     if (!res.ok) return [];
-    return (await res.json()) as DemoSupplyItem[];
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) {
+      console.error("[fetchSupplyCatalogFromApi] resposta não é array:", typeof data);
+      return [];
+    }
+    return data as DemoSupplyItem[];
   } catch (e) {
     console.error("[fetchSupplyCatalogFromApi] falha ao buscar catálogo:", e);
     return [];

@@ -89,15 +89,30 @@ function normalizeCompositeLineRow(row: unknown): DemoCompositeLine | null {
   return { supplyItemId: sid, quantidade: q, snapshot_custo_unitario: cost };
 }
 
-function normalizeProductFromApi(p: DemoCompositeProduct): DemoCompositeProduct {
-  const linhasIn = p.linhas as unknown;
-  const linhas: DemoCompositeLine[] = [];
-  if (Array.isArray(linhasIn)) {
-    for (const row of linhasIn) {
-      const line = normalizeCompositeLineRow(row);
-      if (line) linhas.push(line);
+const PLACEHOLDER_VITRINE =
+  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=88";
+
+/** Aceita array, JSON em string ou valores inválidos — sempre devolve array de linhas. */
+function parseLinhasFromApiJson(raw: unknown): DemoCompositeLine[] {
+  let arr: unknown = raw;
+  if (typeof raw === "string") {
+    try {
+      arr = JSON.parse(raw) as unknown;
+    } catch {
+      return [];
     }
   }
+  if (!Array.isArray(arr)) return [];
+  const out: DemoCompositeLine[] = [];
+  for (const row of arr) {
+    const line = normalizeCompositeLineRow(row);
+    if (line) out.push(line);
+  }
+  return out;
+}
+
+function normalizeProductFromApi(p: DemoCompositeProduct): DemoCompositeProduct {
+  const linhas = parseLinhasFromApiJson(p.linhas as unknown);
   const galleryRaw = p.galeria_imagens as unknown;
   const galeria_imagens = Array.isArray(galleryRaw)
     ? galleryRaw
@@ -106,9 +121,13 @@ function normalizeProductFromApi(p: DemoCompositeProduct): DemoCompositeProduct 
         .filter(Boolean)
     : [];
 
+  const imagem =
+    typeof p.imagem_url === "string" && p.imagem_url.trim().length > 0 ? p.imagem_url.trim() : PLACEHOLDER_VITRINE;
+
   return {
     ...p,
-    linhas: Array.isArray(linhasIn) ? linhas : p.linhas,
+    linhas,
+    imagem_url: imagem,
     galeria_imagens,
     preco_venda_publico: coerceFiniteNumber(p.preco_venda_publico, 0),
     executor_fee_planejada: coerceFiniteNumber(p.executor_fee_planejada, 0),
@@ -125,11 +144,25 @@ function normalizeProductFromApi(p: DemoCompositeProduct): DemoCompositeProduct 
 }
 
 function normalizeCommerceStateFromApi(state: DemoCommerceState): DemoCommerceState {
+  const productsRaw = state.products as unknown;
+  const products = Array.isArray(productsRaw)
+    ? productsRaw
+        .filter((p): p is DemoCompositeProduct => typeof p === "object" && p !== null && "id" in p)
+        .map((p) => normalizeProductFromApi(p))
+    : [];
+  const execRaw = state.executionRequests as unknown;
+  const executionRequests = Array.isArray(execRaw)
+    ? execRaw
+    : [];
+  const assignRaw = state.productionAssignments as unknown;
+  const productionAssignments = Array.isArray(assignRaw)
+    ? assignRaw
+    : [];
   return {
     ...state,
-    products: Array.isArray(state.products)
-      ? state.products.map((p) => normalizeProductFromApi(p))
-      : [],
+    products,
+    executionRequests,
+    productionAssignments,
   };
 }
 
@@ -155,7 +188,16 @@ export async function getCommerceState(): Promise<DemoCommerceState> {
       console.error("[getCommerceState] JSON inválido da API:", e);
       throw new Error("Resposta inválida da API ao carregar o estado da loja.");
     }
-    return normalizeCommerceStateFromApi(raw);
+    try {
+      return normalizeCommerceStateFromApi(raw);
+    } catch (e) {
+      console.error("[getCommerceState] falha ao normalizar estado:", e);
+      return {
+        products: [],
+        executionRequests: [],
+        productionAssignments: [],
+      };
+    }
   }
   return getCommerceStateFromCookies();
 }

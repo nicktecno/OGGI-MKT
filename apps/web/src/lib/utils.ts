@@ -6,8 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatBrl(value: number): string {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : Number(value);
+  const safe = Number.isFinite(n) ? n : 0;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value)
+  }).format(safe);
 }
