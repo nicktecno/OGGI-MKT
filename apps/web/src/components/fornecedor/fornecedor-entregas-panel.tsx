@@ -1,19 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { retryMelhorEnvioEtiquetaForAssignmentAction } from "@/app/(painel)/painel/fornecedor/fornecedor-actions";
 import type { SupplierFulfillmentLineDto } from "@/lib/platform-account-server";
 import { formatBrl } from "@/lib/utils";
 
 type Props = {
   lines: SupplierFulfillmentLineDto[];
   demoMode: boolean;
+  apiMode: boolean;
 };
 
 function kindLabel(k: string) {
   return k === "PECA" ? "peça(s)" : "metro(s)";
 }
 
-export function FornecedorEntregasPanel({ lines, demoMode }: Props) {
+export function FornecedorEntregasPanel({ lines, demoMode, apiMode }: Props) {
+  const router = useRouter();
+  const [pendingAssignment, setPendingAssignment] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
   const groups = useMemo(() => {
     const m = new Map<string, SupplierFulfillmentLineDto[]>();
     for (const line of lines) {
@@ -29,8 +37,8 @@ export function FornecedorEntregasPanel({ lines, demoMode }: Props) {
     return (
       <p className="text-sm text-muted-foreground">
         Com a API e o login pela base ativos, esta aba lista para onde enviar cada insumo quando uma peça for
-        atribuída a uma costureira. A etiqueta do <strong>Melhor Envio</strong> aparecerá aqui após a
-        integração de envio estar ligada.
+        atribuída a uma costureira. Com o Melhor Envio configurado na API, surge o link da etiqueta (gerada na
+        atribuição ou pelo botão <strong>Gerar etiqueta</strong> nesta aba).
       </p>
     );
   }
@@ -50,7 +58,8 @@ export function FornecedorEntregasPanel({ lines, demoMode }: Props) {
         Quando o mesmo pedido inclui <strong>vários insumos seus</strong>, o sistema usa o pacote de{" "}
         <strong>maior volume</strong> (e o maior peso entre eles) para cotar um único envio ao executor. O frete
         B2B é definido na <strong>atribuição</strong> e entra no preço final da peça; não pode ser alterado por
-        aqui.
+        aqui. A <strong>etiqueta Melhor Envio</strong> é criada na atribuição (se a API estiver pronta) ou ao
+        clicar em <strong>Gerar etiqueta (Melhor Envio)</strong> no bloco do envio.
       </p>
 
       <div className="space-y-8">
@@ -79,11 +88,39 @@ export function FornecedorEntregasPanel({ lines, demoMode }: Props) {
                     </span>
                   </span>
                   <span className="text-muted-foreground">
-                    Frete estimado:{" "}
+                    Frete ao executor:{" "}
                     <span className="font-medium text-foreground">
                       {head.frete_cotado_reais != null ? formatBrl(head.frete_cotado_reais) : "—"}
                     </span>
+                    <span className="ml-1 block text-xs font-normal normal-case text-muted-foreground sm:inline sm:ml-1">
+                      · Melhor Envio quando a API tem token; senão, estimativa local
+                    </span>
                   </span>
+                  {apiMode && !head.melhor_envio_etiqueta_url ? (
+                    <button
+                      type="button"
+                      disabled={isPending && pendingAssignment === assignmentId}
+                      className="rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/15 disabled:opacity-60"
+                      onClick={() => {
+                        setPendingAssignment(assignmentId);
+                        startTransition(async () => {
+                          try {
+                            await retryMelhorEnvioEtiquetaForAssignmentAction(assignmentId);
+                            toast.success("Etiqueta gerada. O link aparece na coluna ao lado.");
+                            router.refresh();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Não foi possível gerar a etiqueta.");
+                          } finally {
+                            setPendingAssignment(null);
+                          }
+                        });
+                      }}
+                    >
+                      {isPending && pendingAssignment === assignmentId
+                        ? "A gerar…"
+                        : "Gerar etiqueta (Melhor Envio)"}
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
@@ -122,7 +159,11 @@ export function FornecedorEntregasPanel({ lines, demoMode }: Props) {
                               Abrir etiqueta
                             </a>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Pendente (integração ME)</span>
+                            <span className="text-xs text-muted-foreground">
+                              {apiMode
+                                ? 'Sem etiqueta — use "Gerar etiqueta" acima se a API ME já estiver configurada.'
+                                : "Pendente (integração ME)"}
+                            </span>
                           )}
                           {row.melhor_envio_pedido_id ? (
                             <div className="mt-1 font-mono text-[0.65rem] text-muted-foreground">

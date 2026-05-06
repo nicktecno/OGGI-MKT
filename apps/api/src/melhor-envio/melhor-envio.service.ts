@@ -216,11 +216,98 @@ export class MelhorEnvioService {
     return row.accessToken;
   }
 
+  /** Documentos mínimos para carrinho ME em envio B2B insumos (não comercial). */
+  isB2BInsumoLabelConfigured(): boolean {
+    return this.getB2bSupplierCnpjDigits().length === 14 && this.getB2bExecutorCpfDigits().length === 11;
+  }
+
+  getB2bSupplierCnpjDigits(): string {
+    return this.config.get<string>('MELHOR_ENVIO_B2B_SUPPLIER_CNPJ')?.replace(/\D/g, '') ?? '';
+  }
+
+  getB2bExecutorCpfDigits(): string {
+    return this.config.get<string>('MELHOR_ENVIO_B2B_EXECUTOR_CPF')?.replace(/\D/g, '') ?? '';
+  }
+
+  private pickCheapestQuoteOption(quotes: unknown[]): { serviceId: number; price: number } {
+    let best: { serviceId: number; price: number } | null = null;
+    for (const row of quotes) {
+      if (!row || typeof row !== 'object') continue;
+      const o = row as Record<string, unknown>;
+      if ('error' in o && o.error) continue;
+      const sid = typeof o.id === 'number' && Number.isInteger(o.id) ? o.id : null;
+      if (sid == null) continue;
+      const p = this.parsePriceBrl(o.custom_price ?? o.price);
+      if (p === null) continue;
+      if (!best || p < best.price) best = { serviceId: sid, price: p };
+    }
+    if (!best) {
+      throw new BadRequestException('Melhor Envio não retornou preços de frete para esta rota.');
+    }
+    return { serviceId: best.serviceId, price: Math.round(best.price * 100) / 100 };
+  }
+
+  private async postMeJson(
+    path: string,
+    body: unknown,
+  ): Promise<{ ok: boolean; status: number; json: unknown | null; text: string }> {
+    const token = await this.getBearerTokenForShipping();
+    const base = this.getApiBase();
+    const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    const postOnce = async (bearer: string) =>
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${bearer}`,
+          'User-Agent': this.getUserAgent(),
+        },
+        body: JSON.stringify(body),
+      });
+
+    let res = await postOnce(token);
+    let text = await res.text();
+    if (res.status === 401) {
+      const row = await this.prisma.melhorEnvioOAuthToken.findUnique({
+        where: { id: OAUTH_ROW_ID },
+      });
+      if (row && !this.config.get<string>('MELHOR_ENVIO_ACCESS_TOKEN')?.trim()) {
+        const tokens = await this.refreshOAuthToken(row.refreshToken);
+        await this.persistOAuthTokens(tokens);
+        const nextTok = await this.getBearerTokenForShipping();
+        res = await postOnce(nextTok);
+        text = await res.text();
+      }
+    }
+    let json: unknown | null = null;
+    try {
+      json = JSON.parse(text) as unknown;
+    } catch {
+      json = null;
+    }
+    return { ok: res.ok, status: res.status, json, text };
+  }
+
+  private async shipmentCalculate(body: Record<string, unknown>): Promise<unknown[]> {
+    const { ok, status, json, text } = await this.postMeJson('/api/v2/me/shipment/calculate', body);
+    if (!ok) {
+      this.log.warn(`ME shipment/calculate ${status}: ${text.slice(0, 400)}`);
+      throw new BadRequestException(
+        'Melhor Envio não cotou este envio. Verifique CEPs, dimensões e a conta na sandbox/produção.',
+      );
+    }
+    if (!Array.isArray(json)) {
+      throw new BadRequestException('Melhor Envio retornou formato inesperado na cotação.');
+    }
+    return json;
+  }
+
   /**
-   * Cotação pública (CEP executor → CEP cliente), menor `custom_price` entre serviços.
+   * Cotação por caixa (um produto fictício) — preço e id do serviço ME mais barato.
    * @see https://docs.melhorenvio.com.br/reference/calculo-de-fretes-por-produtos
    */
-  async quoteCheapestProductShipping(params: {
+  async quoteCheapestForProductBoxWithService(params: {
     fromPostalCode: string;
     toPostalCode: string;
     productId: string;
@@ -230,7 +317,7 @@ export class MelhorEnvioService {
     weightKg: number;
     insuranceValueBrl: number;
     quantity: number;
-  }): Promise<number> {
+  }): Promise<{ price: number; serviceId: number }> {
     const from = params.fromPostalCode.replace(/\D/g, '').slice(0, 8);
     const to = params.toPostalCode.replace(/\D/g, '').slice(0, 8);
     if (from.length !== 8 || to.length !== 8) {
@@ -243,9 +330,6 @@ export class MelhorEnvioService {
     const insurance = Math.round(Math.max(0, params.insuranceValueBrl) * 100) / 100;
     const qty = Math.min(99, Math.max(1, Math.floor(params.quantity)));
 
-    const token = await this.getBearerTokenForShipping();
-    const base = this.getApiBase();
-    const url = `${base}/api/v2/me/shipment/calculate`;
     const body: Record<string, unknown> = {
       from: { postal_code: from },
       to: { postal_code: to },
@@ -266,65 +350,169 @@ export class MelhorEnvioService {
     if (serviceIds) {
       body.services = serviceIds;
     }
+    const arr = await this.shipmentCalculate(body);
+    return this.pickCheapestQuoteOption(arr);
+  }
 
-    const postOnce = async (bearer: string) => {
-      return fetch(url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${bearer}`,
-          'User-Agent': this.getUserAgent(),
-        },
-        body: JSON.stringify(body),
-      });
+  /** Cotação pública (CEP origem → CEP destino), menor `custom_price`. */
+  async quoteCheapestProductShipping(params: {
+    fromPostalCode: string;
+    toPostalCode: string;
+    productId: string;
+    widthCm: number;
+    heightCm: number;
+    lengthCm: number;
+    weightKg: number;
+    insuranceValueBrl: number;
+    quantity: number;
+  }): Promise<number> {
+    return (await this.quoteCheapestForProductBoxWithService(params)).price;
+  }
+
+  /**
+   * Insumos fornecedor → costureira: carrinho, checkout, geração e link público de impressão.
+   * Requer saldo na carteira Melhor Envio e variáveis B2B em .env.example.
+   */
+  async purchaseSupplierInsumoShipment(params: {
+    fromPostalCode: string;
+    toPostalCode: string;
+    serviceId: number;
+    from: {
+      name: string;
+      email: string;
+      phone: string;
+      address: string;
+      number: string;
+      complement: string;
+      district: string;
+      city: string;
+      state_abbr: string;
+      postal_code: string;
+      company_document: string;
+      state_register: string;
     };
-
-    let res = await postOnce(token);
-    let text = await res.text();
-
-    if (res.status === 401) {
-      const row = await this.prisma.melhorEnvioOAuthToken.findUnique({
-        where: { id: OAUTH_ROW_ID },
-      });
-      if (row && !this.config.get<string>('MELHOR_ENVIO_ACCESS_TOKEN')?.trim()) {
-        const tokens = await this.refreshOAuthToken(row.refreshToken);
-        await this.persistOAuthTokens(tokens);
-        const nextTok = await this.getBearerTokenForShipping();
-        res = await postOnce(nextTok);
-        text = await res.text();
-      }
-    }
-
-    if (!res.ok) {
-      this.log.warn(`ME shipment/calculate ${res.status}: ${text.slice(0, 400)}`);
+    to: {
+      name: string;
+      email: string;
+      phone: string;
+      document: string;
+      address: string;
+      number: string;
+      complement: string;
+      district: string;
+      city: string;
+      state_abbr: string;
+      postal_code: string;
+      country_id: string;
+    };
+    volumes: { height: number; width: number; length: number; weight: number }[];
+    products: { name: string; quantity: number; unitary_value: number }[];
+    insuranceValueBrl: number;
+    platformTag: string;
+  }): Promise<{ orderId: string; printUrl: string }> {
+    if (!this.isB2BInsumoLabelConfigured()) {
       throw new BadRequestException(
-        'Melhor Envio não cotou este envio. Verifique CEPs, dimensões e a conta na sandbox/produção.',
+        'Defina MELHOR_ENVIO_B2B_SUPPLIER_CNPJ (14 dígitos) e MELHOR_ENVIO_B2B_EXECUTOR_CPF (11 dígitos) para gerar etiquetas de insumos.',
       );
     }
 
-    let data: unknown;
-    try {
-      data = JSON.parse(text) as unknown;
-    } catch {
-      throw new BadRequestException('Melhor Envio retornou JSON inválido na cotação.');
-    }
-    if (!Array.isArray(data)) {
-      throw new BadRequestException('Melhor Envio retornou formato inesperado na cotação.');
+    const companyDoc = params.from.company_document.replace(/\D/g, '');
+    if (companyDoc.length !== 14) {
+      throw new BadRequestException('CNPJ do remetente (B2B) inválido para Melhor Envio.');
     }
 
-    let min = Infinity;
-    for (const row of data) {
-      if (!row || typeof row !== 'object') continue;
-      const o = row as Record<string, unknown>;
-      if ('error' in o && o.error) continue;
-      const p = this.parsePriceBrl(o.custom_price ?? o.price);
-      if (p !== null && p < min) min = p;
+    const cartBody = {
+      service: params.serviceId,
+      from: {
+        name: params.from.name.slice(0, 120),
+        email: params.from.email.trim(),
+        phone: params.from.phone.replace(/\D/g, '').slice(0, 11),
+        document: '',
+        company_document: companyDoc,
+        state_register: params.from.state_register || 'ISENTO',
+        address: params.from.address.slice(0, 200),
+        complement: (params.from.complement || '').slice(0, 120),
+        number: params.from.number.slice(0, 20),
+        district: params.from.district.slice(0, 120),
+        city: params.from.city.slice(0, 120),
+        postal_code: params.from.postal_code.replace(/\D/g, '').slice(0, 8),
+        state_abbr: params.from.state_abbr.slice(0, 2).toUpperCase(),
+      },
+      to: {
+        name: params.to.name.slice(0, 120),
+        email: params.to.email.trim(),
+        phone: params.to.phone.replace(/\D/g, '').slice(0, 11),
+        document: params.to.document.replace(/\D/g, '').slice(0, 11),
+        state_register: 'ISENTO',
+        address: params.to.address.slice(0, 200),
+        complement: (params.to.complement || '').slice(0, 120),
+        number: params.to.number.slice(0, 20),
+        district: params.to.district.slice(0, 120),
+        city: params.to.city.slice(0, 120),
+        postal_code: params.to.postal_code.replace(/\D/g, '').slice(0, 8),
+        country_id: params.to.country_id || 'BR',
+        state_abbr: params.to.state_abbr.slice(0, 2).toUpperCase(),
+      },
+      products: params.products.map((p) => ({
+        name: p.name.slice(0, 120),
+        quantity: String(Math.max(1, Math.floor(p.quantity))),
+        unitary_value: String(Math.round(Math.max(0.01, p.unitary_value) * 100) / 100),
+      })),
+      volumes: params.volumes.map((v) => ({
+        height: Math.max(1, Math.round(v.height)),
+        width: Math.max(1, Math.round(v.width)),
+        length: Math.max(1, Math.round(v.length)),
+        weight: Math.max(0.001, v.weight),
+      })),
+      options: {
+        platform: 'AgregadorServicos',
+        reminder: params.platformTag.slice(0, 200),
+        insurance_value: Math.round(Math.max(0, params.insuranceValueBrl) * 100) / 100,
+        receipt: false,
+        own_hand: false,
+        reverse: false,
+        non_commercial: true,
+      },
+    };
+
+    const cart = await this.postMeJson('/api/v2/me/cart', cartBody);
+    if (!cart.ok || cart.status !== 201) {
+      this.log.warn(`ME cart ${cart.status}: ${cart.text.slice(0, 500)}`);
+      throw new BadRequestException('Melhor Envio recusou inserir o envio no carrinho.');
     }
-    if (!Number.isFinite(min)) {
-      throw new BadRequestException('Melhor Envio não retornou preços de frete para esta rota.');
+    const cartJson = cart.json as Record<string, unknown> | null;
+    const orderId = typeof cartJson?.id === 'string' ? cartJson.id.trim() : '';
+    if (!orderId) {
+      throw new BadRequestException('Melhor Envio não devolveu o id do pedido no carrinho.');
     }
-    return Math.round(min * 100) / 100;
+
+    const checkout = await this.postMeJson('/api/v2/me/shipment/checkout', { orders: [orderId] });
+    if (!checkout.ok) {
+      this.log.warn(`ME checkout ${checkout.status}: ${checkout.text.slice(0, 500)}`);
+      throw new BadRequestException(
+        'Melhor Envio não concluiu o pagamento do frete (verifique saldo na carteira ME).',
+      );
+    }
+
+    const gen = await this.postMeJson('/api/v2/me/shipment/generate', { orders: [orderId] });
+    if (!gen.ok) {
+      this.log.warn(`ME generate ${gen.status}: ${gen.text.slice(0, 500)}`);
+      throw new BadRequestException('Melhor Envio não gerou a etiqueta.');
+    }
+
+    const print = await this.postMeJson('/api/v2/me/shipment/print', {
+      orders: [orderId],
+      mode: 'public',
+    });
+    if (!print.ok || !print.json || typeof print.json !== 'object') {
+      this.log.warn(`ME print ${print.status}: ${print.text.slice(0, 500)}`);
+      throw new BadRequestException('Melhor Envio não devolveu o link de impressão.');
+    }
+    const url = (print.json as Record<string, unknown>).url;
+    if (typeof url !== 'string' || !url.startsWith('http')) {
+      throw new BadRequestException('Resposta de impressão ME sem URL válida.');
+    }
+    return { orderId, printUrl: url };
   }
 
   /**

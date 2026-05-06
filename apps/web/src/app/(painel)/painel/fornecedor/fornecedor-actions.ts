@@ -125,6 +125,34 @@ export async function updateSupplyItemAction(
   revalidatePath("/painel/fornecedor");
 }
 
+export async function retryMelhorEnvioEtiquetaForAssignmentAction(productionAssignmentId: string) {
+  if (!commerceUsesDatabase()) {
+    throw new Error("Etiqueta ME exige API com banco de dados ativo.");
+  }
+  const token = await bearer();
+  if (!token) throw new Error("Sessão expirada. Entre novamente.");
+  const res = await fetch(
+    `${serverApiUrl()}/supply-items/fulfillment-lines/${encodeURIComponent(productionAssignmentId)}/melhor-envio/retry`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+    },
+  );
+  if (!res.ok) {
+    let msg = await res.text();
+    try {
+      const j = JSON.parse(msg) as { message?: string | string[] };
+      if (typeof j.message === "string") msg = j.message;
+      else if (Array.isArray(j.message)) msg = j.message.join(", ");
+    } catch {
+      /* keep text */
+    }
+    throw new Error(msg || `Erro ${res.status}`);
+  }
+  revalidatePath("/painel/fornecedor");
+  return (await res.json()) as { orderId: string; printUrl: string };
+}
+
 export async function uploadSupplyItemImageAction(supplyItemId: string, formData: FormData) {
   if (!commerceUsesDatabase()) {
     throw new Error("Upload exige API ativa.");

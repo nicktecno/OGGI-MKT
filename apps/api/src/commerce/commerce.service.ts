@@ -938,6 +938,51 @@ export class CommerceService {
     });
   }
 
+  /**
+   * Marca linha de pedido da loja como postada (envio ao cliente).
+   * Chamada interna (Next/worker) após ME ou registo manual da costureira.
+   */
+  async markStoreOrderLinePosted(body: {
+    order_id: string;
+    listing_id: string;
+    posted_at?: string;
+    tracking_code?: string | null;
+    carrier_name?: string | null;
+  }): Promise<{ ok: true }> {
+    const orderId = String(body.order_id ?? '').trim();
+    const listingId = String(body.listing_id ?? '').trim();
+    if (!orderId || !listingId) {
+      throw new BadRequestException('order_id e listing_id são obrigatórios.');
+    }
+    const postedAt =
+      typeof body.posted_at === 'string' && body.posted_at.trim()
+        ? new Date(body.posted_at.trim())
+        : new Date();
+    if (Number.isNaN(postedAt.getTime())) {
+      throw new BadRequestException('posted_at inválido.');
+    }
+    const tracking =
+      typeof body.tracking_code === 'string' && body.tracking_code.trim()
+        ? body.tracking_code.trim()
+        : null;
+    const carrier =
+      typeof body.carrier_name === 'string' && body.carrier_name.trim()
+        ? body.carrier_name.trim()
+        : null;
+    const r = await this.prisma.storeOrderLine.updateMany({
+      where: { orderId, listingId },
+      data: {
+        postedAt,
+        trackingCode: tracking,
+        carrierName: carrier,
+      },
+    });
+    if (r.count === 0) {
+      throw new NotFoundException('Linha de pedido não encontrada para este pedido e oferta.');
+    }
+    return { ok: true as const };
+  }
+
   private parseProductGallery(value: unknown): string[] {
     if (value == null) return [];
     if (Array.isArray(value)) {

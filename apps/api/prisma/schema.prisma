@@ -124,14 +124,18 @@ model StoreCustomerOrder {
 }
 
 model StoreOrderLine {
-  id                 String   @id @default(cuid())
-  orderId            String   @map("order_id")
-  listingId          String   @map("listing_id")
-  productSlug        String   @map("product_slug")
-  productName        String   @map("product_name")
+  id                 String    @id @default(cuid())
+  orderId            String    @map("order_id")
+  listingId          String    @map("listing_id")
+  productSlug        String    @map("product_slug")
+  productName        String    @map("product_name")
   quantity           Int
-  unitPriceBrl       Float    @map("unit_price_brl")
-  compositeProductId String   @map("composite_product_id")
+  unitPriceBrl       Float     @map("unit_price_brl")
+  compositeProductId String    @map("composite_product_id")
+  /// Quando a costureira/postagem registrou envio ao cliente.
+  postedAt           DateTime? @map("posted_at")
+  trackingCode       String?   @map("tracking_code")
+  carrierName        String?   @map("carrier_name")
 
   order StoreCustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 

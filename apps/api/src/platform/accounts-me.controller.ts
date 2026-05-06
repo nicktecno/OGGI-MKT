@@ -79,12 +79,16 @@ export class AccountsMeController {
       total_brl: o.totalBrl,
       delivery: o.delivery,
       lines: o.lines.map((l) => ({
+        id: l.id,
         listing_id: l.listingId,
         product_slug: l.productSlug,
         product_name: l.productName,
         quantity: l.quantity,
         unit_price_brl: l.unitPriceBrl,
         composite_product_id: l.compositeProductId,
+        posted_at: l.postedAt ? l.postedAt.toISOString() : null,
+        tracking_code: l.trackingCode,
+        carrier_name: l.carrierName,
       })),
     }));
   }

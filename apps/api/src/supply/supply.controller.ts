@@ -44,6 +44,21 @@ export class SupplyController {
     return this.fulfillment.listForSupplier(req.platformUser.sub);
   }
 
+  /** Gera ou atualiza etiqueta ME para o envio deste fornecedor nesta atribuição. */
+  @Post('fulfillment-lines/:productionAssignmentId/melhor-envio/retry')
+  retryMelhorEnvio(
+    @Req() req: Request & { platformUser: PlatformJwtUser },
+    @Param('productionAssignmentId') productionAssignmentId: string,
+  ) {
+    if (req.platformUser.role !== 'SUPPLIER') {
+      throw new ForbiddenException('Apenas fornecedores podem solicitar etiquetas.');
+    }
+    return this.fulfillment.retryMelhorEnvioForSupplierAssignment(
+      productionAssignmentId,
+      req.platformUser.sub,
+    );
+  }
+
   @Post()
   create(
     @Req() req: Request & { platformUser: PlatformJwtUser },

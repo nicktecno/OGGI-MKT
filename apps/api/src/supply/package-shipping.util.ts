@@ -38,8 +38,7 @@ export function pickShipmentPackFromSupplies(items: PackDims[]): PackDims {
 }
 
 /**
- * Estimativa local até integrar a API Melhor Envio (CEP + volume + peso).
- * Substitui-se por cotação real quando `MELHOR_ENVIO` estiver ligado.
+ * Fallback quando a cotação Melhor Envio não está disponível ou falha (CEP + volume + peso).
  */
 export function stubFreteB2B(params: {
   cepOrigem: string;

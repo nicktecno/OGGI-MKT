@@ -32,12 +32,17 @@ export type PlatformMe = {
 };
 
 export type StoreOrderLineDto = {
+  id?: string;
   listing_id: string;
   product_slug: string;
   product_name: string;
   quantity: number;
   unit_price_brl: number;
   composite_product_id: string;
+  /** ISO 8601 quando a peça foi postada ao cliente. */
+  posted_at?: string | null;
+  tracking_code?: string | null;
+  carrier_name?: string | null;
 };
 
 export type StoreCustomerOrderDto = {

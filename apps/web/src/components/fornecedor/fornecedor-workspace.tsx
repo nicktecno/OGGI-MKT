@@ -87,5 +87,7 @@ export function FornecedorWorkspace({
     return <FornecedorInsumosPanel initialItems={meusInsumos} apiMode={apiMode} supplierEmail={email} />;
   }
 
-  return <FornecedorEntregasPanel lines={fulfillmentLines} demoMode={!apiMode} />;
+  return (
+    <FornecedorEntregasPanel lines={fulfillmentLines} demoMode={!apiMode} apiMode={apiMode} />
+  );
 }

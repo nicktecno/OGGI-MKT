@@ -3,7 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
-import { fetchCustomerStoreOrders } from "@/lib/platform-account-server";
+import {
+  fetchCustomerStoreOrders,
+  type StoreOrderLineDto,
+} from "@/lib/platform-account-server";
 import { getSession } from "@/lib/session";
 import { formatBrl } from "@/lib/utils";
 
@@ -97,24 +100,27 @@ export default async function PainelClientePedidosPage() {
                       <DeliverySummary d={o.delivery as Record<string, unknown>} />
                     </div>
                   ) : null}
-                  <ul className="space-y-2 text-sm">
+                  <ul className="space-y-3 text-sm">
                     {o.lines.map((l) => (
                       <li
-                        key={`${o.id}-${l.listing_id}-${l.product_slug}`}
-                        className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/40 pb-2 last:border-0 last:pb-0"
+                        key={l.id ?? `${o.id}-${l.listing_id}-${l.product_slug}`}
+                        className="flex flex-col gap-2 border-b border-border/40 pb-3 last:border-0 last:pb-0"
                       >
-                        <span>
-                          <Link
-                            href={`/loja/produto/${encodeURIComponent(l.product_slug)}`}
-                            className="font-medium text-foreground underline-offset-4 hover:underline"
-                          >
-                            {l.product_name}
-                          </Link>
-                          <span className="text-muted-foreground"> × {l.quantity}</span>
-                        </span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {formatBrl(l.unit_price_brl * l.quantity)}
-                        </span>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <span>
+                            <Link
+                              href={`/loja/produto/${encodeURIComponent(l.product_slug)}`}
+                              className="font-medium text-foreground underline-offset-4 hover:underline"
+                            >
+                              {l.product_name}
+                            </Link>
+                            <span className="text-muted-foreground"> × {l.quantity}</span>
+                          </span>
+                          <span className="tabular-nums text-muted-foreground">
+                            {formatBrl(l.unit_price_brl * l.quantity)}
+                          </span>
+                        </div>
+                        <OrderLineShipmentStatus line={l} />
                       </li>
                     ))}
                   </ul>
@@ -124,6 +130,59 @@ export default async function PainelClientePedidosPage() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function OrderLineShipmentStatus({ line }: { line: StoreOrderLineDto }) {
+  const posted =
+    typeof line.posted_at === "string" && line.posted_at.trim().length > 0 ? line.posted_at : null;
+  if (!posted) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        <span className="inline-flex items-center rounded-md border border-border bg-muted/40 px-2 py-0.5 font-medium text-foreground">
+          Envio
+        </span>{" "}
+        <span className="text-muted-foreground">Aguardando postagem pela costureira.</span>
+      </p>
+    );
+  }
+  let postedLabel = posted;
+  try {
+    postedLabel = new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(posted));
+  } catch {
+    /* keep raw */
+  }
+  const tracking =
+    typeof line.tracking_code === "string" && line.tracking_code.trim()
+      ? line.tracking_code.trim()
+      : null;
+  const carrier =
+    typeof line.carrier_name === "string" && line.carrier_name.trim()
+      ? line.carrier_name.trim()
+      : null;
+  return (
+    <div className="space-y-1 text-xs leading-relaxed">
+      <p>
+        <span className="inline-flex items-center rounded-md border border-emerald-600/30 bg-emerald-600/10 px-2 py-0.5 font-medium text-emerald-900 dark:text-emerald-100">
+          Postado
+        </span>{" "}
+        <span className="text-muted-foreground">{postedLabel}</span>
+      </p>
+      {carrier ? (
+        <p className="text-muted-foreground">
+          Transportadora: <span className="font-medium text-foreground">{carrier}</span>
+        </p>
+      ) : null}
+      {tracking ? (
+        <p className="text-muted-foreground">
+          Rastreio:{" "}
+          <span className="font-mono font-medium text-foreground tabular-nums">{tracking}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -237,4 +237,19 @@ export class CommerceInternalController {
     await this.commerce.reserveCheckoutLines(body?.lines ?? [], body?.customer_order);
     return { ok: true as const };
   }
+
+  /** Marca item do pedido como postado (rastreio opcional). */
+  @Post('store-order-lines/posted')
+  markOrderLinePosted(
+    @Body()
+    body: {
+      order_id: string;
+      listing_id: string;
+      posted_at?: string;
+      tracking_code?: string | null;
+      carrier_name?: string | null;
+    },
+  ) {
+    return this.commerce.markStoreOrderLinePosted(body ?? {});
+  }
 }
