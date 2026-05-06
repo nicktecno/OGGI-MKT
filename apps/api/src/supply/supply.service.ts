@@ -93,7 +93,7 @@ export class SupplyService {
         unidade: this.unidadeFromKind(dto.quantidadeKind),
         quantidadeKind: dto.quantidadeKind,
         quantidade: dto.quantidade,
-        custoFornecedor: dto.custoFornecedor !== undefined ? dto.custoFornecedor : null,
+        custoFornecedor: dto.custoFornecedor,
         freteAteExecutor: dto.freteAteExecutor !== undefined ? dto.freteAteExecutor : null,
         observacao: dto.observacao?.trim() || null,
         imagemUrl: dto.imagemUrl?.trim() || null,
@@ -113,6 +113,18 @@ export class SupplyService {
       where: { id, supplierAccountId: user.sub },
     });
     if (!row) throw new NotFoundException('Insumo não encontrado.');
+    const resolvedCusto =
+      dto.custoFornecedor !== undefined ? dto.custoFornecedor : row.custoFornecedor;
+    if (
+      resolvedCusto === null ||
+      resolvedCusto === undefined ||
+      Number.isNaN(resolvedCusto) ||
+      resolvedCusto < 0
+    ) {
+      throw new BadRequestException(
+        'Custo do fornecedor é obrigatório: informe um valor numérico em R$ (pode ser 0).',
+      );
+    }
     const updated = await this.prisma.supplyItem.update({
       where: { id },
       data: {

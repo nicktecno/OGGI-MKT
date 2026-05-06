@@ -17,10 +17,10 @@ export class CreateSupplyItemDto {
   @Min(0.0001)
   quantidade!: number;
 
-  /** Opcional: o admin pode precificar só na montagem da peça no painel. */
-  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   @Min(0)
-  custoFornecedor?: number;
+  custoFornecedor!: number;
 
   @IsOptional()
   @Min(0)

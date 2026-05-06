@@ -105,7 +105,11 @@ export function FornecedorEntregasPanel({ lines, demoMode, apiMode }: Props) {
                         setPendingAssignment(assignmentId);
                         startTransition(async () => {
                           try {
-                            await retryMelhorEnvioEtiquetaForAssignmentAction(assignmentId);
+                            const result = await retryMelhorEnvioEtiquetaForAssignmentAction(assignmentId);
+                            if (!result.ok) {
+                              toast.error(result.message);
+                              return;
+                            }
                             toast.success("Etiqueta gerada. O link aparece na coluna ao lado.");
                             router.refresh();
                           } catch (e) {

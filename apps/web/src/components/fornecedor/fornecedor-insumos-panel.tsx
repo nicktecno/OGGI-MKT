@@ -86,14 +86,14 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     if (!apiMode) return;
     setError(null);
     const cRaw = custo.trim();
-    const c = cRaw === "" ? undefined : parseMoney(custo);
+    const c = parseMoney(custo);
     const q = parseQty(quantidade);
     const pa = parseQty(pacAlt);
     const pl = parseQty(pacLar);
     const pc = parseQty(pacComp);
     const pp = parseQty(pacPeso);
-    if (c !== undefined && (Number.isNaN(c) || c < 0)) {
-      setError("Custo inválido (use vazio para cadastrar só especificações).");
+    if (cRaw === "" || Number.isNaN(c) || c < 0) {
+      setError("Informe o custo do fornecedor em R$ (número ≥ 0).");
       return;
     }
     if (!nome.trim() || !sku.trim() || Number.isNaN(q) || q <= 0) {
@@ -120,7 +120,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         skuInterno: sku.trim(),
         quantidadeKind,
         quantidade: q,
-        ...(c !== undefined ? { custoFornecedor: c } : {}),
+        custoFornecedor: c,
         observacao: observacao.trim() || undefined,
         pacoteAlturaCm: pa,
         pacoteLarguraCm: pl,
@@ -147,14 +147,14 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     if (!apiMode) return;
     setError(null);
     const cRaw = custo.trim();
-    const c = cRaw === "" ? undefined : parseMoney(custo);
+    const c = parseMoney(custo);
     const q = parseQty(quantidade);
     const pa = parseQty(pacAlt);
     const pl = parseQty(pacLar);
     const pc = parseQty(pacComp);
     const pp = parseQty(pacPeso);
-    if (c !== undefined && (Number.isNaN(c) || c < 0)) {
-      setError("Custo inválido.");
+    if (cRaw === "" || Number.isNaN(c) || c < 0) {
+      setError("Informe o custo do fornecedor em R$ (número ≥ 0).");
       return;
     }
     if (!nome.trim() || !sku.trim() || Number.isNaN(q) || q <= 0) {
@@ -181,7 +181,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         skuInterno: sku.trim(),
         quantidadeKind,
         quantidade: q,
-        ...(c !== undefined ? { custoFornecedor: c } : {}),
+        custoFornecedor: c,
         observacao: observacao.trim() || undefined,
         pacoteAlturaCm: pa,
         pacoteLarguraCm: pl,
@@ -266,9 +266,10 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
             {editingId ? "Editar insumo" : "Novo insumo"}
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            O frete até a costureira é cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a
-            peça a um executor. Informe o <strong>pacote</strong> típico deste insumo (para cotação); se
-            vários insumos seus forem no mesmo envio, prevalece o de maior volume.
+            O <strong>custo do fornecedor</strong> (R$) é obrigatório por insumo. O frete até a costureira é
+            cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a peça a um executor. Informe
+            o <strong>pacote</strong> típico deste insumo (para cotação); se vários insumos seus forem no
+            mesmo envio, prevalece o de maior volume.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
@@ -311,13 +312,15 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ins-custo">Custo fornecedor (R$, opcional)</Label>
+              <Label htmlFor="ins-custo">Custo fornecedor (R$) *</Label>
               <Input
                 id="ins-custo"
                 value={custo}
                 onChange={(e) => setCusto(e.target.value)}
-                placeholder="Deixe vazio se o admin precificar na peça"
+                placeholder="0,00"
+                required
                 className="bg-background"
+                inputMode="decimal"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">

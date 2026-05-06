@@ -15,7 +15,7 @@ export async function createSupplyItemAction(input: {
   skuInterno: string;
   quantidadeKind: "METRO" | "PECA";
   quantidade: number;
-  custoFornecedor?: number;
+  custoFornecedor: number;
   freteAteExecutor?: number;
   observacao?: string;
   imagemUrl?: string;
@@ -42,8 +42,8 @@ export async function createSupplyItemAction(input: {
     pacoteLarguraCm: input.pacoteLarguraCm,
     pacoteComprimentoCm: input.pacoteComprimentoCm,
     pacotePesoKg: input.pacotePesoKg,
+    custoFornecedor: input.custoFornecedor,
   };
-  if (input.custoFornecedor !== undefined) body.custoFornecedor = input.custoFornecedor;
   if (input.freteAteExecutor !== undefined) body.freteAteExecutor = input.freteAteExecutor;
 
   const res = await fetch(`${serverApiUrl()}/supply-items`, {
@@ -94,7 +94,7 @@ export async function updateSupplyItemAction(
     skuInterno?: string;
     quantidadeKind?: "METRO" | "PECA";
     quantidade?: number;
-    custoFornecedor?: number;
+    custoFornecedor: number;
     freteAteExecutor?: number;
     observacao?: string;
     imagemUrl?: string;
@@ -125,32 +125,59 @@ export async function updateSupplyItemAction(
   revalidatePath("/painel/fornecedor");
 }
 
-export async function retryMelhorEnvioEtiquetaForAssignmentAction(productionAssignmentId: string) {
+export type RetryMelhorEnvioEtiquetaResult =
+  | { ok: true; orderId: string; printUrl: string }
+  | { ok: false; message: string };
+
+/**
+ * Gera etiqueta ME via API. Devolve `{ ok }` em vez de lançar em falhas esperadas,
+ * para o POST da Server Action não aparecer como 500 na aba Network quando a API responde 4xx.
+ */
+export async function retryMelhorEnvioEtiquetaForAssignmentAction(
+  productionAssignmentId: string,
+): Promise<RetryMelhorEnvioEtiquetaResult> {
   if (!commerceUsesDatabase()) {
-    throw new Error("Etiqueta ME exige API com banco de dados ativo.");
+    return { ok: false, message: "Etiqueta ME exige API com banco de dados ativo." };
   }
   const token = await bearer();
-  if (!token) throw new Error("Sessão expirada. Entre novamente.");
-  const res = await fetch(
-    `${serverApiUrl()}/supply-items/fulfillment-lines/${encodeURIComponent(productionAssignmentId)}/melhor-envio/retry`,
-    {
+  if (!token) {
+    return { ok: false, message: "Sessão expirada. Entre novamente." };
+  }
+  const url = `${serverApiUrl()}/supply-items/fulfillment-lines/${encodeURIComponent(productionAssignmentId)}/melhor-envio/retry`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
       method: "POST",
       headers: { authorization: `Bearer ${token}` },
-    },
-  );
+    });
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Não foi possível contactar a API: ${detail}` };
+  }
+
+  const bodyText = await res.text();
   if (!res.ok) {
-    let msg = await res.text();
+    let msg = bodyText;
     try {
-      const j = JSON.parse(msg) as { message?: string | string[] };
+      const j = JSON.parse(bodyText) as { message?: string | string[] };
       if (typeof j.message === "string") msg = j.message;
       else if (Array.isArray(j.message)) msg = j.message.join(", ");
     } catch {
       /* keep text */
     }
-    throw new Error(msg || `Erro ${res.status}`);
+    return { ok: false, message: (msg || `Erro ${res.status}`).trim() };
   }
-  revalidatePath("/painel/fornecedor");
-  return (await res.json()) as { orderId: string; printUrl: string };
+
+  try {
+    const data = JSON.parse(bodyText) as { orderId?: unknown; printUrl?: unknown };
+    if (typeof data.orderId !== "string" || typeof data.printUrl !== "string") {
+      return { ok: false, message: "Resposta inválida da API ao gerar a etiqueta." };
+    }
+    revalidatePath("/painel/fornecedor");
+    return { ok: true, orderId: data.orderId, printUrl: data.printUrl };
+  } catch {
+    return { ok: false, message: "Resposta inválida da API ao gerar a etiqueta." };
+  }
 }
 
 export async function uploadSupplyItemImageAction(supplyItemId: string, formData: FormData) {
