@@ -89,9 +89,7 @@ export default async function ExecutorPainelPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ExecutorSolicitarProducao
-            options={pecasParaPedido.map((p) => ({ id: p.id, nome: p.nome }))}
-          />
+          <ExecutorSolicitarProducao products={pecasParaPedido} />
         </CardContent>
       </Card>
 
