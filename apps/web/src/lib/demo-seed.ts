@@ -429,8 +429,11 @@ export function getCatalogRowsFromData(
 
 /** URLs para carrossel na ficha do produto: capa + extras (sem duplicar). */
 export function productImageSlides(product: DemoCompositeProduct): string[] {
-  const capa = product.imagem_url?.trim() ?? "";
-  const extra = (product.galeria_imagens ?? []).map((u) => u.trim()).filter(Boolean);
+  const capa = typeof product.imagem_url === "string" ? product.imagem_url.trim() : "";
+  const extra = (product.galeria_imagens ?? [])
+    .filter((u): u is string => typeof u === "string")
+    .map((u) => u.trim())
+    .filter(Boolean);
   const out: string[] = [];
   if (capa) out.push(capa);
   for (const u of extra) {

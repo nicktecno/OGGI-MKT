@@ -71,6 +71,8 @@ export async function createCompositeProductAction(
   safeRevalidatePath(`/loja/produto/${result.slug}`);
   safeRevalidatePath("/loja");
   safeRevalidatePath("/painel/admin", "layout");
+  safeRevalidatePath("/painel/admin/cadastro-peca");
+  safeRevalidatePath("/painel/admin/pecas");
   safeRevalidatePath("/painel/executor");
   return result;
 }

@@ -64,6 +64,74 @@ export async function readApiError(res: Response): Promise<string> {
   return (await res.text()) || `Erro HTTP ${res.status}`;
 }
 
+function coerceFiniteNumber(v: unknown, fallback = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v.replace(",", "."));
+    if (Number.isFinite(n)) return n;
+  }
+  return fallback;
+}
+
+/** Garante formato esperado pelo app após `JSON.parse` da API (Prisma/JSON heterogéneo). */
+function normalizeCompositeLineRow(row: unknown): DemoCompositeLine | null {
+  if (typeof row !== "object" || row === null) return null;
+  const r = row as Record<string, unknown>;
+  const sidRaw = r.supplyItemId ?? r.supply_item_id;
+  const sid = typeof sidRaw === "string" ? sidRaw.trim() : "";
+  const qRaw = r.quantidade;
+  const q = typeof qRaw === "number" ? qRaw : Number(qRaw);
+  const cRaw = r.snapshot_custo_unitario;
+  const c = typeof cRaw === "number" ? cRaw : Number(cRaw);
+  if (!sid || !Number.isFinite(q) || q <= 0) return null;
+  const cost = Number.isFinite(c) && c >= 0 ? c : 0;
+  return { supplyItemId: sid, quantidade: q, snapshot_custo_unitario: cost };
+}
+
+function normalizeProductFromApi(p: DemoCompositeProduct): DemoCompositeProduct {
+  const linhasIn = p.linhas as unknown;
+  const linhas: DemoCompositeLine[] = [];
+  if (Array.isArray(linhasIn)) {
+    for (const row of linhasIn) {
+      const line = normalizeCompositeLineRow(row);
+      if (line) linhas.push(line);
+    }
+  }
+  const galleryRaw = p.galeria_imagens as unknown;
+  const galeria_imagens = Array.isArray(galleryRaw)
+    ? galleryRaw
+        .filter((u): u is string => typeof u === "string")
+        .map((u) => u.trim())
+        .filter(Boolean)
+    : [];
+
+  return {
+    ...p,
+    linhas: Array.isArray(linhasIn) ? linhas : p.linhas,
+    galeria_imagens,
+    preco_venda_publico: coerceFiniteNumber(p.preco_venda_publico, 0),
+    executor_fee_planejada: coerceFiniteNumber(p.executor_fee_planejada, 0),
+    platform_fee_planejada: coerceFiniteNumber(p.platform_fee_planejada, 0),
+    frete_insumos_atribuicao_reais:
+      p.frete_insumos_atribuicao_reais === null || p.frete_insumos_atribuicao_reais === undefined
+        ? (p.frete_insumos_atribuicao_reais ?? null)
+        : coerceFiniteNumber(p.frete_insumos_atribuicao_reais, 0),
+    pacote_altura_cm: coerceFiniteNumber(p.pacote_altura_cm, 22),
+    pacote_largura_cm: coerceFiniteNumber(p.pacote_largura_cm, 18),
+    pacote_comprimento_cm: coerceFiniteNumber(p.pacote_comprimento_cm, 8),
+    pacote_peso_kg: coerceFiniteNumber(p.pacote_peso_kg, 0.55),
+  };
+}
+
+function normalizeCommerceStateFromApi(state: DemoCommerceState): DemoCommerceState {
+  return {
+    ...state,
+    products: Array.isArray(state.products)
+      ? state.products.map((p) => normalizeProductFromApi(p))
+      : [],
+  };
+}
+
 export type SupplierAccountOption = { id: string; email: string; label: string };
 
 export async function fetchSupplierAccountsFromApi(): Promise<SupplierAccountOption[]> {
@@ -79,7 +147,14 @@ export async function getCommerceState(): Promise<DemoCommerceState> {
     if (!res.ok) {
       throw new Error(await readApiError(res));
     }
-    return (await res.json()) as DemoCommerceState;
+    let raw: DemoCommerceState;
+    try {
+      raw = (await res.json()) as DemoCommerceState;
+    } catch (e) {
+      console.error("[getCommerceState] JSON inválido da API:", e);
+      throw new Error("Resposta inválida da API ao carregar o estado da loja.");
+    }
+    return normalizeCommerceStateFromApi(raw);
   }
   return getCommerceStateFromCookies();
 }

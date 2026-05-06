@@ -1192,7 +1192,9 @@ function AdminPecaProductCard({
                   extra em carrossel na ficha pública (ampliar / zoom).
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {(product.galeria_imagens ?? []).map((url, galIdx) => {
+                  {(product.galeria_imagens ?? [])
+                    .filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+                    .map((url, galIdx) => {
                     const sGalDel = `peca-${product.id}-gal-del-${galIdx}`;
                     return (
                       <div

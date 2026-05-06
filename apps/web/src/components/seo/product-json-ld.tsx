@@ -36,7 +36,10 @@ export function ProductJsonLd({ product, listing, imageUrls }: Props) {
           "@type": "Offer",
           url,
           priceCurrency: "BRL",
-          price: product.preco_venda_publico,
+          price:
+            typeof product.preco_venda_publico === "number" && Number.isFinite(product.preco_venda_publico)
+              ? product.preco_venda_publico
+              : Number(product.preco_venda_publico) || 0,
           availability:
             listing.available_quantity > 0
               ? "https://schema.org/InStock"
