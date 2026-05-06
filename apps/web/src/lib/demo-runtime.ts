@@ -14,8 +14,10 @@ export {
   updateCommerceDelta,
   writeCommerceDelta,
 } from "./commerce-cookies";
+export type { SupplierAccountOption } from "./commerce-backend";
 export {
   commerceUsesDatabase,
+  fetchSupplierAccountsFromApi,
   getCommerceState,
   getDemoCommerceState,
   persistApproveExecutionRequest,

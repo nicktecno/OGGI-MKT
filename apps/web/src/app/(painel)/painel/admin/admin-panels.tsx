@@ -14,6 +14,7 @@ import {
   compositeInsumosTotal,
   compositePrecoFromLinhasAndFees,
   compositePrecoLojaPlanejado,
+  compositePrecoPreviaSemFreteB2B,
   mergeSupplyCatalog,
   resolveCompositeLines,
   supplierOptionsFromCatalog,
@@ -578,7 +579,7 @@ function InsumoPicker({
   );
 }
 
-function AdminNovaPecaCard({
+export function AdminNovaPecaCard({
   supplies,
   pending,
   pendingScope,
@@ -621,8 +622,8 @@ function AdminNovaPecaCard({
         <CardHeader>
           <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
           <CardDescription className="text-base leading-relaxed">
-            Ainda não há insumos no catálogo. Aprove cadastros de fornecedores em{" "}
-            <strong className="text-foreground">Cadastros</strong> para poder montar uma peça aqui.
+            Ainda não há insumos no catálogo. Peça ao fornecedor cadastrar no painel dele (e aprove em{" "}
+            <strong className="text-foreground">Cadastros</strong> se necessário).
           </CardDescription>
         </CardHeader>
       </Card>
@@ -632,13 +633,15 @@ function AdminNovaPecaCard({
   return (
     <Card className={ADMIN_CARD}>
       <CardHeader className={ADMIN_CARD_HEADER}>
-        <CardTitle className="font-serif text-xl">Nova modelo (produto composto)</CardTitle>
+        <CardTitle className="font-serif text-xl">Cadastro da peça (sem preços)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
-          Crie o desenho do produto: insumos, quantidades e tamanhos (P a XG ou tamanho único) que a peça pode ter.
+          Monte o modelo com <strong className="text-foreground">insumos dos fornecedores</strong>, quantidades,
+          descrição, SKU, tamanhos e fotos. <strong className="text-foreground">Não inclui valores</strong> — custos
+          dos insumos, taxas e pacote ao cliente ficam na aba <strong className="text-foreground">Preços</strong>. O
+          frete B2B entra no total só após atribuir costureira ou aprovar pedido.
           {marketplaceImagesEnabled
-            ? " Pode já enviar até 5 fotos (a primeira é a capa da vitrine; as outras entram na galeria da ficha). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
-            : " Depois ajuste preço e pacote nos cartões (fotos após configurar API e R2); para vincular costureiras use "}
-          <strong className="text-foreground">Quem faz o quê</strong>.
+            ? " Até 5 fotos (a primeira é a capa)."
+            : " Fotos após API e R2."}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -871,10 +874,11 @@ function AdminNovaPecaCard({
             </div>
           ) : null}
           <div className="space-y-3">
-            <Label>Insumos e quantidades</Label>
+            <Label>Insumos e quantidades na montagem</Label>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Em cada linha, escolha o <strong className="text-foreground">fornecedor</strong> e depois o{" "}
-              <strong className="text-foreground">insumo</strong> desse fornecedor (só aparecem itens dele).
+              Escolha o <strong className="text-foreground">fornecedor</strong> e o{" "}
+              <strong className="text-foreground">insumo</strong> dele. Os preços unitários você define na aba{" "}
+              <strong className="text-foreground">Preços</strong>.
             </p>
             {lines.map((line, idx) => {
               const rowSupplies = suppliesForSupplier(supplies, line.supplierEmail);
@@ -918,6 +922,7 @@ function AdminNovaPecaCard({
                     setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, quantidade: v } : x)));
                   }}
                   disabled={pending}
+                  aria-label={`Quantidade linha ${idx + 1}`}
                 />
                 {lines.length > 1 ? (
                   <Button
@@ -1004,11 +1009,12 @@ function AdminPecaProductCard({
   const freteB2B = product.frete_insumos_atribuicao_reais ?? null;
   const materiaisMaisFrete =
     freteB2B != null ? insumoTotal + freteB2B : null;
-  /** Com atribuição, o preço gravado na API/cookie é o canônico. */
+  const isPrevia = product.preco_venda_congelado !== true;
+  /** Final congelado = gravado; antes disso = prévia sem frete B2B dos insumos. */
   const precoLojaCard =
     product.preco_venda_congelado === true
       ? product.preco_venda_publico
-      : compositePrecoLojaPlanejado(product);
+      : compositePrecoPreviaSemFreteB2B(product);
   const sPause = `peca-${product.id}-pause`;
   const sActive = `peca-${product.id}-active`;
   const sDelete = `peca-${product.id}-delete`;
@@ -1048,9 +1054,16 @@ function AdminPecaProductCard({
             ) : null}
           </p>
           <p className="text-sm font-medium tabular-nums text-foreground">
-            Preço na loja: {formatBrl(precoLojaCard)}
+            {isPrevia ? "Prévia na loja (sem frete B2B dos insumos): " : "Preço na loja: "}
+            {formatBrl(precoLojaCard)}
           </p>
-          {freteB2B != null ? (
+          {isPrevia ? (
+            <p className="text-xs leading-snug text-muted-foreground">
+              O frete fornecedor → costureira entra no total após vincular uma costureira ou aprovar um pedido de
+              serviço.
+            </p>
+          ) : null}
+          {!isPrevia && freteB2B != null ? (
             <p className="text-xs leading-snug text-muted-foreground">
               Inclui frete dos insumos à costureira{" "}
               <span className="font-medium tabular-nums text-foreground">{formatBrl(freteB2B)}</span>
@@ -1285,7 +1298,13 @@ function AdminPecaProductCard({
                 Estes números aparecem para o cliente e ajudam a calcular repasses.
               </p>
               <div className="mt-4">
-                <PricingForm product={product} pending={pending} pendingScope={pendingScope} run={run} />
+                <PricingForm
+                  product={product}
+                  supplyCatalog={supplyCatalog}
+                  pending={pending}
+                  pendingScope={pendingScope}
+                  run={run}
+                />
               </div>
             </div>
           </CardContent>
@@ -1318,20 +1337,15 @@ export function AdminPecasPanel({
       {!marketplaceImagesEnabled ? <MarketplaceImagesDisabledCallout /> : null}
       <SectionIntro title="Peças e preços">
         <p>
-          Aqui você ajusta o preço que o cliente vê, o que fica para a costureira e para a loja, e pode pausar uma peça
-          inteira na vitrine ou tirá-la de uso. <strong className="text-foreground">Pausar na vitrine</strong> esconde
-          todas as ofertas daquele modelo; <strong className="text-foreground">Desativar</strong> tira a peça das
-          buscas. Toque num cartão para ver fotos, materiais e preços.
+          Aqui estão <strong className="text-foreground">todos os valores</strong>: custo unitário de cada insumo na
+          montagem, repasses, margem da loja e pacote ao cliente. A{" "}
+          <strong className="text-foreground">prévia na loja</strong> não inclui o frete B2B dos insumos até vincular
+          costureira; após a atribuição, o preço passa ao valor definitivo com esse frete. Novos modelos cadastre em{" "}
+          <strong className="text-foreground">Cadastro de peça</strong>.{" "}
+          <strong className="text-foreground">Pausar na vitrine</strong> esconde ofertas;{" "}
+          <strong className="text-foreground">Desativar</strong> tira a peça das buscas.
         </p>
       </SectionIntro>
-
-      <AdminNovaPecaCard
-        supplies={supplyCatalog}
-        pending={pending}
-        pendingScope={pendingScope}
-        run={run}
-        marketplaceImagesEnabled={marketplaceImagesEnabled}
-      />
 
       <div className="grid gap-8 xl:grid-cols-2">
         {products.map((product) => (
@@ -1629,11 +1643,13 @@ export function AdminCombinacoesPanel({
 
 function PricingForm({
   product,
+  supplyCatalog,
   pending,
   pendingScope,
   run,
 }: {
   product: DemoCompositeProduct;
+  supplyCatalog: DemoSupplyItem[];
   pending: boolean;
   pendingScope: string | null;
   run: AdminMutationRun;
@@ -1647,6 +1663,14 @@ function PricingForm({
   const [pacLar, setPacLar] = useState(String(pd0.pacote_largura_cm));
   const [pacComp, setPacComp] = useState(String(pd0.pacote_comprimento_cm));
   const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
+  const [lineCosts, setLineCosts] = useState<string[]>(() =>
+    product.linhas.map((l) => String(l.snapshot_custo_unitario)),
+  );
+
+  const resolvedMontagem = useMemo(
+    () => resolveCompositeLines(product, supplyCatalog),
+    [product, supplyCatalog],
+  );
 
   useEffect(() => {
     setExecFee(String(product.executor_fee_planejada));
@@ -1656,16 +1680,32 @@ function PricingForm({
     setPacLar(String(pd.pacote_largura_cm));
     setPacComp(String(pd.pacote_comprimento_cm));
     setPacPeso(String(pd.pacote_peso_kg));
+    setLineCosts(product.linhas.map((l) => String(l.snapshot_custo_unitario)));
   }, [product]);
 
   const frozen = product.preco_venda_congelado === true;
   const execParsed = Number(execFee.replace(",", "."));
   const platParsed = Number(platFee.replace(",", "."));
-  const materiaisRef = compositeInsumosTotal(product);
   const freteRef = product.frete_insumos_atribuicao_reais ?? 0;
+
+  const linhasEditadas: DemoCompositeProduct["linhas"] = product.linhas.map((l, i) => ({
+    ...l,
+    snapshot_custo_unitario: Number((lineCosts[i] ?? "0").replace(",", ".")),
+  }));
+  const custosLinhasValidos =
+    lineCosts.length === product.linhas.length &&
+    linhasEditadas.every(
+      (l) => Number.isFinite(l.snapshot_custo_unitario) && l.snapshot_custo_unitario >= 0,
+    );
+  const materiaisRef = custosLinhasValidos ? compositeInsumosTotal({ ...product, linhas: linhasEditadas }) : null;
+  const feesValid =
+    Number.isFinite(execParsed) &&
+    execParsed >= 0 &&
+    Number.isFinite(platParsed) &&
+    platParsed >= 0;
   const precoLojaCalculado =
-    Number.isFinite(execParsed) && Number.isFinite(platParsed)
-      ? compositePrecoFromLinhasAndFees(product.linhas, execParsed, platParsed, freteRef)
+    custosLinhasValidos && feesValid
+      ? compositePrecoFromLinhasAndFees(linhasEditadas, execParsed, platParsed, freteRef)
       : null;
 
   return (
@@ -1673,17 +1713,42 @@ function PricingForm({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (frozen) return;
+        const pacote_altura_cm = Number(pacAlt.replace(",", "."));
+        const pacote_largura_cm = Number(pacLar.replace(",", "."));
+        const pacote_comprimento_cm = Number(pacComp.replace(",", "."));
+        const pacote_peso_kg = Number(pacPeso.replace(",", "."));
+        if (frozen) {
+          run(
+            () =>
+              updateCompositeProductPricing({
+                productId: product.id,
+                executor_fee_planejada: product.executor_fee_planejada,
+                platform_fee_planejada: product.platform_fee_planejada,
+                pacote_altura_cm,
+                pacote_largura_cm,
+                pacote_comprimento_cm,
+                pacote_peso_kg,
+              }),
+            scope,
+          );
+          return;
+        }
+        if (!custosLinhasValidos || !feesValid) return;
         run(
           () =>
             updateCompositeProductPricing({
               productId: product.id,
               executor_fee_planejada: Number(execFee.replace(",", ".")),
               platform_fee_planejada: Number(platFee.replace(",", ".")),
-              pacote_altura_cm: Number(pacAlt.replace(",", ".")),
-              pacote_largura_cm: Number(pacLar.replace(",", ".")),
-              pacote_comprimento_cm: Number(pacComp.replace(",", ".")),
-              pacote_peso_kg: Number(pacPeso.replace(",", ".")),
+              pacote_altura_cm,
+              pacote_largura_cm,
+              pacote_comprimento_cm,
+              pacote_peso_kg,
+              linhas: product.linhas.map((l, i) => ({
+                supply_item_id: l.supplyItemId,
+                quantidade: l.quantidade,
+                snapshot_custo_unitario: linhasEditadas[i]!.snapshot_custo_unitario,
+              })),
             }),
           scope,
         );
@@ -1692,9 +1757,52 @@ function PricingForm({
       {frozen ? (
         <p className="rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-sm text-muted-foreground">
           O preço ao cliente desta peça foi <strong className="text-foreground">fixado</strong> ao vincular
-          costureira e cotar o frete B2B dos insumos; taxas e preço não podem ser alterados por aqui.
+          costureira e cotar o frete B2B dos insumos; custos por insumo, taxas e preço não podem ser alterados por
+          aqui. Você ainda pode ajustar o <strong className="text-foreground">pacote ao cliente</strong>.
         </p>
       ) : null}
+      <div className="rounded-xl border border-border/50 bg-muted/15 p-4">
+        <h4 className="text-sm font-semibold text-foreground">Custo unitário na montagem (R$)</h4>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          Valor por unidade de cada insumo nesta peça (o total na linha = quantidade × unitário). A montagem em si
+          continua em <strong className="text-foreground">Cadastro de peça</strong>.
+        </p>
+        <ul className="mt-3 space-y-3">
+          {resolvedMontagem.map((row, idx) => (
+            <li
+              key={`${row.supplyItemId}-${idx}`}
+              className="flex flex-col gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-3 sm:flex-row sm:items-end sm:justify-between"
+            >
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <p className="text-sm font-medium leading-snug text-foreground">{row.insumo.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  Qtd. na peça:{" "}
+                  <span className="font-medium tabular-nums text-foreground">{row.quantidade}</span>
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-1.5 sm:w-40 sm:shrink-0">
+                <Label htmlFor={`custo-linha-${product.id}-${idx}`} className="text-xs font-medium">
+                  R$ / un.
+                </Label>
+                <Input
+                  id={`custo-linha-${product.id}-${idx}`}
+                  value={lineCosts[idx] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLineCosts((prev) => {
+                      const next = [...prev];
+                      next[idx] = v;
+                      return next;
+                    });
+                  }}
+                  disabled={pending || frozen}
+                  inputMode="decimal"
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
         <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preço na loja (R$)</p>
@@ -1702,7 +1810,7 @@ function PricingForm({
             {precoLojaCalculado !== null ? formatBrl(precoLojaCalculado) : "—"}
           </p>
           <p className="text-[0.7rem] leading-snug text-muted-foreground">
-            Materiais ({formatBrl(materiaisRef)})
+            Materiais ({materiaisRef !== null ? formatBrl(materiaisRef) : "—"})
             {freteRef > 0 ? (
               <>
                 {" "}
@@ -1793,13 +1901,19 @@ function PricingForm({
         </div>
       </div>
       <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending || (!frozen && (!custosLinhasValidos || !feesValid))}
+        >
           {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
           {frozen ? "Salvar pacote (envio ao cliente)" : "Salvar valores"}
         </Button>
         <p className="text-sm text-muted-foreground">
           Materiais na montagem:{" "}
-          <span className="font-medium tabular-nums text-foreground">{formatBrl(materiaisRef)}</span>
+          <span className="font-medium tabular-nums text-foreground">
+            {materiaisRef !== null ? formatBrl(materiaisRef) : "—"}
+          </span>
           {freteRef > 0 ? (
             <>
               {" "}

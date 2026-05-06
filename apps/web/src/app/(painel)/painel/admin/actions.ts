@@ -59,8 +59,6 @@ export async function createCompositeProductAction(
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    executor_fee_planejada?: number;
-    platform_fee_planejada?: number;
   },
   /** Capa da vitrine: enviada no mesmo pedido à API para evitar placeholder na listagem. */
   coverFile?: File,
@@ -97,6 +95,8 @@ export async function updateCompositeProductPricing(input: {
   pacote_largura_cm: number;
   pacote_comprimento_cm: number;
   pacote_peso_kg: number;
+  /** Omitir quando o preço está congelado: grava só o pacote (envio ao cliente). */
+  linhas?: { supply_item_id: string; quantidade: number; snapshot_custo_unitario: number }[];
 }) {
   await requireAdmin();
   const {
@@ -107,15 +107,8 @@ export async function updateCompositeProductPricing(input: {
     pacote_largura_cm,
     pacote_comprimento_cm,
     pacote_peso_kg,
+    linhas,
   } = input;
-  if (
-    !Number.isFinite(executor_fee_planejada) ||
-    !Number.isFinite(platform_fee_planejada) ||
-    executor_fee_planejada < 0 ||
-    platform_fee_planejada < 0
-  ) {
-    throw new Error("Confira os números: use valores em reais, zero ou maiores.");
-  }
   if (
     !Number.isFinite(pacote_altura_cm) ||
     !Number.isFinite(pacote_largura_cm) ||
@@ -128,6 +121,29 @@ export async function updateCompositeProductPricing(input: {
   ) {
     throw new Error("Pacote: use dimensões ≥ 0,1 cm e peso ≥ 0,01 kg.");
   }
+  if (linhas !== undefined) {
+    if (
+      !Number.isFinite(executor_fee_planejada) ||
+      !Number.isFinite(platform_fee_planejada) ||
+      executor_fee_planejada < 0 ||
+      platform_fee_planejada < 0
+    ) {
+      throw new Error("Confira os números: use valores em reais, zero ou maiores.");
+    }
+    if (!linhas.length) {
+      throw new Error("Montagem da peça inválida ao salvar preços.");
+    }
+    for (const row of linhas) {
+      if (
+        !row.supply_item_id?.trim() ||
+        !Number.isFinite(row.quantidade) ||
+        !Number.isFinite(row.snapshot_custo_unitario) ||
+        row.snapshot_custo_unitario < 0
+      ) {
+        throw new Error("Cada insumo precisa de custo unitário ≥ 0 na montagem.");
+      }
+    }
+  }
   await persistCompositeProductPricing({
     productId,
     executor_fee_planejada,
@@ -136,6 +152,7 @@ export async function updateCompositeProductPricing(input: {
     pacote_largura_cm,
     pacote_comprimento_cm,
     pacote_peso_kg,
+    linhas,
   });
   revalidateStorefront();
 }

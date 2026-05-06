@@ -1,14 +1,28 @@
-import { Controller, Get, Param, Post, Body, UseGuards, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  ServiceUnavailableException,
+  UseGuards,
+} from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
+import { SupplyQuantityKind } from '@prisma/client';
 import Stripe from 'stripe';
-import { PrismaService } from '../prisma/prisma.service';
 import { InternalApiGuard } from '../commerce/internal-api.guard';
+import { PrismaService } from '../prisma/prisma.service';
+import { SupplyService } from '../supply/supply.service';
 
 @Controller('internal/platform')
 @UseGuards(InternalApiGuard)
 @SkipThrottle()
 export class InternalPlatformController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supply: SupplyService,
+  ) {}
 
   private async listAllStripeCharges(
     stripe: InstanceType<typeof Stripe>,
@@ -82,6 +96,64 @@ export class InternalPlatformController {
       pacote_comprimento_cm: r.pacoteComprimentoCm,
       pacote_peso_kg: r.pacotePesoKg,
     }));
+  }
+
+  @Get('supplier-accounts')
+  async supplierAccounts() {
+    const rows = await this.prisma.platformAccount.findMany({
+      where: { role: 'SUPPLIER', status: 'ACTIVE' },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        supplierProfile: { select: { businessName: true } },
+      },
+      orderBy: { email: 'asc' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      email: r.email,
+      label:
+        r.supplierProfile?.businessName?.trim() || r.name?.trim() || r.email,
+    }));
+  }
+
+  /** Admin: cria insumo só com especificações (sem custo); precificação na aba Peças. */
+  @Post('catalog/supply-items')
+  async createSupplyCatalogItem(
+    @Body()
+    body: {
+      supplier_account_id: string;
+      nome: string;
+      sku_interno: string;
+      quantidade_kind: SupplyQuantityKind;
+      quantidade: number;
+      observacao?: string;
+      pacote_altura_cm?: number;
+      pacote_largura_cm?: number;
+      pacote_comprimento_cm?: number;
+      pacote_peso_kg?: number;
+    },
+  ) {
+    const qk = body.quantidade_kind;
+    if (!Object.values(SupplyQuantityKind).includes(qk)) {
+      throw new BadRequestException('quantidade_kind inválido (METRO ou PECA).');
+    }
+    if (!body.supplier_account_id?.trim()) {
+      throw new BadRequestException('supplier_account_id é obrigatório.');
+    }
+    return this.supply.createSpecsForSupplier({
+      supplierAccountId: body.supplier_account_id.trim(),
+      nome: body.nome ?? '',
+      skuInterno: body.sku_interno ?? '',
+      quantidadeKind: qk,
+      quantidade: body.quantidade,
+      observacao: body.observacao,
+      pacoteAlturaCm: body.pacote_altura_cm,
+      pacoteLarguraCm: body.pacote_largura_cm,
+      pacoteComprimentoCm: body.pacote_comprimento_cm,
+      pacotePesoKg: body.pacote_peso_kg,
+    });
   }
 
   @Get('accounts/pending-count')

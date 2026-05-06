@@ -15,7 +15,7 @@ export async function createSupplyItemAction(input: {
   skuInterno: string;
   quantidadeKind: "METRO" | "PECA";
   quantidade: number;
-  custoFornecedor: number;
+  custoFornecedor?: number;
   freteAteExecutor?: number;
   observacao?: string;
   imagemUrl?: string;
@@ -30,27 +30,29 @@ export async function createSupplyItemAction(input: {
   }
   const token = await bearer();
   if (!token) throw new Error("Sessão expirada. Entre novamente.");
+  const body: Record<string, unknown> = {
+    nome: input.nome,
+    skuInterno: input.skuInterno,
+    quantidadeKind: input.quantidadeKind,
+    quantidade: input.quantidade,
+    observacao: input.observacao,
+    imagemUrl: input.imagemUrl,
+    ativo: input.ativo ?? true,
+    pacoteAlturaCm: input.pacoteAlturaCm,
+    pacoteLarguraCm: input.pacoteLarguraCm,
+    pacoteComprimentoCm: input.pacoteComprimentoCm,
+    pacotePesoKg: input.pacotePesoKg,
+  };
+  if (input.custoFornecedor !== undefined) body.custoFornecedor = input.custoFornecedor;
+  if (input.freteAteExecutor !== undefined) body.freteAteExecutor = input.freteAteExecutor;
+
   const res = await fetch(`${serverApiUrl()}/supply-items`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      nome: input.nome,
-      skuInterno: input.skuInterno,
-      quantidadeKind: input.quantidadeKind,
-      quantidade: input.quantidade,
-      custoFornecedor: input.custoFornecedor,
-      freteAteExecutor: input.freteAteExecutor ?? 0,
-      observacao: input.observacao,
-      imagemUrl: input.imagemUrl,
-      ativo: input.ativo ?? true,
-      pacoteAlturaCm: input.pacoteAlturaCm,
-      pacoteLarguraCm: input.pacoteLarguraCm,
-      pacoteComprimentoCm: input.pacoteComprimentoCm,
-      pacotePesoKg: input.pacotePesoKg,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const t = await res.text();

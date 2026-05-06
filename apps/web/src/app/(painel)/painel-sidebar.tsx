@@ -48,6 +48,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
 
   if (role === "ADMIN" && adminNavCounts) {
     type AdminNavItem =
+      | { href: "/painel/admin/cadastro-peca"; label: "Cadastro de peça" }
       | { href: "/painel/admin/pecas"; label: "Peças e preços" }
       | { href: "/painel/admin/financeiro"; label: "Financeiro (Stripe)" }
       | { href: "/painel/admin/cadastros"; label: "Cadastros"; badge: number }
@@ -55,6 +56,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
       | { href: "/painel/admin/combinacoes"; label: "Quem faz o quê"; badge: number };
 
     const items: AdminNavItem[] = [
+      { href: "/painel/admin/cadastro-peca", label: "Cadastro de peça" },
       { href: "/painel/admin/pecas", label: "Peças e preços" },
       { href: "/painel/admin/financeiro", label: "Financeiro (Stripe)" },
       {

@@ -136,8 +136,9 @@ model SupplyItem {
   nome                String
   skuInterno          String              @map("sku_interno")
   unidade             String
-  custoFornecedor     Float               @map("custo_fornecedor")
-  freteAteExecutor    Float               @map("frete_ate_executor")
+  /// Opcional: o admin pode precificar só na montagem da peça.
+  custoFornecedor     Float?              @map("custo_fornecedor")
+  freteAteExecutor    Float?              @map("frete_ate_executor")
   imagemUrl           String?             @map("imagem_url")
   observacao          String?
   quantidadeKind      SupplyQuantityKind  @default(METRO) @map("quantidade_kind")

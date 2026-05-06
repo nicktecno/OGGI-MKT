@@ -40,8 +40,8 @@ export class SupplyService {
     nome: string;
     skuInterno: string;
     unidade: string;
-    custoFornecedor: number;
-    freteAteExecutor: number;
+    custoFornecedor: number | null;
+    freteAteExecutor: number | null;
     ativo: boolean;
     imagemUrl: string | null;
     observacao: string | null;
@@ -84,7 +84,6 @@ export class SupplyService {
   async create(user: PlatformJwtUser, dto: CreateSupplyItemDto) {
     this.assertSupplier(user);
     const id = `supply-${randomUUID().slice(0, 12)}`;
-    const frete = dto.freteAteExecutor ?? 0;
     const row = await this.prisma.supplyItem.create({
       data: {
         id,
@@ -94,8 +93,8 @@ export class SupplyService {
         unidade: this.unidadeFromKind(dto.quantidadeKind),
         quantidadeKind: dto.quantidadeKind,
         quantidade: dto.quantidade,
-        custoFornecedor: dto.custoFornecedor,
-        freteAteExecutor: frete,
+        custoFornecedor: dto.custoFornecedor !== undefined ? dto.custoFornecedor : null,
+        freteAteExecutor: dto.freteAteExecutor !== undefined ? dto.freteAteExecutor : null,
         observacao: dto.observacao?.trim() || null,
         imagemUrl: dto.imagemUrl?.trim() || null,
         ativo: dto.ativo ?? true,
@@ -207,5 +206,53 @@ export class SupplyService {
       data: { imagemUrl: url },
     });
     return { url };
+  }
+
+  /** Cadastro pelo admin (API interna): especificações apenas; precificação na montagem da peça. */
+  async createSpecsForSupplier(input: {
+    supplierAccountId: string;
+    nome: string;
+    skuInterno: string;
+    quantidadeKind: SupplyQuantityKind;
+    quantidade: number;
+    observacao?: string;
+    pacoteAlturaCm?: number;
+    pacoteLarguraCm?: number;
+    pacoteComprimentoCm?: number;
+    pacotePesoKg?: number;
+  }) {
+    const nome = input.nome.trim();
+    const sku = input.skuInterno.trim();
+    if (nome.length < 2) throw new BadRequestException('Nome do insumo muito curto.');
+    if (!sku) throw new BadRequestException('SKU interno é obrigatório.');
+    if (!Number.isFinite(input.quantidade) || input.quantidade <= 0) {
+      throw new BadRequestException('Quantidade base deve ser maior que zero.');
+    }
+    const acc = await this.prisma.platformAccount.findFirst({
+      where: { id: input.supplierAccountId, role: 'SUPPLIER', status: 'ACTIVE' },
+    });
+    if (!acc) throw new NotFoundException('Fornecedor não encontrado ou cadastro não ativo.');
+    const id = `supply-${randomUUID().slice(0, 12)}`;
+    const row = await this.prisma.supplyItem.create({
+      data: {
+        id,
+        supplierAccountId: input.supplierAccountId,
+        nome,
+        skuInterno: sku,
+        unidade: this.unidadeFromKind(input.quantidadeKind),
+        quantidadeKind: input.quantidadeKind,
+        quantidade: input.quantidade,
+        custoFornecedor: null,
+        freteAteExecutor: null,
+        observacao: input.observacao?.trim() || null,
+        imagemUrl: null,
+        ativo: true,
+        pacoteAlturaCm: input.pacoteAlturaCm ?? 14,
+        pacoteLarguraCm: input.pacoteLarguraCm ?? 12,
+        pacoteComprimentoCm: input.pacoteComprimentoCm ?? 5,
+        pacotePesoKg: input.pacotePesoKg ?? 0.4,
+      },
+    });
+    return this.toListRow(row, acc.email);
   }
 }

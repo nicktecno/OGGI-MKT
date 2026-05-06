@@ -85,14 +85,19 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
   async function onCreate() {
     if (!apiMode) return;
     setError(null);
-    const c = parseMoney(custo);
+    const cRaw = custo.trim();
+    const c = cRaw === "" ? undefined : parseMoney(custo);
     const q = parseQty(quantidade);
     const pa = parseQty(pacAlt);
     const pl = parseQty(pacLar);
     const pc = parseQty(pacComp);
     const pp = parseQty(pacPeso);
-    if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
-      setError("Preencha nome, SKU, custo e quantidade válidos.");
+    if (c !== undefined && (Number.isNaN(c) || c < 0)) {
+      setError("Custo inválido (use vazio para cadastrar só especificações).");
+      return;
+    }
+    if (!nome.trim() || !sku.trim() || Number.isNaN(q) || q <= 0) {
+      setError("Preencha nome, SKU e quantidade válidos.");
       return;
     }
     if (
@@ -115,8 +120,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         skuInterno: sku.trim(),
         quantidadeKind,
         quantidade: q,
-        custoFornecedor: c,
-        freteAteExecutor: 0,
+        ...(c !== undefined ? { custoFornecedor: c } : {}),
         observacao: observacao.trim() || undefined,
         pacoteAlturaCm: pa,
         pacoteLarguraCm: pl,
@@ -142,13 +146,18 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
   async function onUpdate(row: DemoSupplyItem) {
     if (!apiMode) return;
     setError(null);
-    const c = parseMoney(custo);
+    const cRaw = custo.trim();
+    const c = cRaw === "" ? undefined : parseMoney(custo);
     const q = parseQty(quantidade);
     const pa = parseQty(pacAlt);
     const pl = parseQty(pacLar);
     const pc = parseQty(pacComp);
     const pp = parseQty(pacPeso);
-    if (!nome.trim() || !sku.trim() || c < 0 || Number.isNaN(c) || Number.isNaN(q) || q <= 0) {
+    if (c !== undefined && (Number.isNaN(c) || c < 0)) {
+      setError("Custo inválido.");
+      return;
+    }
+    if (!nome.trim() || !sku.trim() || Number.isNaN(q) || q <= 0) {
       setError("Confira os campos antes de salvar.");
       return;
     }
@@ -172,7 +181,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
         skuInterno: sku.trim(),
         quantidadeKind,
         quantidade: q,
-        custoFornecedor: c,
+        ...(c !== undefined ? { custoFornecedor: c } : {}),
         observacao: observacao.trim() || undefined,
         pacoteAlturaCm: pa,
         pacoteLarguraCm: pl,
@@ -201,7 +210,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
     setSku(row.sku_interno);
     setQuantidadeKind(row.quantidade_kind ?? (row.unidade === "pc" ? "PECA" : "METRO"));
     setQuantidade(String(row.quantidade ?? 1));
-    setCusto(String(row.custo_fornecedor));
+    setCusto(row.custo_fornecedor != null ? String(row.custo_fornecedor) : "");
     setObservacao(row.observacao ?? "");
     const d = defaultPacote(row);
     setPacAlt(d.altura);
@@ -302,8 +311,14 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ins-custo">Custo fornecedor (R$)</Label>
-              <Input id="ins-custo" value={custo} onChange={(e) => setCusto(e.target.value)} className="bg-background" />
+              <Label htmlFor="ins-custo">Custo fornecedor (R$, opcional)</Label>
+              <Input
+                id="ins-custo"
+                value={custo}
+                onChange={(e) => setCusto(e.target.value)}
+                placeholder="Deixe vazio se o admin precificar na peça"
+                className="bg-background"
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="ins-obs">Observação (opcional)</Label>
@@ -450,12 +465,16 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
                   {row.pacote_altura_cm ?? "—"}×{row.pacote_largura_cm ?? "—"}×{row.pacote_comprimento_cm ?? "—"}{" "}
                   · {row.pacote_peso_kg ?? "—"} kg
                 </td>
-                <td className="px-3 py-3 text-right tabular-nums">{formatBrl(row.custo_fornecedor)}</td>
+                <td className="px-3 py-3 text-right tabular-nums">
+                  {row.custo_fornecedor != null ? formatBrl(row.custo_fornecedor) : "—"}
+                </td>
                 <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
-                  {formatBrl(row.frete_ate_executor)}
+                  {row.frete_ate_executor != null ? formatBrl(row.frete_ate_executor) : "—"}
                 </td>
                 <td className="px-3 py-3 text-right font-medium tabular-nums text-foreground">
-                  {formatBrl(insumoCostTotal(row))}
+                  {row.custo_fornecedor == null && row.frete_ate_executor == null
+                    ? "—"
+                    : formatBrl(insumoCostTotal(row))}
                 </td>
                 {apiMode ? (
                   <td className="px-3 py-3 text-right">

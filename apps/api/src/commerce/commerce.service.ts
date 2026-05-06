@@ -135,6 +135,77 @@ export class CommerceService {
     return sum;
   }
 
+  private parseLinhasStructured(linhas: unknown): Array<{
+    supplyItemId: string;
+    quantidade: number;
+    snapshot_custo_unitario: number;
+  }> {
+    if (!Array.isArray(linhas)) return [];
+    const out: Array<{
+      supplyItemId: string;
+      quantidade: number;
+      snapshot_custo_unitario: number;
+    }> = [];
+    for (const row of linhas) {
+      if (typeof row !== 'object' || row === null) continue;
+      const r = row as Record<string, unknown>;
+      const sidRaw = r.supplyItemId ?? r.supply_item_id;
+      const sid = typeof sidRaw === 'string' ? sidRaw : '';
+      const qRaw = r.quantidade;
+      const q = typeof qRaw === 'number' ? qRaw : Number(qRaw);
+      const cRaw = r.snapshot_custo_unitario;
+      const c = typeof cRaw === 'number' ? cRaw : Number(cRaw);
+      if (!sid || !Number.isFinite(q)) continue;
+      out.push({
+        supplyItemId: sid,
+        quantidade: q,
+        snapshot_custo_unitario: Number.isFinite(c) ? c : 0,
+      });
+    }
+    return out;
+  }
+
+  /** Atualiza só os valores unitários; insumo e quantidade vêm do cadastro da peça. */
+  private mergeLinhasPrecificacao(
+    rows: { supply_item_id: string; quantidade: number; snapshot_custo_unitario: number }[],
+    existingJson: unknown,
+  ): Array<{ supplyItemId: string; quantidade: number; snapshot_custo_unitario: number }> {
+    const existing = this.parseLinhasStructured(existingJson);
+    if (rows.length !== existing.length) {
+      throw new BadRequestException(
+        'A montagem não coincide com a peça. Para mudar insumos ou quantidades, use o cadastro da peça.',
+      );
+    }
+    const out: Array<{
+      supplyItemId: string;
+      quantidade: number;
+      snapshot_custo_unitario: number;
+    }> = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
+      const ex = existing[i]!;
+      const sid = row.supply_item_id?.trim();
+      if (!sid || sid !== ex.supplyItemId) {
+        throw new BadRequestException(
+          'Insumos definidos no cadastro da peça não podem ser alterados nesta aba.',
+        );
+      }
+      if (Math.abs(row.quantidade - ex.quantidade) > 1e-6) {
+        throw new BadRequestException('Altere quantidades no cadastro da peça.');
+      }
+      const c = row.snapshot_custo_unitario;
+      if (!Number.isFinite(c) || c < 0) {
+        throw new BadRequestException('Cada linha precisa de snapshot_custo_unitario ≥ 0.');
+      }
+      out.push({
+        supplyItemId: ex.supplyItemId,
+        quantidade: ex.quantidade,
+        snapshot_custo_unitario: c,
+      });
+    }
+    return out;
+  }
+
   async patchProduct(
     productId: string,
     body: {
@@ -148,6 +219,7 @@ export class CommerceService {
       pacote_largura_cm?: number;
       pacote_comprimento_cm?: number;
       pacote_peso_kg?: number;
+      linhas?: { supply_item_id: string; quantidade: number; snapshot_custo_unitario: number }[];
     },
   ): Promise<void> {
     const has =
@@ -159,7 +231,8 @@ export class CommerceService {
       body.pacote_altura_cm !== undefined ||
       body.pacote_largura_cm !== undefined ||
       body.pacote_comprimento_cm !== undefined ||
-      body.pacote_peso_kg !== undefined;
+      body.pacote_peso_kg !== undefined ||
+      body.linhas !== undefined;
     if (!has) {
       throw new BadRequestException('Nenhum campo para atualizar.');
     }
@@ -214,6 +287,18 @@ export class CommerceService {
         'O preço ao cliente desta peça foi fixado ao vincular costureira e fretes dos insumos; não é possível alterar taxas ou preço por aqui.',
       );
     }
+    if (existing.precoVendaCongelado && body.linhas !== undefined) {
+      throw new BadRequestException(
+        'A montagem e valores dos insumos não podem ser alterados após o preço ter sido fixado na atribuição.',
+      );
+    }
+
+    let mergedLinhas:
+      | Array<{ supplyItemId: string; quantidade: number; snapshot_custo_unitario: number }>
+      | undefined;
+    if (body.linhas !== undefined) {
+      mergedLinhas = this.mergeLinhasPrecificacao(body.linhas, existing.linhas);
+    }
 
     const nextExec =
       body.executor_fee_planejada !== undefined
@@ -230,8 +315,8 @@ export class CommerceService {
       body.preco_venda_publico !== undefined;
 
     let precoComputed: number | undefined;
-    if (!existing.precoVendaCongelado && feeFieldsInBody) {
-      const materials = this.sumMateriaisFromLinhasJson(existing.linhas);
+    if (!existing.precoVendaCongelado && (feeFieldsInBody || mergedLinhas !== undefined)) {
+      const materials = this.sumMateriaisFromLinhasJson(mergedLinhas ?? existing.linhas);
       const fretePlanejado = existing.freteInsumosAtribuicaoReais ?? 0;
       precoComputed = materials + fretePlanejado + nextExec + nextPlat;
     }
@@ -241,6 +326,9 @@ export class CommerceService {
       data: {
         ...(body.ativo !== undefined ? { ativo: body.ativo } : {}),
         ...(body.admin_pausado !== undefined ? { adminPausado: body.admin_pausado } : {}),
+        ...(mergedLinhas !== undefined
+          ? { linhas: mergedLinhas as unknown as Prisma.InputJsonValue }
+          : {}),
         ...(precoComputed !== undefined ? { precoVendaPublico: precoComputed } : {}),
         ...(body.executor_fee_planejada !== undefined
           ? { executorFeePlanejada: body.executor_fee_planejada }
@@ -303,8 +391,6 @@ export class CommerceService {
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    executor_fee_planejada?: number;
-    platform_fee_planejada?: number;
   },
   cover?: { buffer: Buffer; mimeType: string },
   ): Promise<{ id: string; slug: string }> {
@@ -354,17 +440,11 @@ export class CommerceService {
       linhasPayload.push({
         supplyItemId: item.id,
         quantidade: q,
-        snapshot_custo_unitario: item.custoFornecedor,
+        snapshot_custo_unitario: 0,
       });
     }
 
     const id = `cp-${randomUUID().slice(0, 12)}`;
-    const materialsTotal = linhasPayload.reduce(
-      (sum, row) => sum + row.quantidade * row.snapshot_custo_unitario,
-      0,
-    );
-    const execFee = body.executor_fee_planejada ?? 0;
-    const platFee = body.platform_fee_planejada ?? 0;
     await this.prisma.compositeProduct.create({
       data: {
         id,
@@ -373,9 +453,9 @@ export class CommerceService {
         sku,
         descricaoCurta: desc,
         linhas: linhasPayload as unknown as Prisma.InputJsonValue,
-        executorFeePlanejada: execFee,
-        platformFeePlanejada: platFee,
-        precoVendaPublico: materialsTotal + execFee + platFee,
+        executorFeePlanejada: 0,
+        platformFeePlanejada: 0,
+        precoVendaPublico: 0,
         ativo: true,
         adminPausado: false,
         imagemUrl:

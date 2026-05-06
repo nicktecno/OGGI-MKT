@@ -34,8 +34,10 @@ export default function AdminPainelLayout({ children }: { children: React.ReactN
             Administração
           </h1>
           <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
-            Pelo menu à esquerda você altera peças e preços, responde pedidos das costureiras e vê quem
-            está fazendo cada modelo. {persistenceCopy}
+            Pelo menu: em <strong className="text-foreground">Cadastro de peça</strong> monte o modelo (insumos e
+            vitrine, sem preços); em <strong className="text-foreground">Peças e preços</strong> defina custos e
+            taxas; depois responda pedidos e acompanhe combinações.{" "}
+            {persistenceCopy}
           </p>
         </div>
       </div>

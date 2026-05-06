@@ -41,9 +41,6 @@ export class CommerceInternalController {
       descricao_curta: string;
       linhas: { supply_item_id: string; quantidade: number }[];
       variacoes_tamanho: string[];
-      preco_venda_publico?: number;
-      executor_fee_planejada?: number;
-      platform_fee_planejada?: number;
     },
   ) {
     return this.commerce.createCompositeProduct(body);
@@ -79,9 +76,6 @@ export class CommerceInternalController {
       descricao_curta: string;
       linhas: { supply_item_id: string; quantidade: number }[];
       variacoes_tamanho: string[];
-      preco_venda_publico?: number;
-      executor_fee_planejada?: number;
-      platform_fee_planejada?: number;
     };
     try {
       body = JSON.parse(payloadJson) as typeof body;
@@ -110,6 +104,7 @@ export class CommerceInternalController {
       pacote_largura_cm?: number;
       pacote_comprimento_cm?: number;
       pacote_peso_kg?: number;
+      linhas?: { supply_item_id: string; quantidade: number; snapshot_custo_unitario: number }[];
     },
   ) {
     return this.commerce.patchProduct(id, body);

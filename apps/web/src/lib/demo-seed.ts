@@ -13,8 +13,9 @@ export type DemoSupplyItem = {
   nome: string;
   sku_interno: string;
   unidade: string;
-  custo_fornecedor: number;
-  frete_ate_executor: number;
+  /** Null quando o preço fica só na montagem da peça (admin). */
+  custo_fornecedor?: number | null;
+  frete_ate_executor?: number | null;
   ativo: boolean;
   imagem_url?: string | null;
   observacao?: string | null;
@@ -504,7 +505,7 @@ export function searchCatalogRowsFromData(
 }
 
 export function insumoCostTotal(item: DemoSupplyItem): number {
-  return item.custo_fornecedor + item.frete_ate_executor;
+  return (item.custo_fornecedor ?? 0) + (item.frete_ate_executor ?? 0);
 }
 
 export function lineTotal(line: DemoCompositeLine): number {
@@ -532,6 +533,16 @@ export function compositePrecoLojaPlanejado(product: DemoCompositeProduct): numb
     product.executor_fee_planejada,
     product.platform_fee_planejada,
     product.frete_insumos_atribuicao_reais ?? 0,
+  );
+}
+
+/** Preço exibido antes da atribuição: materiais + taxas, sem frete B2B dos insumos. */
+export function compositePrecoPreviaSemFreteB2B(product: DemoCompositeProduct): number {
+  return compositePrecoFromLinhasAndFees(
+    product.linhas,
+    product.executor_fee_planejada,
+    product.platform_fee_planejada,
+    0,
   );
 }
 

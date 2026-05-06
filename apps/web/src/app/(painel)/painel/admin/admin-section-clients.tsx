@@ -7,8 +7,36 @@ import type {
   DemoSupplyItem,
   ExecutorPickerOption,
 } from "@/lib/demo-seed";
-import { AdminCombinacoesPanel, AdminPedidosPanel, AdminPecasPanel } from "./admin-panels";
+import { mergeSupplyCatalog } from "@/lib/demo-seed";
+import {
+  AdminCombinacoesPanel,
+  AdminNovaPecaCard,
+  AdminPedidosPanel,
+  AdminPecasPanel,
+} from "./admin-panels";
 import { useAdminMutations } from "./use-admin-mutations";
+
+export function CadastroPecaSectionClient({
+  supplyCatalogExtra,
+  marketplaceImagesEnabled,
+}: {
+  supplyCatalogExtra?: DemoSupplyItem[];
+  marketplaceImagesEnabled: boolean;
+}) {
+  const { pending, pendingScope, run } = useAdminMutations();
+  const supplies = mergeSupplyCatalog(supplyCatalogExtra ?? []);
+  return (
+    <div className="space-y-8">
+      <AdminNovaPecaCard
+        supplies={supplies}
+        pending={pending}
+        pendingScope={pendingScope}
+        run={run}
+        marketplaceImagesEnabled={marketplaceImagesEnabled}
+      />
+    </div>
+  );
+}
 
 export function PecasSectionClient({
   products,

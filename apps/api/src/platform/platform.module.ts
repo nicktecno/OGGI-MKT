@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SupplyModule } from '../supply/supply.module';
 import { AccountsMeController } from './accounts-me.controller';
 import { InternalPlatformController } from './internal-platform.controller';
 import { StripeConnectController } from './stripe-connect.controller';
@@ -7,6 +8,7 @@ import { StripeWebhookController } from './stripe-webhook.controller';
 import { StripeWebhookService } from './stripe-webhook.service';
 
 @Module({
+  imports: [SupplyModule],
   controllers: [
     AccountsMeController,
     InternalPlatformController,

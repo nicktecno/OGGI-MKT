@@ -25,7 +25,7 @@ export function commerceUsesDatabase(): boolean {
   return serverApiConfigured();
 }
 
-async function internalFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function internalFetch(path: string, init?: RequestInit): Promise<Response> {
   const base = serverApiUrl();
   if (!base.trim()) {
     throw new Error(
@@ -53,7 +53,7 @@ async function internalFetch(path: string, init?: RequestInit): Promise<Response
   }
 }
 
-async function readApiError(res: Response): Promise<string> {
+export async function readApiError(res: Response): Promise<string> {
   try {
     const j = (await res.json()) as { message?: string | string[] };
     if (typeof j.message === "string") return j.message;
@@ -62,6 +62,15 @@ async function readApiError(res: Response): Promise<string> {
     /* ignore */
   }
   return (await res.text()) || `Erro HTTP ${res.status}`;
+}
+
+export type SupplierAccountOption = { id: string; email: string; label: string };
+
+export async function fetchSupplierAccountsFromApi(): Promise<SupplierAccountOption[]> {
+  if (!commerceUsesDatabase()) return [];
+  const res = await internalFetch("/internal/platform/supplier-accounts");
+  if (!res.ok) return [];
+  return (await res.json()) as SupplierAccountOption[];
 }
 
 export async function getCommerceState(): Promise<DemoCommerceState> {
@@ -121,31 +130,60 @@ export async function persistCompositeProductPricing(input: {
   pacote_largura_cm: number;
   pacote_comprimento_cm: number;
   pacote_peso_kg: number;
+  /** Quando omitido, só dimensões/peso do pacote são enviados (ex.: preço já congelado na atribuição). */
+  linhas?: { supply_item_id: string; quantidade: number; snapshot_custo_unitario: number }[];
 }) {
   if (commerceUsesDatabase()) {
-    const res = await internalFetch(
-      `/internal/commerce/products/${encodeURIComponent(input.productId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          executor_fee_planejada: input.executor_fee_planejada,
-          platform_fee_planejada: input.platform_fee_planejada,
-          pacote_altura_cm: input.pacote_altura_cm,
-          pacote_largura_cm: input.pacote_largura_cm,
-          pacote_comprimento_cm: input.pacote_comprimento_cm,
-          pacote_peso_kg: input.pacote_peso_kg,
-        }),
-      },
-    );
+    const body: Record<string, unknown> = {
+      pacote_altura_cm: input.pacote_altura_cm,
+      pacote_largura_cm: input.pacote_largura_cm,
+      pacote_comprimento_cm: input.pacote_comprimento_cm,
+      pacote_peso_kg: input.pacote_peso_kg,
+    };
+    if (input.linhas !== undefined) {
+      body.executor_fee_planejada = input.executor_fee_planejada;
+      body.platform_fee_planejada = input.platform_fee_planejada;
+      body.linhas = input.linhas;
+    }
+    const res = await internalFetch(`/internal/commerce/products/${encodeURIComponent(input.productId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
     if (!res.ok) throw new Error(await readApiError(res));
     return;
   }
   const state = await getCommerceStateFromCookies();
   const product = state.products.find((p) => p.id === input.productId);
   if (!product) throw new Error("Peça não encontrada.");
+  if (input.linhas === undefined) {
+    await updateCommerceDelta((d) => ({
+      ...d,
+      productPatch: {
+        ...d.productPatch,
+        [input.productId]: {
+          ...d.productPatch?.[input.productId],
+          pacote_altura_cm: input.pacote_altura_cm,
+          pacote_largura_cm: input.pacote_largura_cm,
+          pacote_comprimento_cm: input.pacote_comprimento_cm,
+          pacote_peso_kg: input.pacote_peso_kg,
+        },
+      },
+    }));
+    return;
+  }
+  const nextLinhas = product.linhas.map((l, i) => {
+    const row = input.linhas![i];
+    if (!row || row.supply_item_id !== l.supplyItemId || row.quantidade !== l.quantidade) {
+      throw new Error("Montagem inválida ao salvar preços.");
+    }
+    return {
+      ...l,
+      snapshot_custo_unitario: row.snapshot_custo_unitario,
+    };
+  });
   const frete = product.frete_insumos_atribuicao_reais ?? 0;
   const preco_venda_publico = compositePrecoFromLinhasAndFees(
-    product.linhas,
+    nextLinhas,
     input.executor_fee_planejada,
     input.platform_fee_planejada,
     frete,
@@ -156,6 +194,7 @@ export async function persistCompositeProductPricing(input: {
       ...d.productPatch,
       [input.productId]: {
         ...d.productPatch?.[input.productId],
+        linhas: nextLinhas,
         preco_venda_publico,
         executor_fee_planejada: input.executor_fee_planejada,
         platform_fee_planejada: input.platform_fee_planejada,
@@ -630,8 +669,6 @@ export async function persistCreateCompositeProduct(
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
-    executor_fee_planejada?: number;
-    platform_fee_planejada?: number;
   },
   /** Capa opcional: enviar o `File` da Server Action diretamente no `FormData` (evita reconstruir `File` no Node). */
   coverFile?: File | null,
@@ -659,8 +696,6 @@ export async function persistCreateCompositeProduct(
         quantidade: l.quantidade,
       })),
       variacoes_tamanho,
-      executor_fee_planejada: input.executor_fee_planejada ?? 0,
-      platform_fee_planejada: input.platform_fee_planejada ?? 0,
     };
 
     if (coverFile && coverFile.size > 0) {
@@ -707,7 +742,7 @@ export async function persistCreateCompositeProduct(
     linhas.push({
       supplyItemId: item.id,
       quantidade: q,
-      snapshot_custo_unitario: item.custo_fornecedor,
+      snapshot_custo_unitario: 0,
     });
   }
 
@@ -719,14 +754,9 @@ export async function persistCreateCompositeProduct(
     sku,
     descricao_curta: desc,
     linhas,
-    executor_fee_planejada: input.executor_fee_planejada ?? 0,
-    platform_fee_planejada: input.platform_fee_planejada ?? 0,
-    preco_venda_publico: compositePrecoFromLinhasAndFees(
-      linhas,
-      input.executor_fee_planejada ?? 0,
-      input.platform_fee_planejada ?? 0,
-      0,
-    ),
+    executor_fee_planejada: 0,
+    platform_fee_planejada: 0,
+    preco_venda_publico: compositePrecoFromLinhasAndFees(linhas, 0, 0, 0),
     ativo: true,
     admin_pausado: false,
     imagem_url:

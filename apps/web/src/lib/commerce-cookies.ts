@@ -13,6 +13,7 @@ const COOKIE = "demo_commerce_v1";
 export type DemoProductPatch = Partial<
   Pick<
     DemoCompositeProduct,
+    | "linhas"
     | "preco_venda_publico"
     | "executor_fee_planejada"
     | "platform_fee_planejada"
