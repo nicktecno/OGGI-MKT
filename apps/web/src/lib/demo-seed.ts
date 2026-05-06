@@ -46,7 +46,7 @@ export type DemoCompositeProduct = {
   executor_fee_planejada: number;
   platform_fee_planejada: number;
   preco_venda_publico: number;
-  /** Um frete B2B por fornecedor (pacote maior do envio), gravado na primeira atribuição ativa. */
+  /** Soma dos fretes B2B (um envio por fornecedor — pacote maior entre os insumos dele), gravada na atribuição. */
   frete_insumos_atribuicao_reais?: number | null;
   /** Quando true, taxas e preço ao cliente não podem ser alterados pelo admin. */
   preco_venda_congelado?: boolean;
@@ -618,25 +618,69 @@ function demoStubFreteB2B(params: {
   return Math.round(Math.max(0, base) * 100) / 100;
 }
 
+function supplierGroupKeyForFrete(insumo: DemoSupplyItem): string {
+  const email = insumo.supplierEmail?.trim().toLowerCase() ?? "";
+  if (email) return email;
+  return `id:${insumo.id}`;
+}
+
+/** Um envio B2B por fornecedor (pacote efetivo entre os insumos dele), alinhado à API `SupplierFulfillmentService`. */
+export type DemoFreteB2BSupplierSlice = {
+  supplierKey: string;
+  supplierLabel: string;
+  frete: number;
+  lines: Array<ResolvedLine & { montagemIndex: number }>;
+};
+
 /**
- * Estimativa B2B fornecedor → costureira no modo cookie (mesma regra que a API: maior pacote entre insumos).
+ * Cotacao B2B no modo cookie: agrupa insumos por fornecedor, calcula um frete por grupo (maior volume entre os
+ * insumos daquele fornecedor) e soma — mesma regra que a API Nest.
  */
+export function demoFreteB2BBreakdownForCompositeProduct(
+  product: DemoCompositeProduct,
+  opts?: { cepOrigem?: string; cepDestino?: string },
+  extraCatalog: DemoSupplyItem[] = [],
+): { freteTotal: number; slices: DemoFreteB2BSupplierSlice[] } {
+  const resolved = resolveCompositeLines(product, extraCatalog);
+  const indexed = resolved.map((row, montagemIndex) => ({ ...row, montagemIndex }));
+  const cepOrigem = opts?.cepOrigem ?? "01310-100";
+  const cepDestino = opts?.cepDestino ?? "01310-100";
+  const byKey = new Map<string, Array<ResolvedLine & { montagemIndex: number }>>();
+  for (const row of indexed) {
+    const key = supplierGroupKeyForFrete(row.insumo);
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key)!.push(row);
+  }
+  const slices: DemoFreteB2BSupplierSlice[] = [];
+  let freteTotal = 0;
+  for (const [supplierKey, groupLines] of byKey) {
+    const packs = groupLines.map((row) => ({
+      alturaCm: row.insumo.pacote_altura_cm ?? 14,
+      larguraCm: row.insumo.pacote_largura_cm ?? 12,
+      comprimentoCm: row.insumo.pacote_comprimento_cm ?? 5,
+      pesoKg: row.insumo.pacote_peso_kg ?? 0.4,
+    }));
+    const ship = demoPickShipmentPackFromSupplies(packs);
+    const frete = demoStubFreteB2B({
+      cepOrigem,
+      cepDestino,
+      ...ship,
+    });
+    freteTotal += frete;
+    const label = supplierDisplayLabelForInsumoRow(groupLines[0]!.insumo);
+    slices.push({ supplierKey, supplierLabel: label, frete, lines: groupLines });
+  }
+  slices.sort((a, b) =>
+    a.supplierLabel.localeCompare(b.supplierLabel, "pt-BR", { sensitivity: "base" }),
+  );
+  return { freteTotal, slices };
+}
+
+/** Soma dos fretes B2B por fornecedor (ver `demoFreteB2BBreakdownForCompositeProduct`). */
 export function demoFreteB2BForCompositeProduct(
   product: DemoCompositeProduct,
   opts?: { cepOrigem?: string; cepDestino?: string },
   extraCatalog: DemoSupplyItem[] = [],
 ): number {
-  const resolved = resolveCompositeLines(product, extraCatalog);
-  const packs = resolved.map((row) => ({
-    alturaCm: row.insumo.pacote_altura_cm ?? 14,
-    larguraCm: row.insumo.pacote_largura_cm ?? 12,
-    comprimentoCm: row.insumo.pacote_comprimento_cm ?? 5,
-    pesoKg: row.insumo.pacote_peso_kg ?? 0.4,
-  }));
-  const ship = demoPickShipmentPackFromSupplies(packs);
-  return demoStubFreteB2B({
-    cepOrigem: opts?.cepOrigem ?? "01310-100",
-    cepDestino: opts?.cepDestino ?? "01310-100",
-    ...ship,
-  });
+  return demoFreteB2BBreakdownForCompositeProduct(product, opts, extraCatalog).freteTotal;
 }

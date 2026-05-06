@@ -7,6 +7,7 @@ import type {
 } from "./demo-seed";
 import {
   DEMO_ASSIGNMENTS_INITIAL,
+  DEMO_COMPOSITE_PRODUCTS,
   DEMO_EXECUTION_REQUESTS_INITIAL,
   compositeInsumosTotal,
   compositePrecoFromLinhasAndFees,
@@ -747,22 +748,40 @@ export async function persistDeleteCompositeProduct(productId: string): Promise<
   await updateCommerceDelta((d) => {
     const addedList = d.addedProducts ?? [];
     const idx = addedList.findIndex((p) => p.id === productId);
-    if (idx === -1) {
-      throw new Error(
-        "No modo demonstração só pode apagar peças que você criou nesta sessão. Com API e banco de dados pode apagar qualquer peça.",
-      );
-    }
-    const nextAdded = addedList.filter((_, i) => i !== idx);
     const baseAssignments = d.assignments ?? structuredClone(DEMO_ASSIGNMENTS_INITIAL);
     const baseReqs = d.executionRequests ?? structuredClone(DEMO_EXECUTION_REQUESTS_INITIAL);
     const nextPatch = { ...(d.productPatch ?? {}) };
     delete nextPatch[productId];
+    const filteredAssignments = baseAssignments.filter((a) => a.compositeProductId !== productId);
+    const filteredReqs = baseReqs.filter((r) => r.compositeProductId !== productId);
+
+    if (idx !== -1) {
+      const nextAdded = addedList.filter((_, i) => i !== idx);
+      return {
+        ...d,
+        productPatch: nextPatch,
+        addedProducts: nextAdded,
+        assignments: filteredAssignments,
+        executionRequests: filteredReqs,
+      };
+    }
+
+    const isSeed = DEMO_COMPOSITE_PRODUCTS.some((p) => p.id === productId);
+    if (!isSeed) {
+      throw new Error("Peça não encontrada.");
+    }
+
+    const prevRemoved = d.removedProductIds ?? [];
+    const removedProductIds = prevRemoved.includes(productId)
+      ? prevRemoved
+      : [...prevRemoved, productId];
+
     return {
       ...d,
+      removedProductIds,
       productPatch: nextPatch,
-      addedProducts: nextAdded,
-      assignments: baseAssignments.filter((a) => a.compositeProductId !== productId),
-      executionRequests: baseReqs.filter((r) => r.compositeProductId !== productId),
+      assignments: filteredAssignments,
+      executionRequests: filteredReqs,
     };
   });
 }

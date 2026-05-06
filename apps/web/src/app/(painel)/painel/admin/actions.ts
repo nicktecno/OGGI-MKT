@@ -244,4 +244,6 @@ export async function deleteCompositeProductAction(productId: string, productSlu
   await persistDeleteCompositeProduct(productId);
   revalidateStorefront();
   revalidateProductPage(productSlug);
+  safeRevalidatePath("/painel/admin/pecas");
+  safeRevalidatePath("/painel/admin/cadastro-peca");
 }

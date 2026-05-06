@@ -36,6 +36,8 @@ export type DemoCommerceDelta = {
   productPatch?: Record<string, DemoProductPatch>;
   /** Peças criadas no modo demo (cookie), além do seed. */
   addedProducts?: DemoCompositeProduct[];
+  /** No modo demo: ids de peças do seed removidas pelo admin (não aparecem na listagem). */
+  removedProductIds?: string[];
 };
 
 export type DemoCommerceState = {
@@ -72,8 +74,14 @@ export async function writeCommerceDelta(next: DemoCommerceDelta): Promise<void>
 
 export function mergeProducts(delta: DemoCommerceDelta): DemoCompositeProduct[] {
   const patch = delta.productPatch ?? {};
-  const base = DEMO_COMPOSITE_PRODUCTS.map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
-  const added = (delta.addedProducts ?? []).map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
+  const removed = new Set(delta.removedProductIds ?? []);
+  const base = DEMO_COMPOSITE_PRODUCTS.filter((p) => !removed.has(p.id)).map((p) => ({
+    ...p,
+    ...(patch[p.id] ?? {}),
+  }));
+  const added = (delta.addedProducts ?? [])
+    .filter((p) => !removed.has(p.id))
+    .map((p) => ({ ...p, ...(patch[p.id] ?? {}) }));
   return [...base, ...added];
 }
 

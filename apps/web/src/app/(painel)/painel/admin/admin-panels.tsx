@@ -15,9 +15,9 @@ import {
   compositePrecoFromLinhasAndFees,
   compositePrecoLojaPlanejado,
   compositePrecoPreviaSemFreteB2B,
+  demoFreteB2BBreakdownForCompositeProduct,
   insumoCostTotal,
   mergeSupplyCatalog,
-  resolveCompositeLines,
   supplierOptionsFromCatalog,
   type DemoCompositeProduct,
   type DemoSupplyItem,
@@ -1015,9 +1015,14 @@ function AdminPecaProductCard({
   run: AdminMutationRun;
 }) {
   const [open, setOpen] = useState(false);
-  const lines = resolveCompositeLines(product, supplyCatalog);
-  const insumoTotal = compositeInsumosTotal(product);
   const freteB2B = product.frete_insumos_atribuicao_reais ?? null;
+  const freteBreakdown = useMemo(
+    () => demoFreteB2BBreakdownForCompositeProduct(product, undefined, supplyCatalog),
+    [product, supplyCatalog],
+  );
+  const freteScale =
+    freteB2B != null && freteBreakdown.freteTotal > 0 ? freteB2B / freteBreakdown.freteTotal : 1;
+  const insumoTotal = compositeInsumosTotal(product);
   const materiaisMaisFrete =
     freteB2B != null ? insumoTotal + freteB2B : null;
   const isPrevia = product.preco_venda_congelado !== true;
@@ -1035,81 +1040,110 @@ function AdminPecaProductCard({
     ? formatVariacoesTamanhosLabel(product.variacoes_tamanho)
     : null;
 
+  const confirmDeletePeca = () => {
+    if (
+      !window.confirm(
+        `Excluir definitivamente a peça “${product.nome}”? Na API isto apaga também combinações, pedidos de execução e linhas de cumprimento ligados a este modelo.`,
+      )
+    ) {
+      return;
+    }
+    run(() => deleteCompositeProductAction(product.id, product.slug), sDelete);
+  };
+
   return (
     <Card className={cn(ADMIN_CARD, "shadow-none hover:shadow-lg")}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={`peca-detalhes-${product.id}`}
-        id={`peca-resumo-${product.id}`}
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-start gap-3 rounded-t-lg border-b border-border/40 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
-        <img
-          src={product.imagem_url}
-          alt=""
-          className="h-14 w-14 shrink-0 rounded-md border border-border object-cover sm:h-16 sm:w-16"
-        />
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="font-serif text-base font-semibold leading-snug text-foreground sm:text-lg">
-            {product.nome}
-          </p>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            <span className="font-mono text-foreground/90">{product.sku}</span>
-            {tamanhosLabel ? (
-              <>
-                <span className="mx-1 text-border">·</span>
-                {tamanhosLabel}
-              </>
-            ) : null}
-          </p>
-          <p className="text-sm font-medium tabular-nums text-foreground">
-            {isPrevia ? "Prévia na loja (sem frete B2B dos insumos): " : "Preço na loja: "}
-            {formatBrl(precoLojaCard)}
-          </p>
-          {isPrevia ? (
-            <p className="text-xs leading-snug text-muted-foreground">
-              O frete fornecedor → costureira entra no total após vincular uma costureira ou aprovar um pedido de
-              serviço.
+      <div className="flex w-full items-stretch rounded-t-lg border-b border-border/40">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`peca-detalhes-${product.id}`}
+          id={`peca-resumo-${product.id}`}
+          aria-label={open ? "Recolher detalhes da peça" : "Expandir detalhes da peça"}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 flex-1 items-start gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa (Unsplash ou R2) */}
+          <img
+            src={product.imagem_url}
+            alt=""
+            className="h-14 w-14 shrink-0 rounded-md border border-border object-cover sm:h-16 sm:w-16"
+          />
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-serif text-base font-semibold leading-snug text-foreground sm:text-lg">
+              {product.nome}
             </p>
-          ) : null}
-          {!isPrevia && freteB2B != null ? (
-            <p className="text-xs leading-snug text-muted-foreground">
-              Inclui frete dos insumos à costureira{" "}
-              <span className="font-medium tabular-nums text-foreground">{formatBrl(freteB2B)}</span>
-              {materiaisMaisFrete != null ? (
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              <span className="font-mono text-foreground/90">{product.sku}</span>
+              {tamanhosLabel ? (
                 <>
-                  {" "}
-                  · Materiais + esse frete:{" "}
-                  <span className="font-medium tabular-nums text-foreground">
-                    {formatBrl(materiaisMaisFrete)}
-                  </span>{" "}
-                  (+ taxas no detalhe)
+                  <span className="mx-1 text-border">·</span>
+                  {tamanhosLabel}
                 </>
               ) : null}
             </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-          <div className="flex flex-wrap justify-end gap-1.5">
-            <StatusChip ok={product.ativo} label={product.ativo ? "Ativa" : "Inativa"} />
-            <StatusChip
-              ok={!product.admin_pausado}
-              label={product.admin_pausado ? "Pausada" : "Na vitrine"}
-              muted={product.admin_pausado}
+            <p className="text-sm font-medium tabular-nums text-foreground">
+              {isPrevia ? "Prévia na loja (sem frete B2B dos insumos): " : "Preço na loja: "}
+              {formatBrl(precoLojaCard)}
+            </p>
+            {isPrevia ? (
+              <p className="text-xs leading-snug text-muted-foreground">
+                O frete fornecedor → costureira entra no total após vincular uma costureira ou aprovar um pedido de
+                serviço.
+              </p>
+            ) : null}
+            {!isPrevia && freteB2B != null ? (
+              <p className="text-xs leading-snug text-muted-foreground">
+                Inclui frete dos insumos à costureira{" "}
+                <span className="font-medium tabular-nums text-foreground">{formatBrl(freteB2B)}</span>
+                {materiaisMaisFrete != null ? (
+                  <>
+                    {" "}
+                    · Materiais + esse frete:{" "}
+                    <span className="font-medium tabular-nums text-foreground">
+                      {formatBrl(materiaisMaisFrete)}
+                    </span>{" "}
+                    (+ taxas no detalhe)
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2 self-stretch">
+            <div className="flex flex-wrap justify-end gap-1.5">
+              <StatusChip ok={product.ativo} label={product.ativo ? "Ativa" : "Inativa"} />
+              <StatusChip
+                ok={!product.admin_pausado}
+                label={product.admin_pausado ? "Pausada" : "Na vitrine"}
+                muted={product.admin_pausado}
+              />
+            </div>
+            <ChevronDown
+              aria-hidden
+              className={cn("size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
             />
           </div>
-          <ChevronDown
-            aria-hidden
-            className={cn("size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
-          />
+        </button>
+        <div className="flex w-[min-content] shrink-0 flex-col justify-center border-l border-border/30 px-2 py-3 sm:px-3">
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="border-destructive/80"
+            disabled={pending}
+            onClick={confirmDeletePeca}
+          >
+            {adminActionLoading(pending, pendingScope, sDelete) ? (
+              <Loader2 className="animate-spin" aria-hidden />
+            ) : null}
+            Excluir
+          </Button>
         </div>
-      </button>
+      </div>
 
       {open ? (
         <div id={`peca-detalhes-${product.id}`} role="region" aria-labelledby={`peca-resumo-${product.id}`}>
-          <CardHeader className={cn("space-y-3 border-b border-border/30 pb-5 pt-2", ADMIN_CARD_HEADER)}>
+          <div className="space-y-3 border-b border-border/30 bg-muted/10 px-4 pb-4 pt-3">
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -1141,16 +1175,7 @@ function AdminPecaProductCard({
                 size="sm"
                 className="border-destructive/80"
                 disabled={pending}
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      `Excluir definitivamente a peça “${product.nome}”? Na API isto apaga também combinações, pedidos de execução e linhas de cumprimento ligados a este modelo.`,
-                    )
-                  ) {
-                    return;
-                  }
-                  run(() => deleteCompositeProductAction(product.id, product.slug), sDelete);
-                }}
+                onClick={confirmDeletePeca}
               >
                 {adminActionLoading(pending, pendingScope, sDelete) ? (
                   <Loader2 className="animate-spin" aria-hidden />
@@ -1158,7 +1183,7 @@ function AdminPecaProductCard({
                 Excluir peça
               </Button>
             </div>
-          </CardHeader>
+          </div>
           <CardContent className="space-y-6 pt-6">
             <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/5 p-4 sm:flex-row sm:items-start">
               <div className="space-y-2 shrink-0">
@@ -1260,25 +1285,41 @@ function AdminPecaProductCard({
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Materiais usados neste modelo
               </h3>
-              <ul className="mt-3 divide-y divide-border rounded-lg border border-border/80">
-                {lines.map((row) => (
-                  <li
-                    key={row.supplyItemId}
-                    className="flex flex-col gap-1 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground">{row.insumo.nome}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
-                        {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por {row.insumo.unidade}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-base tabular-nums text-foreground">
-                      {formatBrl(row.quantidade * row.snapshot_custo_unitario)}
+              <div className="mt-3 space-y-6 rounded-lg border border-border/80 p-4">
+                {freteBreakdown.slices.map((slice) => (
+                  <div key={slice.supplierKey}>
+                    <p className="text-sm font-semibold text-foreground">
+                      Insumos — {slice.supplierLabel}
                     </p>
-                  </li>
+                    <ul className="mt-2 divide-y divide-border rounded-md border border-border/60">
+                      {slice.lines.map((row) => (
+                        <li
+                          key={`${row.supplyItemId}-${row.montagemIndex}`}
+                          className="flex flex-col gap-1 px-4 py-3 text-base sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground">{row.insumo.nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {row.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}{" "}
+                              {row.insumo.unidade} · {formatBrl(row.snapshot_custo_unitario)} por{" "}
+                              {row.insumo.unidade}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-base tabular-nums text-foreground">
+                            {formatBrl(row.quantidade * row.snapshot_custo_unitario)}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-right text-sm text-muted-foreground">
+                      Frete B2B (este fornecedor):{" "}
+                      <span className="font-medium tabular-nums text-foreground">
+                        {formatBrl(slice.frete * freteScale)}
+                      </span>
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
               <p className="mt-2 space-y-1 text-right text-sm text-muted-foreground">
                 <span className="block">
                   Soma dos materiais (montagem):{" "}
@@ -1287,7 +1328,7 @@ function AdminPecaProductCard({
                 {freteB2B != null ? (
                   <>
                     <span className="block">
-                      Frete dos insumos à costureira (B2B, um envio por fornecedor — pacote maior):{" "}
+                      Total frete insumos à costureira (soma por fornecedor):{" "}
                       <span className="font-medium text-foreground">{formatBrl(freteB2B)}</span>
                     </span>
                     <span className="block text-foreground">
@@ -1298,9 +1339,18 @@ function AdminPecaProductCard({
                     </span>
                   </>
                 ) : (
-                  <span className="block text-xs">
-                    Frete B2B dos insumos aparece após vincular uma costureira (cotação na atribuição).
-                  </span>
+                  <>
+                    <span className="block">
+                      Frete B2B estimado (soma por fornecedor):{" "}
+                      <span className="font-medium text-foreground">
+                        {formatBrl(freteBreakdown.freteTotal)}
+                      </span>
+                    </span>
+                    <span className="block text-xs">
+                      Após vincular costureira, o valor gravado usa o CEP informado na combinação (pode diferir
+                      levemente desta estimativa).
+                    </span>
+                  </>
                 )}
               </p>
             </div>
@@ -1644,6 +1694,7 @@ export function AdminCombinacoesPanel({
         <h3 className="mb-3 text-base font-medium text-foreground">Indicar costureira você mesmo</h3>
         <DirectAssignForm
           products={products}
+          productionAssignments={productionAssignments}
           executorOptions={executorOptions}
           pending={pending}
           pendingScope={pendingScope}
@@ -1686,8 +1737,8 @@ function PricingForm({
   const [pacPeso, setPacPeso] = useState(String(pd0.pacote_peso_kg));
   const [lineCosts, setLineCosts] = useState<string[]>(() => pricingLineCostsInitial(product, supplyCatalog));
 
-  const resolvedMontagem = useMemo(
-    () => resolveCompositeLines(product, supplyCatalog),
+  const montagemPorFornecedor = useMemo(
+    () => demoFreteB2BBreakdownForCompositeProduct(product, undefined, supplyCatalog).slices,
     [product, supplyCatalog],
   );
 
@@ -1793,41 +1844,53 @@ function PricingForm({
           Valor por unidade de cada insumo nesta peça (o total na linha = quantidade × unitário). A montagem em si
           continua em <strong className="text-foreground">Cadastro de peça</strong>.
         </p>
-        <ul className="mt-3 space-y-3">
-          {resolvedMontagem.map((row, idx) => (
-            <li
-              key={`${row.supplyItemId}-${idx}`}
-              className="flex flex-col gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-3 sm:flex-row sm:items-end sm:justify-between"
-            >
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="text-sm font-medium leading-snug text-foreground">{row.insumo.nome}</p>
-                <p className="text-xs text-muted-foreground">
-                  Qtd. na peça:{" "}
-                  <span className="font-medium tabular-nums text-foreground">{row.quantidade}</span>
-                </p>
-              </div>
-              <div className="flex w-full flex-col gap-1.5 sm:w-40 sm:shrink-0">
-                <Label htmlFor={`custo-linha-${product.id}-${idx}`} className="text-xs font-medium">
-                  R$ / un.
-                </Label>
-                <Input
-                  id={`custo-linha-${product.id}-${idx}`}
-                  value={lineCosts[idx] ?? ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setLineCosts((prev) => {
-                      const next = [...prev];
-                      next[idx] = v;
-                      return next;
-                    });
-                  }}
-                  disabled={pending || frozen}
-                  inputMode="decimal"
-                />
-              </div>
-            </li>
+        <div className="mt-3 space-y-6">
+          {montagemPorFornecedor.map((slice) => (
+            <div key={slice.supplierKey}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Insumos — {slice.supplierLabel}
+              </p>
+              <ul className="mt-2 space-y-3">
+                {slice.lines.map((row) => {
+                  const idx = row.montagemIndex;
+                  return (
+                    <li
+                      key={`${row.supplyItemId}-${idx}`}
+                      className="flex flex-col gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-3 sm:flex-row sm:items-end sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-sm font-medium leading-snug text-foreground">{row.insumo.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Qtd. na peça:{" "}
+                          <span className="font-medium tabular-nums text-foreground">{row.quantidade}</span>
+                        </p>
+                      </div>
+                      <div className="flex w-full flex-col gap-1.5 sm:w-40 sm:shrink-0">
+                        <Label htmlFor={`custo-linha-${product.id}-${idx}`} className="text-xs font-medium">
+                          R$ / un.
+                        </Label>
+                        <Input
+                          id={`custo-linha-${product.id}-${idx}`}
+                          value={lineCosts[idx] ?? ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setLineCosts((prev) => {
+                              const next = [...prev];
+                              next[idx] = v;
+                              return next;
+                            });
+                          }}
+                          disabled={pending || frozen}
+                          inputMode="decimal"
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
         <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
@@ -1943,7 +2006,7 @@ function PricingForm({
           {freteRef > 0 ? (
             <>
               {" "}
-              · Frete B2B insumos:{" "}
+              · Frete B2B insumos (soma por fornecedor):{" "}
               <span className="font-medium tabular-nums text-foreground">{formatBrl(freteRef)}</span>
             </>
           ) : null}
@@ -2017,12 +2080,14 @@ function RejectInline({
 
 function DirectAssignForm({
   products,
+  productionAssignments,
   executorOptions,
   pending,
   pendingScope,
   run,
 }: {
   products: DemoCompositeProduct[];
+  productionAssignments: DemoProductionAssignment[];
   executorOptions: ExecutorPickerOption[];
   pending: boolean;
   pendingScope: string | null;
@@ -2030,10 +2095,26 @@ function DirectAssignForm({
 }) {
   const scope = "direct-assign";
   const saving = adminActionLoading(pending, pendingScope, scope);
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
+  const assignableProducts = useMemo(() => {
+    const busy = new Set(
+      productionAssignments.filter((a) => a.status !== "ARCHIVED").map((a) => a.compositeProductId),
+    );
+    return products.filter((p) => !busy.has(p.id));
+  }, [products, productionAssignments]);
+  const [productId, setProductId] = useState("");
   const [executorEmail, setExecutorEmail] = useState(() => executorOptions[0]?.email ?? "");
   const [cidade, setCidade] = useState("São Paulo — SP");
   const [cep, setCep] = useState("01310-100");
+
+  useEffect(() => {
+    if (assignableProducts.length === 0) {
+      setProductId("");
+      return;
+    }
+    setProductId((prev) =>
+      assignableProducts.some((p) => p.id === prev) ? prev : assignableProducts[0].id,
+    );
+  }, [assignableProducts]);
 
   useEffect(() => {
     if (executorOptions.length === 0) return;
@@ -2058,14 +2139,29 @@ function DirectAssignForm({
     );
   }
 
+  if (assignableProducts.length === 0) {
+    return (
+      <Card className={cn(ADMIN_CARD, "max-w-2xl")}>
+        <CardHeader className={ADMIN_CARD_HEADER}>
+          <CardTitle className="font-serif text-xl">Nova combinação peça + costureira</CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            Todas as peças já têm uma combinação ativa (em andamento). Para vincular outra costureira
+            a um modelo, encerre a combinação atual dele na tabela acima — ou crie uma peça nova no
+            catálogo.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card className={cn(ADMIN_CARD, "max-w-2xl")}>
       <CardHeader className={ADMIN_CARD_HEADER}>
         <CardTitle className="font-serif text-xl">Nova combinação peça + costureira</CardTitle>
         <CardDescription className="text-base leading-relaxed">
-          Escolha a costureira na lista (nome e e-mail vêm do cadastro). Use quando você quer definir
-          diretamente quem faz um modelo, sem passar pelo pedido dela. Não repita a mesma costureira
-          para o mesmo produto se já houver uma combinação ativa.
+          Só aparecem peças que ainda não têm combinação ativa. Escolha a costureira na lista (nome e
+          e-mail vêm do cadastro). Use quando você quer definir diretamente quem faz um modelo, sem
+          passar pelo pedido dela.
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -2073,7 +2169,7 @@ function DirectAssignForm({
           className="grid gap-5 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!selectedExecutor) return;
+            if (!selectedExecutor || !productId) return;
             run(
               () =>
                 createDirectAssignment({
@@ -2096,7 +2192,7 @@ function DirectAssignForm({
               onChange={(e) => setProductId(e.target.value)}
               disabled={pending}
             >
-              {products.map((p) => (
+              {assignableProducts.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nome}
                 </option>
@@ -2128,7 +2224,7 @@ function DirectAssignForm({
             <Input id="da-cep" value={cep} onChange={(e) => setCep(e.target.value)} disabled={pending} />
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={pending || !selectedExecutor}>
+            <Button type="submit" disabled={pending || !selectedExecutor || !productId}>
               {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
               Salvar combinação
             </Button>
