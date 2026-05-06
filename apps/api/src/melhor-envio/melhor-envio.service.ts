@@ -6,6 +6,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { MeFiscalParty } from '../platform/fiscal-document.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Resposta documentada em https://docs.melhorenvio.com.br/reference/solicitacao-do-token */
@@ -216,19 +217,6 @@ export class MelhorEnvioService {
     return row.accessToken;
   }
 
-  /** Documentos mínimos para carrinho ME em envio B2B insumos (não comercial). */
-  isB2BInsumoLabelConfigured(): boolean {
-    return this.getB2bSupplierCnpjDigits().length === 14 && this.getB2bExecutorCpfDigits().length === 11;
-  }
-
-  getB2bSupplierCnpjDigits(): string {
-    return this.config.get<string>('MELHOR_ENVIO_B2B_SUPPLIER_CNPJ')?.replace(/\D/g, '') ?? '';
-  }
-
-  getB2bExecutorCpfDigits(): string {
-    return this.config.get<string>('MELHOR_ENVIO_B2B_EXECUTOR_CPF')?.replace(/\D/g, '') ?? '';
-  }
-
   private pickCheapestQuoteOption(quotes: unknown[]): { serviceId: number; price: number } {
     let best: { serviceId: number; price: number } | null = null;
     for (const row of quotes) {
@@ -371,9 +359,11 @@ export class MelhorEnvioService {
 
   /**
    * Insumos fornecedor → costureira: carrinho, checkout, geração e link público de impressão.
-   * Requer saldo na carteira Melhor Envio e variáveis B2B em .env.example.
+   * Documentos fiscais vêm das contas (`fiscalDocument` / `fiscalDocumentKind`), não de .env.
    */
   async purchaseSupplierInsumoShipment(params: {
+    fromParty: MeFiscalParty;
+    toParty: MeFiscalParty;
     fromPostalCode: string;
     toPostalCode: string;
     serviceId: number;
@@ -388,14 +378,12 @@ export class MelhorEnvioService {
       city: string;
       state_abbr: string;
       postal_code: string;
-      company_document: string;
       state_register: string;
     };
     to: {
       name: string;
       email: string;
       phone: string;
-      document: string;
       address: string;
       number: string;
       complement: string;
@@ -410,15 +398,21 @@ export class MelhorEnvioService {
     insuranceValueBrl: number;
     platformTag: string;
   }): Promise<{ orderId: string; printUrl: string }> {
-    if (!this.isB2BInsumoLabelConfigured()) {
-      throw new BadRequestException(
-        'Defina MELHOR_ENVIO_B2B_SUPPLIER_CNPJ (14 dígitos) e MELHOR_ENVIO_B2B_EXECUTOR_CPF (11 dígitos) para gerar etiquetas de insumos.',
-      );
-    }
+    const fromPersonDoc = params.fromParty.kind === 'CPF' ? params.fromParty.digits : '';
+    const fromCompanyDoc = params.fromParty.kind === 'CNPJ' ? params.fromParty.digits : '';
+    const toDoc = params.toParty.digits;
 
-    const companyDoc = params.from.company_document.replace(/\D/g, '');
-    if (companyDoc.length !== 14) {
-      throw new BadRequestException('CNPJ do remetente (B2B) inválido para Melhor Envio.');
+    if (params.fromParty.kind === 'CPF' && fromPersonDoc.length !== 11) {
+      throw new BadRequestException('CPF do remetente inválido para Melhor Envio.');
+    }
+    if (params.fromParty.kind === 'CNPJ' && fromCompanyDoc.length !== 14) {
+      throw new BadRequestException('CNPJ do remetente inválido para Melhor Envio.');
+    }
+    if (params.toParty.kind === 'CPF' && toDoc.length !== 11) {
+      throw new BadRequestException('CPF do destinatário inválido para Melhor Envio.');
+    }
+    if (params.toParty.kind === 'CNPJ' && toDoc.length !== 14) {
+      throw new BadRequestException('CNPJ do destinatário inválido para Melhor Envio.');
     }
 
     const cartBody = {
@@ -427,8 +421,8 @@ export class MelhorEnvioService {
         name: params.from.name.slice(0, 120),
         email: params.from.email.trim(),
         phone: params.from.phone.replace(/\D/g, '').slice(0, 11),
-        document: '',
-        company_document: companyDoc,
+        document: fromPersonDoc.slice(0, 11),
+        company_document: fromCompanyDoc,
         state_register: params.from.state_register || 'ISENTO',
         address: params.from.address.slice(0, 200),
         complement: (params.from.complement || '').slice(0, 120),
@@ -442,7 +436,7 @@ export class MelhorEnvioService {
         name: params.to.name.slice(0, 120),
         email: params.to.email.trim(),
         phone: params.to.phone.replace(/\D/g, '').slice(0, 11),
-        document: params.to.document.replace(/\D/g, '').slice(0, 11),
+        document: toDoc.replace(/\D/g, '').slice(0, 14),
         state_register: 'ISENTO',
         address: params.to.address.slice(0, 200),
         complement: (params.to.complement || '').slice(0, 120),

@@ -9,6 +9,10 @@ COPY package*.json ./
 RUN npm install --no-audit --no-fund
 
 COPY prisma ./prisma/
+ARG DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
+ARG DATABASE_DIRECT_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
+ENV DATABASE_URL=$DATABASE_URL \
+    DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL
 RUN npx prisma generate
 
 COPY tsconfig*.json nest-cli.json ./

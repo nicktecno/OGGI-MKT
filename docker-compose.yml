@@ -27,6 +27,8 @@ services:
       NODE_ENV: development
       PORT: "4000"
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agregador
+      # Mesmo valor que DATABASE_URL em Postgres local (Prisma exige `directUrl` no schema).
+      DATABASE_DIRECT_URL: postgresql://postgres:postgres@postgres:5432/agregador
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-local-dev-internal-secret-min-32-chars-long!!}
       AUTH_SECRET: ${AUTH_SECRET:-dev-only-agregador-auth-secret-32chars!}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}

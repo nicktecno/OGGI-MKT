@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, type CompositeProduct, type ProductionAssignment, type SupplyItem } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import {
@@ -7,6 +13,7 @@ import {
   supplyItemIdFromCompositeLineJson,
 } from '../commerce/composite-line-json.util';
 import { MelhorEnvioService } from '../melhor-envio/melhor-envio.service';
+import { resolveMeFiscalParty } from '../platform/fiscal-document.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { pickShipmentPackFromSupplies, stubFreteB2B } from './package-shipping.util';
 
@@ -21,6 +28,11 @@ type ExecutorAccWithProfile = Prisma.PlatformAccountGetPayload<{
 }>;
 
 type PendingLine = { line: CompositeLine; item: SupplyItem };
+
+/** Compra ME insumos: sucesso ou motivo legível (retry usa `reason`; sync ignora falha). */
+type MelhorEnvioInsumoPurchase =
+  | { ok: true; orderId: string; printUrl: string; quotedPrice: number }
+  | { ok: false; reason: string };
 
 @Injectable()
 export class SupplierFulfillmentService {
@@ -168,10 +180,10 @@ export class SupplierFulfillmentService {
         pending,
         preQuoted: meQuote ?? undefined,
       });
-      const freteCotadoReais = me?.quotedPrice ?? meQuote?.price ?? stubFrete;
+      const freteCotadoReais = me.ok ? me.quotedPrice : (meQuote?.price ?? stubFrete);
       freteTotal += freteCotadoReais;
-      const meOrderId = me?.orderId ?? null;
-      const mePrintUrl = me?.printUrl ?? null;
+      const meOrderId = me.ok ? me.orderId : null;
+      const mePrintUrl = me.ok ? me.printUrl : null;
 
       for (const { line } of pending) {
         rows.push({
@@ -305,10 +317,8 @@ export class SupplierFulfillmentService {
       pending,
       preQuoted: meQuote ?? undefined,
     });
-    if (!me) {
-      throw new BadRequestException(
-        'Melhor Envio não gerou etiqueta. Verifique OAuth/token na API, variáveis MELHOR_ENVIO_B2B_SUPPLIER_CNPJ e MELHOR_ENVIO_B2B_EXECUTOR_CPF, endereços completos (fornecedor e costureira), CEPs e saldo na carteira (sandbox incluído).',
-      );
+    if (!me.ok) {
+      throw new BadRequestException(me.reason);
     }
 
     await this.prisma.supplierFulfillmentLine.updateMany({
@@ -340,7 +350,7 @@ export class SupplierFulfillmentService {
   }
 
   /**
-   * Cotação ME do pacote de insumos (não exige B2B no .env). Usada no frete exibido e, opcionalmente,
+   * Cotação ME do pacote de insumos (só credenciais ME). Usada no frete exibido e, opcionalmente,
    * reutilizada na compra da etiqueta via `preQuoted` para evitar duplicar `shipment/calculate`.
    */
   private async quoteMelhorEnvioInsumoPack(params: {
@@ -389,7 +399,7 @@ export class SupplierFulfillmentService {
 
   /**
    * Compra etiqueta ME fornecedor → costureira (um pedido por fornecedor no batch).
-   * Falhas de API ou dados incompletos → null (sync de fulfillment continua).
+   * Falhas → `{ ok: false, reason }` (sync ignora; retry devolve a mensagem ao utilizador).
    */
   private async tryPurchaseMelhorEnvioInsumoLabel(params: {
     assignmentId: string;
@@ -403,19 +413,23 @@ export class SupplierFulfillmentService {
     pending: PendingLine[];
     /** Se vier da cotação prévia no sync, evita segundo `shipment/calculate` antes do carrinho. */
     preQuoted?: { price: number; serviceId: number };
-  }): Promise<{ orderId: string; printUrl: string; quotedPrice: number } | null> {
+  }): Promise<MelhorEnvioInsumoPurchase> {
     try {
-      if (!(await this.melhorEnvio.hasShippingCredentials())) return null;
-      if (!this.melhorEnvio.isB2BInsumoLabelConfigured()) return null;
-
-      const cnpj = this.melhorEnvio.getB2bSupplierCnpjDigits();
-      const cpf = this.melhorEnvio.getB2bExecutorCpfDigits();
-      if (cnpj.length !== 14 || cpf.length !== 11) return null;
-
+      if (!(await this.melhorEnvio.hasShippingCredentials())) {
+        return {
+          ok: false,
+          reason:
+            'Sem credenciais Melhor Envio na API: defina MELHOR_ENVIO_ACCESS_TOKEN ou conclua o OAuth no painel admin (integração Melhor Envio).',
+        };
+      }
       const ex = params.executorAcc?.executorProfile;
       if (!params.executorAcc || !ex?.addressLine1?.trim() || !ex.cep?.trim()) {
         this.log.warn('ME etiqueta insumos: costureira sem endereço/CEP no perfil');
-        return null;
+        return {
+          ok: false,
+          reason:
+            'A costureira (destino) não tem endereço completo e CEP no perfil da conta. Peça para preencher no painel.',
+        };
       }
 
       const supplierAcc = await this.prisma.platformAccount.findUnique({
@@ -425,14 +439,41 @@ export class SupplierFulfillmentService {
       const sp = supplierAcc?.supplierProfile;
       if (!supplierAcc || !sp?.addressLine1?.trim() || !sp.cep?.trim()) {
         this.log.warn(`ME etiqueta insumos: fornecedor ${params.supplierAccountId} sem endereço completo`);
-        return null;
+        return {
+          ok: false,
+          reason:
+            'O fornecedor não tem endereço completo e CEP no perfil. Complete o cadastro postal no painel do fornecedor.',
+        };
+      }
+
+      const fromParty = resolveMeFiscalParty(supplierAcc.fiscalDocumentKind, supplierAcc.fiscalDocument);
+      if (!fromParty) {
+        return {
+          ok: false,
+          reason:
+            'O fornecedor precisa de CPF ou CNPJ válido na conta (Minha conta / registo) para gerar a etiqueta.',
+        };
+      }
+      const toParty = resolveMeFiscalParty(
+        params.executorAcc.fiscalDocumentKind,
+        params.executorAcc.fiscalDocument,
+      );
+      if (!toParty) {
+        return {
+          ok: false,
+          reason:
+            'A costureira precisa de CPF ou CNPJ válido na conta (Minha conta / registo) para receber o envio na etiqueta.',
+        };
       }
 
       const fromCep = params.cepOrigem.replace(/\D/g, '').slice(0, 8);
       const toCep = params.cepDestino.replace(/\D/g, '').slice(0, 8);
       if (fromCep.length !== 8 || toCep.length !== 8) {
         this.log.warn('ME etiqueta insumos: CEP origem ou destino inválido');
-        return null;
+        return {
+          ok: false,
+          reason: `CEP inválido para Melhor Envio: origem e destino precisam de 8 dígitos (origem ${fromCep.length}, destino ${toCep.length}).`,
+        };
       }
 
       const products = params.pending.map(({ line, item }) => {
@@ -465,6 +506,8 @@ export class SupplierFulfillmentService {
       const toAddr = ex.addressLine1.trim();
 
       const purchased = await this.melhorEnvio.purchaseSupplierInsumoShipment({
+        fromParty,
+        toParty,
         fromPostalCode: fromCep,
         toPostalCode: toCep,
         serviceId: quoted.serviceId,
@@ -479,14 +522,12 @@ export class SupplierFulfillmentService {
           city: sp.city.slice(0, 120),
           state_abbr: sp.stateUf,
           postal_code: fromCep,
-          company_document: cnpj,
           state_register: 'ISENTO',
         },
         to: {
           name: (ex.displayName || params.executorAcc.name).slice(0, 120),
           email: params.executorAcc.email.trim(),
           phone: this.sanitizeMePhone(ex.phone),
-          document: cpf,
           address: toAddr.slice(0, 200),
           number: this.inferStreetNumber(toAddr).slice(0, 20),
           complement: (ex.addressComplement ?? '').slice(0, 120),
@@ -508,12 +549,26 @@ export class SupplierFulfillmentService {
         insuranceValueBrl,
         platformTag: `insumo ${params.assignmentId} fornecedor ${params.supplierAccountId}`,
       });
-      return { ...purchased, quotedPrice: quoted.price };
+      return { ok: true, ...purchased, quotedPrice: quoted.price };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = this.melhorEnvioFailureMessage(e);
       this.log.warn(`ME etiqueta insumos ignorada (${params.supplierAccountId}): ${msg}`);
-      return null;
+      return { ok: false, reason: msg };
     }
+  }
+
+  private melhorEnvioFailureMessage(e: unknown): string {
+    if (e instanceof HttpException) {
+      const r = e.getResponse();
+      if (typeof r === 'string') return r;
+      if (r && typeof r === 'object' && 'message' in r) {
+        const m = (r as { message: unknown }).message;
+        if (typeof m === 'string') return m;
+        if (Array.isArray(m)) return m.join(', ');
+      }
+    }
+    if (e instanceof Error) return e.message;
+    return String(e);
   }
 
   async deleteForAssignment(assignmentId: string): Promise<void> {

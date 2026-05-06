@@ -1,6 +1,27 @@
 import { BadRequestException } from '@nestjs/common';
+import type { FiscalDocumentKind as PrismaFiscalDocumentKind } from '@prisma/client';
 
 export type FiscalDocumentKind = 'CPF' | 'CNPJ';
+
+/** Remetente/destinatário ME: documento já validado (checksum). */
+export type MeFiscalParty = { kind: FiscalDocumentKind; digits: string };
+
+/**
+ * CPF/CNPJ da conta (registo / “Minha conta”) para etiquetas Melhor Envio.
+ * Devolve null se vazio ou inválido — o chamador deve pedir para completar o perfil.
+ */
+export function resolveMeFiscalParty(
+  kind: PrismaFiscalDocumentKind,
+  fiscalDocument: string | null | undefined,
+): MeFiscalParty | null {
+  const k: FiscalDocumentKind = kind === 'CNPJ' ? 'CNPJ' : 'CPF';
+  try {
+    const digits = assertValidFiscalDocument(k, fiscalDocument ?? '');
+    return { kind: k, digits };
+  } catch {
+    return null;
+  }
+}
 
 export function stripTaxIdDigits(raw: string): string {
   return raw.replace(/\D/g, '');

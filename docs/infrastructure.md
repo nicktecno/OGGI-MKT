@@ -24,10 +24,14 @@
 2. **Runtime**: Docker. **Root Directory**: vazio (raiz do repo) — existe um `Dockerfile` na raiz que compila `apps/api`. Alternativa: Root Directory `apps/api` e Dockerfile `Dockerfile` (o ficheiro dentro de `apps/api`).
 3. Preencher **Environment** com as variáveis da secção abaixo. **`DATABASE_URL` tem de ser a connection string do Neon** (nunca `localhost` — no Render não há Postgres na própria máquina do serviço). No Vercel, `COMMERCE_API_URL` = URL pública `https://….onrender.com` (ou domínio próprio).
 
+#### Neon: pooler vs migrações Prisma
+
+Se `DATABASE_URL` usar o **host com `-pooler-`** (PgBouncer), `prisma migrate deploy` na subida do contentor pode falhar com timeout em **`pg_advisory_lock`**. O schema Prisma define `directUrl` → variável **`DATABASE_DIRECT_URL`**: no dashboard Neon, copie a connection string **direct** (sem pooler / “Connection pooling off”) com o mesmo user, password e database. No Render, defina **as duas** variáveis. Em Postgres local ou se só usar URL directa, pode repetir o mesmo valor nas duas.
+
 ## Variáveis de ambiente (visão)
 
 - **Vercel (Next `apps/web`)**: `COMMERCE_API_URL` — URL **HTTPS** pública da API (só servidor Next; chamadas a `/public/*` e rotas internas usam esse base URL). `INTERNAL_API_SECRET` — igual ao valor na API (chamadas server-side com header `x-internal-secret` para `/internal/*`). `AUTH_SECRET` — ≥32 caracteres, **igual** ao `AUTH_SECRET` da API (JWT / alinhamento de auth). Chaves públicas Stripe (`NEXT_PUBLIC_*`) quando existirem.
-- **Render / runtime da API (`apps/api`)**: `DATABASE_URL` (Neon), `INTERNAL_API_SECRET`, `AUTH_SECRET`, `FRONTEND_URL` (origens do front, vírgula se várias), `PORT` (Render injeta; o Nest já escuta `process.env.PORT`), `STRIPE_SECRET_KEY`, `MELHOR_ENVIO_*`, `WEBHOOK_SECRET` Stripe, webhooks Melhor Envio em `https://<api>/webhooks/...`.
+- **Render / runtime da API (`apps/api`)**: `DATABASE_URL` (Neon, frequentemente **pooled**), **`DATABASE_DIRECT_URL`** (Neon **direct** — obrigatório quando `DATABASE_URL` contém `-pooler-`; ver nota acima), `INTERNAL_API_SECRET`, `AUTH_SECRET`, `FRONTEND_URL` (origens do front, vírgula se várias), `PORT` (Render injeta; o Nest já escuta `process.env.PORT`), `STRIPE_SECRET_KEY`, `MELHOR_ENVIO_*`, `WEBHOOK_SECRET` Stripe, webhooks Melhor Envio em `https://<api>/webhooks/...`.
 - **Neon**: sem app rodando na Neon — só credenciais na API.
 
 Build de container da API: contexto do build = pasta `apps/api` (ver `Dockerfile` em `apps/api`). Localmente, `docker compose` na raiz do monorepo sobe Postgres + API com as mesmas variáveis de integração que o front usa em `.env.local`.

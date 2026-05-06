@@ -48,7 +48,8 @@ Em produção o banco costuma ser **Neon**; a API em **Render** (ou similar) usa
 | **Web** (Vercel / `.env.local`) | `COMMERCE_API_URL` | `http://localhost:4000` | `https://…` da API pública |
 | **Web** | `INTERNAL_API_SECRET` | igual à API | igual à API (segredo longo) |
 | **Web** | `AUTH_SECRET` | ≥32 chars (recomendado) | ≥32 chars, **igual** ao da API |
-| **API** (Render / `.env`) | `DATABASE_URL` | Postgres local / Docker | Neon |
+| **API** (Render / `.env`) | `DATABASE_URL` | Postgres local / Docker | Neon (pooled, ex. `-pooler-`) |
+| **API** | `DATABASE_DIRECT_URL` | Igual a `DATABASE_URL` em local | Neon **direct** (sem pooler) — ver `docs/infrastructure.md` |
 | **API** | `INTERNAL_API_SECRET` | igual ao web | igual ao web |
 | **API** | `AUTH_SECRET` | igual ao web | igual ao web |
 | **API** | `FRONTEND_URL` | `http://localhost:3000` | Origens do Next, vírgula se várias |
@@ -95,8 +96,8 @@ Código em `apps/web/src/app/(public)/` e `apps/web/src/app/(painel)/` (route gr
 ## Deploy (resumo)
 
 - **Web**: Vercel → projeto em `apps/web`; definir `COMMERCE_API_URL`, `INTERNAL_API_SECRET`, `AUTH_SECRET` (iguais à API).
-- **API**: Render (Web Service + Docker) → **`Dockerfile` na raiz do repo** (contexto monorepo) ou Root Directory `apps/api` + `Dockerfile` local; `PORT` injetado pela plataforma; `DATABASE_URL` (Neon), `FRONTEND_URL` com URL(s) do Vercel, `INTERNAL_API_SECRET` e `AUTH_SECRET` iguais ao web.
-- **DB**: Neon → `DATABASE_URL` na API.
+- **API**: Render (Web Service + Docker) → **`Dockerfile` na raiz do repo** (contexto monorepo) ou Root Directory `apps/api` + `Dockerfile` local; `PORT` injetado pela plataforma; `DATABASE_URL` + `DATABASE_DIRECT_URL` (Neon: pooled + direct — ver `docs/infrastructure.md`), `FRONTEND_URL` com URL(s) do Vercel, `INTERNAL_API_SECRET` e `AUTH_SECRET` iguais ao web.
+- **DB**: Neon → `DATABASE_URL` (app) e `DATABASE_DIRECT_URL` (migrações Prisma).
 
 ### API que “adormece” (Render free e similares)
 
