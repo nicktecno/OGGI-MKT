@@ -26,7 +26,7 @@ export type ImageUploadFieldProps = {
     outputWidth: number;
     outputHeight: number;
   }) => void;
-  /** Chamado quando o utilizador limpa a pré-visualização (ex.: anular imagem opcional antes de criar a peça). */
+  /** Chamado quando o usuário limpa a pré-visualização (ex.: cancelar imagem opcional antes de criar a peça). */
   onCleared?: () => void;
 };
 

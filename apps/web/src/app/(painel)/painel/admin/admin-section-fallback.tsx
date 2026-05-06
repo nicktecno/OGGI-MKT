@@ -6,7 +6,7 @@ export function AdminSectionFallback() {
     <PageLoadingFallback
       className="min-h-[36vh] py-6 sm:min-h-[32vh]"
       indicatorHeight={100}
-      visibleMessage="A carregar esta secção…"
+      visibleMessage="Carregando esta seção…"
     />
   );
 }

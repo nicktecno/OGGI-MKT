@@ -27,7 +27,7 @@ export function useAdminMutations() {
         await fn();
         router.refresh();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Não foi possível guardar.");
+        toast.error(e instanceof Error ? e.message : "Não foi possível salvar.");
       } finally {
         setPending(false);
         setPendingScope(null);

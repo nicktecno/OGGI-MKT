@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function AdminPainelLayout({ children }: { children: React.ReactNode }) {
   const apiOn = commerceUsesDatabase();
   const persistenceCopy = apiOn
-    ? "As alterações são guardadas no banco de dados pela API do servidor — o mesmo fluxo de produção."
+    ? "As alterações são salvas no banco de dados pela API do servidor — o mesmo fluxo de produção."
     : "No modo demonstração sem API, as alterações ficam só neste navegador até você limpar os dados do site. Com a API e o banco ligados no deploy, tudo passa a ser persistido no servidor.";
 
   return (

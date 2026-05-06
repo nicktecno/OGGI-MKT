@@ -91,7 +91,7 @@ export class StripeConnectService {
       return {
         url: null,
         message:
-          'Não foi possível abrir o cadastro Stripe neste momento. Tente de novo dentro de alguns minutos ou confirme a ligação à internet e à API.',
+          'Não foi possível abrir o cadastro Stripe neste momento. Tente novamente em alguns minutos ou confirme a conexão com a internet e com a API.',
       };
     }
   }

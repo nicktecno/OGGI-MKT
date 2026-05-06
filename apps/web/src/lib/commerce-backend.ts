@@ -46,7 +46,7 @@ async function internalFetch(path: string, init?: RequestInit): Promise<Response
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
-      `Ligação à API falhou (${base}). Confirme que o Nest está a correr na mesma URL e que INTERNAL_API_SECRET coincide com a API. Detalhe: ${detail}`,
+      `A conexão com a API falhou (${base}). Confirme se o Nest está rodando na mesma URL e se INTERNAL_API_SECRET coincide com o da API. Detalhe: ${detail}`,
     );
   }
 }
@@ -457,7 +457,7 @@ export async function persistExecutorPublishAssignment(
   }));
 }
 
-/** Envia WebP da vitrine para a API (Cloudflare R2) e grava URL na peça. Só com base de dados + R2 configurados. */
+/** Envia WebP da vitrine para a API (Cloudflare R2) e grava URL na peça. Só com banco de dados + R2 configurados. */
 export async function persistProductMarketplaceImage(
   productId: string,
   formData: FormData,
@@ -544,7 +544,7 @@ export async function persistDeleteCompositeProduct(productId: string): Promise<
     const idx = addedList.findIndex((p) => p.id === productId);
     if (idx === -1) {
       throw new Error(
-        "No modo demonstração só pode apagar peças que você criou nesta sessão. Com API e base de dados pode apagar qualquer peça.",
+        "No modo demonstração só pode apagar peças que você criou nesta sessão. Com API e banco de dados pode apagar qualquer peça.",
       );
     }
     const nextAdded = addedList.filter((_, i) => i !== idx);

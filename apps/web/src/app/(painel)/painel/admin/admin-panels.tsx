@@ -273,7 +273,7 @@ function FornecedorPicker({
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 240, maxH: 280 });
+  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 280, maxH: 280 });
 
   const updateMenuPosition = () => {
     const wrap = wrapRef.current;
@@ -293,7 +293,7 @@ function FornecedorPicker({
     setMenu({
       top,
       left: r.left,
-      width: Math.max(r.width, 200),
+      width: Math.max(r.width, 268),
       maxH,
     });
   };
@@ -352,8 +352,9 @@ function FornecedorPicker({
               type="button"
               role="option"
               aria-selected={value.trim().toLowerCase() === opt.email.trim().toLowerCase()}
+              aria-label={`${opt.label} · ${opt.email}`}
               className={cn(
-                "flex w-full min-w-0 flex-col gap-0.5 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
+                "flex w-full min-w-0 rounded-sm px-3 py-2.5 text-left hover:bg-muted/80",
                 value.trim().toLowerCase() === opt.email.trim().toLowerCase() && "bg-accent/15",
               )}
               onClick={() => {
@@ -362,9 +363,6 @@ function FornecedorPicker({
               }}
             >
               <span className="min-w-0 truncate font-medium text-foreground">{opt.label}</span>
-              {opt.label.trim().toLowerCase() !== opt.email.trim().toLowerCase() ? (
-                <span className="min-w-0 truncate text-xs text-muted-foreground">{opt.email}</span>
-              ) : null}
             </button>
           </li>
         ))}
@@ -375,31 +373,28 @@ function FornecedorPicker({
   const selectedOpt = options.find((o) => o.email.trim().toLowerCase() === value.trim().toLowerCase());
 
   return (
-    <div ref={wrapRef} className="relative min-w-[12rem] max-w-[min(100%,22rem)] shrink-0">
+    <div ref={wrapRef} className="relative min-w-[17rem] max-w-[min(100%,32rem)] shrink-0 sm:min-w-[20rem]">
       <button
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={ariaLabel}
+        aria-label={
+          selectedOpt ? `${ariaLabel}: ${selectedOpt.label} (${selectedOpt.email})` : ariaLabel
+        }
         disabled={pickerDisabled}
         onClick={() => {
           if (pickerDisabled) return;
           setOpen((o) => !o);
         }}
         className={cn(
-          "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-2 text-left text-sm shadow-sm",
+          "flex h-11 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm shadow-sm",
           "transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           pickerDisabled && "pointer-events-none opacity-60",
         )}
       >
         <span className="min-w-0 flex-1 truncate text-left">
           {selectedOpt ? (
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate font-medium text-foreground">{selectedOpt.label}</span>
-              {selectedOpt.label.trim().toLowerCase() !== selectedOpt.email.trim().toLowerCase() ? (
-                <span className="truncate text-xs text-muted-foreground">{selectedOpt.email}</span>
-              ) : null}
-            </span>
+            <span className="truncate font-medium text-foreground">{selectedOpt.label}</span>
           ) : value.trim() ? (
             <span className="truncate text-foreground">{value}</span>
           ) : (
@@ -432,7 +427,7 @@ function InsumoPicker({
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 280, maxH: 280 });
+  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 300, maxH: 280 });
 
   const updateMenuPosition = () => {
     const wrap = wrapRef.current;
@@ -452,7 +447,7 @@ function InsumoPicker({
     setMenu({
       top,
       left: r.left,
-      width: Math.max(r.width, 220),
+      width: Math.max(r.width, 288),
       maxH,
     });
   };
@@ -512,7 +507,7 @@ function InsumoPicker({
             type="button"
             role="option"
             aria-selected={!value}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-muted-foreground hover:bg-muted/80"
+            className="flex w-full items-center gap-2 rounded-sm px-3 py-2.5 text-left text-muted-foreground hover:bg-muted/80"
             onClick={() => {
               onChange("");
               setOpen(false);
@@ -528,7 +523,7 @@ function InsumoPicker({
               role="option"
               aria-selected={value === s.id}
               className={cn(
-                "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
+                "flex w-full items-center gap-2 rounded-sm px-3 py-2.5 text-left hover:bg-muted/80",
                 value === s.id && "bg-accent/15",
               )}
               onClick={() => {
@@ -548,7 +543,7 @@ function InsumoPicker({
     ) : null;
 
   return (
-    <div ref={wrapRef} className="relative min-w-[220px] flex-1">
+    <div ref={wrapRef} className="relative min-w-[260px] flex-1 sm:min-w-[280px]">
       <button
         type="button"
         aria-haspopup="listbox"
@@ -557,7 +552,7 @@ function InsumoPicker({
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-left text-sm shadow-sm",
+          "flex h-11 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm shadow-sm",
           "transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           disabled && "pointer-events-none opacity-60",
         )}
@@ -641,7 +636,7 @@ function AdminNovaPecaCard({
         <CardDescription className="text-base leading-relaxed">
           Crie o desenho do produto: insumos, quantidades e tamanhos (P a XG ou tamanho único) que a peça pode ter.
           {marketplaceImagesEnabled
-            ? " Pode já enviar até 5 fotos (a 1.ª é a capa da vitrine; as outras entram na galeria da ficha). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
+            ? " Pode já enviar até 5 fotos (a primeira é a capa da vitrine; as outras entram na galeria da ficha). Depois ajuste preço e pacote nos cartões; para vincular costureiras use "
             : " Depois ajuste preço e pacote nos cartões (fotos após configurar API e R2); para vincular costureiras use "}
           <strong className="text-foreground">Quem faz o quê</strong>.
         </CardDescription>
@@ -1144,7 +1139,7 @@ function AdminPecaProductCard({
                   />
                 ) : (
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    O envio de ficheiros fica disponível quando a API e o R2 estiverem configurados (ver aviso acima).
+                    O envio de arquivos fica disponível quando a API e o R2 estiverem configurados (ver aviso acima).
                   </p>
                 )}
               </div>
@@ -1739,7 +1734,7 @@ function PricingForm({
       <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <Button type="submit" size="sm" disabled={pending}>
           {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          Guardar valores
+          Salvar valores
         </Button>
         <p className="text-sm text-muted-foreground">
           Materiais na montagem:{" "}
@@ -1927,7 +1922,7 @@ function DirectAssignForm({
           <div className="sm:col-span-2">
             <Button type="submit" disabled={pending || !selectedExecutor}>
               {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
-              Guardar combinação
+              Salvar combinação
             </Button>
           </div>
         </form>

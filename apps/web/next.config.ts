@@ -14,15 +14,15 @@ if (r2Base) {
       });
     }
   } catch {
-    /* URL inválida em build — ignorar */
+    /* URL inválida no build — ignorar */
   }
 }
 
 const nextConfig: NextConfig = {
   /**
-   * O limite das Server Actions tem de ficar em `experimental.serverActions` — é daí que o
-   * bundle app-page lê `bodySizeLimit` (um `serverActions` ao nível raiz é ignorado).
-   * Capa ~1 MB + multipart ultrapassa o defeito de 1 MB e falha o POST.
+   * O limite das Server Actions precisa ficar em `experimental.serverActions` — é dali que o
+   * bundle app-page lê `bodySizeLimit` (um `serverActions` na raiz é ignorado).
+   * Capa ~1 MB + multipart ultrapassa o limite padrão de 1 MB e falha o POST.
    */
   experimental: {
     serverActions: {
@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
     },
   },
   outputFileTracingRoot: path.join(__dirname, "../.."),
-  /** Muitos browsers pedem `/favicon.ico` por defeito; servimos o mesmo ícone PNG. */
+  /** Muitos browsers pedem `/favicon.ico` por padrão; servimos o mesmo ícone PNG. */
   async redirects() {
     return [{ source: "/favicon.ico", destination: "/icon.png", permanent: false }];
   },

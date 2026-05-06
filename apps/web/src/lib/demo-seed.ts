@@ -168,7 +168,7 @@ export function supplierOptionsFromCatalog(supplies: DemoSupplyItem[]): Supplier
     }
   }
   return [...byKey.values()].sort((a, b) =>
-    a.label.localeCompare(b.label, "pt", { sensitivity: "base" }),
+    a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }),
   );
 }
 

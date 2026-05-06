@@ -63,7 +63,7 @@ export class R2StorageService {
     return url;
   }
 
-  /** Caminho estável por produto + ficheiro único (substituições não apagam o antigo; podes configurar lifecycle no R2). */
+  /** Caminho estável por produto + arquivo único (substituições não apagam o antigo; você pode configurar lifecycle no R2). */
   marketplaceProductImageKey(productId: string): string {
     const safeId = productId.replace(/[^a-zA-Z0-9_-]/g, '');
     return `marketplace/products/${safeId}/${randomUUID()}.webp`;

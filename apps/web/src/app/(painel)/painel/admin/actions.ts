@@ -187,7 +187,7 @@ export async function uploadMarketplaceProductImage(
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    throw new Error("Nenhum ficheiro recebido.");
+    throw new Error("Nenhum arquivo recebido.");
   }
   await persistProductMarketplaceImage(productId, formData);
   revalidateStorefront();
@@ -202,7 +202,7 @@ export async function uploadMarketplaceProductGalleryImage(
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    throw new Error("Nenhum ficheiro recebido.");
+    throw new Error("Nenhum arquivo recebido.");
   }
   await persistProductGalleryImage(productId, formData);
   revalidateStorefront();

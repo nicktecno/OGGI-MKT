@@ -57,13 +57,13 @@ export function FornecedorWorkspace({
     return (
       <div className="space-y-5">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Use o menu à esquerda ou escolha abaixo o que quer gerir. Cada secção abre no seu próprio contexto.
+          Use o menu à esquerda ou escolha abaixo o que quer gerenciar. Cada seção abre no seu próprio contexto.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SectionLinkCard
             href={`${painelBase}?aba=dados`}
             title="Dados da empresa"
-            description="Razão social, morada, contactos e ligação Stripe para receber pagamentos."
+            description="Razão social, endereço, contatos e integração Stripe para receber pagamentos."
             meta="Cadastro e pagamentos"
           />
           <SectionLinkCard

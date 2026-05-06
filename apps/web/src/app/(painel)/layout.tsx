@@ -39,7 +39,7 @@ export default async function PainelLayout({ children }: { children: React.React
               <PageLoadingFallback
                 className="min-h-[52vh] py-12 sm:min-h-[48vh]"
                 indicatorHeight={128}
-                visibleMessage="A carregar o painel…"
+                visibleMessage="Carregando o painel…"
               />
             }
           >

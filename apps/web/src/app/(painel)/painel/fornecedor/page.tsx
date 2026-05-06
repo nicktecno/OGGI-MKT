@@ -66,7 +66,7 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
   const intro =
     section === "dados" ? (
       <>
-        Razão social, morada, contactos e Stripe ficam nesta aba, à parte dos insumos e das entregas.
+        Razão social, endereço, contatos e Stripe ficam nesta aba, separados dos insumos e das entregas.
       </>
     ) : section === "insumos" ? (
       <>
@@ -116,7 +116,7 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {apiOn
                   ? "O perfil de fornecedor ainda não está disponível para edição. Assim que a conta estiver ativa na plataforma, os campos aparecem aqui."
-                  : "No modo demonstração, ligue a API e inicie sessão com um fornecedor aprovado para ver e editar o cadastro completo."}
+                  : "No modo demonstração, ative a API e faça login com um fornecedor aprovado para ver e editar o cadastro completo."}
               </p>
             )}
           </CardContent>
