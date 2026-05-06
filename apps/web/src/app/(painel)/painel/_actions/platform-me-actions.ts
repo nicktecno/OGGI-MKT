@@ -58,6 +58,48 @@ export async function startStripeConnectAction(): Promise<StripeConnectResult> {
   return data;
 }
 
+export async function patchAccountMeAction(body: {
+  name?: string;
+  fiscalDocumentKind?: "CPF" | "CNPJ";
+  fiscalDocument?: string;
+}) {
+  if (!commerceUsesDatabase()) {
+    throw new Error("API não configurada.");
+  }
+  const token = await bearer();
+  if (!token) throw new Error("Sessão expirada.");
+  const payload: Record<string, unknown> = {};
+  if (body.name !== undefined) payload.name = body.name.trim();
+  if (body.fiscalDocumentKind !== undefined) payload.fiscalDocumentKind = body.fiscalDocumentKind;
+  if (body.fiscalDocument !== undefined) payload.fiscalDocument = body.fiscalDocument.trim();
+  if (Object.keys(payload).length === 0) {
+    throw new Error("Nada para atualizar.");
+  }
+  const res = await fetch(`${serverApiUrl()}/accounts/me`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let msg = await res.text();
+    try {
+      const j = JSON.parse(msg) as { message?: string | string[] };
+      if (typeof j.message === "string") msg = j.message;
+      else if (Array.isArray(j.message)) msg = j.message.join(", ");
+    } catch {
+      /* keep */
+    }
+    throw new Error(msg || `Erro ${res.status}`);
+  }
+  revalidatePath("/painel/fornecedor");
+  revalidatePath("/painel/executor");
+  revalidatePath("/painel/cliente/perfil");
+  revalidatePath("/painel/admin/conta");
+}
+
 export async function patchSupplierProfileAction(body: {
   businessName?: string;
   cep?: string;
@@ -81,21 +123,16 @@ export async function patchSupplierProfileAction(body: {
   revalidatePath("/painel/fornecedor");
 }
 
-export async function patchCustomerProfileAction(body: { name: string }) {
-  if (!commerceUsesDatabase()) {
-    throw new Error("API não configurada.");
-  }
-  const token = await bearer();
-  if (!token) throw new Error("Sessão expirada.");
-  const res = await fetch(`${serverApiUrl()}/accounts/me`, {
-    method: "PATCH",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ name: body.name.trim() }),
+export async function patchCustomerProfileAction(body: {
+  name: string;
+  fiscalDocumentKind: "CPF" | "CNPJ";
+  fiscalDocument: string;
+}) {
+  await patchAccountMeAction({
+    name: body.name.trim(),
+    fiscalDocumentKind: body.fiscalDocumentKind,
+    fiscalDocument: body.fiscalDocument,
   });
-  if (!res.ok) throw new Error((await res.text()) || "Não foi possível atualizar.");
   revalidatePath("/painel/cliente");
   revalidatePath("/painel/cliente/perfil");
 }

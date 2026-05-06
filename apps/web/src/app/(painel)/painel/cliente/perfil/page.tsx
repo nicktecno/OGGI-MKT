@@ -39,7 +39,12 @@ export default async function PainelClientePerfilPage() {
         </CardHeader>
         <CardContent>
           {me ? (
-            <CustomerProfileForm initialName={me.name} email={me.email} />
+            <CustomerProfileForm
+              initialName={me.name}
+              email={me.email}
+              initialFiscalKind={me.fiscalDocumentKind === "CNPJ" ? "CNPJ" : "CPF"}
+              initialFiscalDigits={me.fiscalDocument ?? ""}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               Defina <code className="rounded bg-muted px-1">COMMERCE_API_URL</code> e o segredo interno

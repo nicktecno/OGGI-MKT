@@ -290,6 +290,8 @@ export class InternalPlatformController {
       role: a.role,
       status: a.status,
       createdAt: a.createdAt.toISOString(),
+      fiscalDocumentKind: a.fiscalDocumentKind,
+      fiscalDocument: a.fiscalDocument,
       supplierProfile: a.supplierProfile,
       executorProfile: a.executorProfile,
     }));

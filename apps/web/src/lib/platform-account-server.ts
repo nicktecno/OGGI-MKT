@@ -11,6 +11,8 @@ export type PlatformMe = {
   status: string;
   stripeOnboardingComplete: boolean;
   hasStripeAccount: boolean;
+  fiscalDocumentKind?: "CPF" | "CNPJ";
+  fiscalDocument?: string | null;
   supplierProfile: {
     businessName: string;
     cep: string;

@@ -20,6 +20,8 @@ import {
   type AccountTermsRole,
 } from "@/lib/account-terms";
 import { SITE_NAME } from "@/lib/site";
+import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fields";
+import { capTaxIdDigits, stripTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +52,8 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [fiscalKind, setFiscalKind] = useState<FiscalDocumentKind>("CPF");
+  const [fiscalDigits, setFiscalDigits] = useState("");
 
   const termsRole: AccountTermsRole = useMemo(
     () => resolveRegisterTermsRole(accountPath, role),
@@ -68,6 +72,11 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
       setError("Marque a caixa para aceitar os termos de uso do seu tipo de conta.");
       return;
     }
+    const fd = stripTaxIdDigits(fiscalDigits);
+    if ((fiscalKind === "CPF" && fd.length !== 11) || (fiscalKind === "CNPJ" && fd.length !== 14)) {
+      setError("Informe o CPF com 11 dígitos ou o CNPJ com 14 dígitos (válidos).");
+      return;
+    }
     if (!apiEnabled) {
       setError("Cadastro público não está disponível (API não configurada).");
       return;
@@ -79,6 +88,8 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
         email: email.trim().toLowerCase(),
         password,
         name: name.trim(),
+        fiscalDocumentKind: fiscalKind,
+        fiscalDocument: fiscalDigits,
       };
       if (accountPath === "CUSTOMER") {
         body.role = "CUSTOMER";
@@ -300,6 +311,18 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
               />
             </div>
           </div>
+
+          <FiscalDocumentFields
+            idPrefix="reg-fiscal"
+            kind={fiscalKind}
+            documentDigits={fiscalDigits}
+            onKindChange={(k) => {
+              setFiscalKind(k);
+              setFiscalDigits((d) => capTaxIdDigits(k, d));
+            }}
+            onDocumentDigitsChange={setFiscalDigits}
+            disabled={loading}
+          />
 
           {accountPath === "PROFESSIONAL" && role === "SUPPLIER" ? (
             <div className="grid gap-4 sm:grid-cols-2">

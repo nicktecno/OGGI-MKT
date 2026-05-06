@@ -8,6 +8,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import type { PlatformAccount } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { assertValidFiscalDocument, type FiscalDocumentKind } from '../platform/fiscal-document.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { TERMS_ACCEPTANCE_VERSION } from '../legal/terms-acceptance-version';
 import type { LoginDto } from './dto/login.dto';
@@ -39,6 +40,8 @@ export class AuthService {
       throw new ConflictException('Este e-mail já está cadastrado.');
     }
     const hash = await bcrypt.hash(dto.password, 10);
+    const fiscalKind = (dto.fiscalDocumentKind === 'CNPJ' ? 'CNPJ' : 'CPF') as FiscalDocumentKind;
+    const fiscalDigits = assertValidFiscalDocument(fiscalKind, dto.fiscalDocument);
 
     if (dto.role === 'CUSTOMER') {
       const account = await this.prisma.platformAccount.create({
@@ -48,6 +51,8 @@ export class AuthService {
           name: dto.name.trim(),
           role: 'CUSTOMER',
           status: 'ACTIVE',
+          fiscalDocumentKind: fiscalKind,
+          fiscalDocument: fiscalDigits,
           termsAcceptedAt: new Date(),
           termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.CUSTOMER,
         },
@@ -77,6 +82,8 @@ export class AuthService {
           name: dto.name.trim(),
           role: 'SUPPLIER',
           status: 'PENDING_ADMIN_REVIEW',
+          fiscalDocumentKind: fiscalKind,
+          fiscalDocument: fiscalDigits,
           termsAcceptedAt: new Date(),
           termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.SUPPLIER,
           supplierProfile: {
@@ -122,6 +129,8 @@ export class AuthService {
         name: dto.name.trim(),
         role: 'EXECUTOR',
         status: 'PENDING_ADMIN_REVIEW',
+        fiscalDocumentKind: fiscalKind,
+        fiscalDocument: fiscalDigits,
         termsAcceptedAt: new Date(),
         termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.EXECUTOR,
         executorProfile: {

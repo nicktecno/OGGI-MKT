@@ -1,16 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import {
+  patchAccountMeAction,
+  patchSupplierProfileAction,
+} from "@/app/(painel)/painel/_actions/platform-me-actions";
+import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { patchSupplierProfileAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
 import type { PlatformMe } from "@/lib/platform-account-server";
+import { capTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 
-type Props = { initial: NonNullable<PlatformMe["supplierProfile"]> };
+type Props = {
+  initial: NonNullable<PlatformMe["supplierProfile"]>;
+  fiscalKind: FiscalDocumentKind;
+  fiscalDocumentDigits: string;
+};
 
-export function FornecedorProfileForm({ initial }: Props) {
+export function FornecedorProfileForm({ initial, fiscalKind: initialKind, fiscalDocumentDigits }: Props) {
   const [businessName, setBusinessName] = useState(initial.businessName);
   const [cep, setCep] = useState(initial.cep);
   const [phone, setPhone] = useState(initial.phone);
@@ -18,6 +27,10 @@ export function FornecedorProfileForm({ initial }: Props) {
   const [addressComplement, setAddressComplement] = useState(initial.addressComplement ?? "");
   const [city, setCity] = useState(initial.city);
   const [stateUf, setStateUf] = useState(initial.stateUf);
+  const [fiscalKind, setFiscalKind] = useState<FiscalDocumentKind>(initialKind);
+  const [fiscalDigits, setFiscalDigits] = useState(() =>
+    capTaxIdDigits(initialKind, fiscalDocumentDigits),
+  );
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -26,6 +39,10 @@ export function FornecedorProfileForm({ initial }: Props) {
     setMsg(null);
     setPending(true);
     try {
+      await patchAccountMeAction({
+        fiscalDocumentKind: fiscalKind,
+        fiscalDocument: fiscalDigits,
+      });
       await patchSupplierProfileAction({
         businessName,
         cep,
@@ -44,7 +61,18 @@ export function FornecedorProfileForm({ initial }: Props) {
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="space-y-3">
+    <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
+      <FiscalDocumentFields
+        idPrefix="fornecedor-fiscal"
+        kind={fiscalKind}
+        documentDigits={fiscalDigits}
+        onKindChange={(k) => {
+          setFiscalKind(k);
+          setFiscalDigits((d) => capTaxIdDigits(k, d));
+        }}
+        onDocumentDigitsChange={setFiscalDigits}
+        disabled={pending}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label>Razão social</Label>

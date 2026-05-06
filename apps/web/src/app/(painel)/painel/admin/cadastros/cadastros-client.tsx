@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
+import { formatTaxIdDisplay, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { cn } from "@/lib/utils";
 import { approvePlatformAccount, rejectPlatformAccount } from "../platform-admin-actions";
 
@@ -40,6 +41,8 @@ export type PendingPlatformAccount = {
     city: string;
     stateUf: string;
   } | null;
+  fiscalDocumentKind?: FiscalDocumentKind;
+  fiscalDocument?: string | null;
 };
 
 type CadastroBusy = { id: string; action: "approve" | "reject" } | null;
@@ -97,6 +100,12 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
               <CardDescription className="font-mono text-xs">{row.email}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
+              {row.fiscalDocument && row.fiscalDocumentKind ? (
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{row.fiscalDocumentKind}</span>{" "}
+                  {formatTaxIdDisplay(row.fiscalDocumentKind, row.fiscalDocument)}
+                </p>
+              ) : null}
               {row.supplierProfile ? (
                 <div className="rounded-xl border border-border/50 bg-muted/15 p-4 text-muted-foreground ring-1 ring-foreground/[0.02]">
                   <p className="font-medium text-foreground">{row.supplierProfile.businessName}</p>

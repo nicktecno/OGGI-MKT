@@ -29,6 +29,14 @@ export class RegisterDto {
   @IsIn(['SUPPLIER', 'EXECUTOR', 'CUSTOMER'])
   role!: 'SUPPLIER' | 'EXECUTOR' | 'CUSTOMER';
 
+  @IsIn(['CPF', 'CNPJ'])
+  fiscalDocumentKind!: 'CPF' | 'CNPJ';
+
+  @IsString()
+  @MinLength(11)
+  @MaxLength(20)
+  fiscalDocument!: string;
+
   @ValidateIf((o: RegisterDto) => o.role === 'SUPPLIER')
   @IsString()
   @MinLength(2)

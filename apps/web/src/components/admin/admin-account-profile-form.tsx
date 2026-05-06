@@ -1,24 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { patchCustomerProfileAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
+import { patchAccountMeAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
 import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LottieLoading } from "@/components/ui/lottie-loading";
 import { capTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 
 type Props = {
   initialName: string;
-  email: string;
   initialFiscalKind: FiscalDocumentKind;
   initialFiscalDigits: string;
 };
 
-export function CustomerProfileForm({
+export function AdminAccountProfileForm({
   initialName,
-  email,
   initialFiscalKind,
   initialFiscalDigits,
 }: Props) {
@@ -27,50 +24,44 @@ export function CustomerProfileForm({
   const [fiscalDigits, setFiscalDigits] = useState(() =>
     capTaxIdDigits(initialFiscalKind, initialFiscalDigits),
   );
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setOk(false);
-    setLoading(true);
+    setMsg(null);
+    setPending(true);
     try {
-      await patchCustomerProfileAction({
+      await patchAccountMeAction({
         name: name.trim(),
         fiscalDocumentKind: fiscalKind,
         fiscalDocument: fiscalDigits,
       });
-      setOk(true);
+      setMsg("Dados salvos.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível salvar.");
+      setMsg(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
-      setLoading(false);
+      setPending(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-md space-y-4">
+    <form onSubmit={(e) => void onSubmit(e)} className="max-w-lg space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="email">E-mail</Label>
-        <Input id="email" type="email" value={email} disabled className="bg-muted/40" readOnly />
-        <p className="text-xs text-muted-foreground">O e-mail de login não pode ser alterado aqui.</p>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="admin-me-name">Nome</Label>
         <Input
-          id="name"
+          id="admin-me-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           minLength={2}
           maxLength={120}
           required
+          disabled={pending}
           className="bg-background"
         />
       </div>
       <FiscalDocumentFields
-        idPrefix="cliente-fiscal"
+        idPrefix="admin-fiscal"
         kind={fiscalKind}
         documentDigits={fiscalDigits}
         onKindChange={(k) => {
@@ -78,28 +69,15 @@ export function CustomerProfileForm({
           setFiscalDigits((d) => capTaxIdDigits(k, d));
         }}
         onDocumentDigitsChange={setFiscalDigits}
-        disabled={loading}
+        disabled={pending}
       />
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
+      {msg ? (
+        <p className={`text-sm ${msg.includes("Erro") || msg.toLowerCase().includes("invál") ? "text-destructive" : "text-muted-foreground"}`}>
+          {msg}
         </p>
       ) : null}
-      {ok ? (
-        <p className="text-sm text-muted-foreground">
-          Dados atualizados. Se o menu ainda mostrar informação antiga, saia e entre de novo para
-          renovar a sessão.
-        </p>
-      ) : null}
-      <Button type="submit" disabled={loading} className="gap-2">
-        {loading ? (
-          <>
-            <LottieLoading height={24} />
-            Salvando…
-          </>
-        ) : (
-          "Salvar"
-        )}
+      <Button type="submit" disabled={pending}>
+        {pending ? "Salvando…" : "Salvar"}
       </Button>
     </form>
   );

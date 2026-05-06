@@ -68,7 +68,11 @@ export default async function ExecutorPainelPage() {
             <CardDescription>Nome público, endereço de envio e conta Stripe Connect.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <ExecutorProfileForm initial={me.executorProfile} />
+            <ExecutorProfileForm
+              initial={me.executorProfile}
+              fiscalKind={me.fiscalDocumentKind === "CNPJ" ? "CNPJ" : "CPF"}
+              fiscalDocumentDigits={me.fiscalDocument ?? ""}
+            />
             <div className="border-t border-border pt-4">
               <p className="mb-2 text-sm font-medium text-foreground">Stripe Connect</p>
               <StripeConnectButton

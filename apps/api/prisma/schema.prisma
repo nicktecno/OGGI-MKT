@@ -72,6 +72,11 @@ enum PlatformRole {
   CUSTOMER
 }
 
+enum FiscalDocumentKind {
+  CPF
+  CNPJ
+}
+
 enum PlatformAccountStatus {
   PENDING_ADMIN_REVIEW
   ACTIVE
@@ -90,6 +95,9 @@ model PlatformAccount {
   name                     String
   role                     PlatformRole
   status                   PlatformAccountStatus  @default(PENDING_ADMIN_REVIEW)
+  /// CPF ou CNPJ cadastrado pelo utilizador (apenas dígitos).
+  fiscalDocumentKind       FiscalDocumentKind     @default(CPF) @map("fiscal_document_kind")
+  fiscalDocument           String?                @map("fiscal_document")
   stripeAccountId          String?                @map("stripe_account_id")
   stripeOnboardingComplete Boolean                @default(false) @map("stripe_onboarding_complete")
   reviewedAt               DateTime?              @map("reviewed_at")

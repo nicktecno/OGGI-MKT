@@ -103,7 +103,11 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
           <CardContent className="space-y-6">
             {me?.supplierProfile ? (
               <>
-                <FornecedorProfileForm initial={me.supplierProfile} />
+                <FornecedorProfileForm
+                  initial={me.supplierProfile}
+                  fiscalKind={me.fiscalDocumentKind === "CNPJ" ? "CNPJ" : "CPF"}
+                  fiscalDocumentDigits={me.fiscalDocument ?? ""}
+                />
                 <div className="border-t border-border pt-4">
                   <p className="mb-2 text-sm font-medium text-foreground">Stripe Connect</p>
                   <StripeConnectButton

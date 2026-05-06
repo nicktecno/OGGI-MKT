@@ -1,16 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import {
+  patchAccountMeAction,
+  patchExecutorProfileAction,
+} from "@/app/(painel)/painel/_actions/platform-me-actions";
+import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { patchExecutorProfileAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
 import type { PlatformMe } from "@/lib/platform-account-server";
+import { capTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 
-type Props = { initial: NonNullable<PlatformMe["executorProfile"]> };
+type Props = {
+  initial: NonNullable<PlatformMe["executorProfile"]>;
+  fiscalKind: FiscalDocumentKind;
+  fiscalDocumentDigits: string;
+};
 
-export function ExecutorProfileForm({ initial }: Props) {
+export function ExecutorProfileForm({ initial, fiscalKind: initialKind, fiscalDocumentDigits }: Props) {
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [cep, setCep] = useState(initial.cep);
   const [phone, setPhone] = useState(initial.phone);
@@ -18,6 +27,10 @@ export function ExecutorProfileForm({ initial }: Props) {
   const [addressComplement, setAddressComplement] = useState(initial.addressComplement ?? "");
   const [city, setCity] = useState(initial.city);
   const [stateUf, setStateUf] = useState(initial.stateUf);
+  const [fiscalKind, setFiscalKind] = useState<FiscalDocumentKind>(initialKind);
+  const [fiscalDigits, setFiscalDigits] = useState(() =>
+    capTaxIdDigits(initialKind, fiscalDocumentDigits),
+  );
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -26,6 +39,10 @@ export function ExecutorProfileForm({ initial }: Props) {
     setMsg(null);
     setPending(true);
     try {
+      await patchAccountMeAction({
+        fiscalDocumentKind: fiscalKind,
+        fiscalDocument: fiscalDigits,
+      });
       await patchExecutorProfileAction({
         displayName,
         cep,
@@ -44,7 +61,18 @@ export function ExecutorProfileForm({ initial }: Props) {
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="space-y-3">
+    <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
+      <FiscalDocumentFields
+        idPrefix="executor-fiscal"
+        kind={fiscalKind}
+        documentDigits={fiscalDigits}
+        onKindChange={(k) => {
+          setFiscalKind(k);
+          setFiscalDigits((d) => capTaxIdDigits(k, d));
+        }}
+        onDocumentDigitsChange={setFiscalDigits}
+        disabled={pending}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label>Nome público (vitrine)</Label>
@@ -62,7 +90,9 @@ export function ExecutorProfileForm({ initial }: Props) {
                 if (v.localidade) setCity(v.localidade);
                 if (v.uf) setStateUf(v.uf.slice(0, 2).toUpperCase());
                 const extra = [v.complemento, v.bairro ? `Bairro: ${v.bairro}` : ""].filter(Boolean).join(" · ");
-                if (extra) setAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
+                if (extra) {
+                  setAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
+                }
               })
             }
             disabled={pending}

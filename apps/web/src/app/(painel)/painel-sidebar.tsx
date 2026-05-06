@@ -102,6 +102,13 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
               </Link>
             );
           })}
+          <Link
+            href="/painel/admin/conta"
+            prefetch
+            className={sidebarTabClass(pathname === "/painel/admin/conta")}
+          >
+            <span className="min-w-0 flex-1">Minha conta</span>
+          </Link>
           <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
           <Link href="/loja" className={sidebarTabClass(lojaActive)}>
             <span className="min-w-0 flex-1">Loja pública</span>

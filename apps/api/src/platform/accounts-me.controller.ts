@@ -7,9 +7,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type { Request } from 'express';
 import { PlatformJwtGuard, type PlatformJwtUser } from '../auth/platform-jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { PatchMeDto } from './dto/patch-me.dto';
+import { assertValidFiscalDocument, type FiscalDocumentKind } from './fiscal-document.util';
 
 class PatchSupplierProfileDto {
   businessName?: string;
@@ -31,10 +34,6 @@ class PatchExecutorProfileDto {
   stateUf?: string;
 }
 
-class PatchMeDto {
-  name?: string;
-}
-
 @Controller('accounts')
 @UseGuards(PlatformJwtGuard)
 export class AccountsMeController {
@@ -42,18 +41,52 @@ export class AccountsMeController {
 
   @Patch('me')
   async patchMe(@Req() req: Request & { platformUser: PlatformJwtUser }, @Body() body: PatchMeDto) {
-    if (body.name === undefined) {
+    const hasName = body.name !== undefined;
+    const hasFiscal = body.fiscalDocument !== undefined || body.fiscalDocumentKind !== undefined;
+    if (!hasName && !hasFiscal) {
       throw new BadRequestException('Nada para atualizar.');
     }
-    const name = String(body.name ?? '').trim();
-    if (name.length < 2 || name.length > 120) {
-      throw new BadRequestException('Nome deve ter entre 2 e 120 caracteres.');
+
+    const current = await this.prisma.platformAccount.findUnique({
+      where: { id: req.platformUser.sub },
+      select: { fiscalDocumentKind: true, fiscalDocument: true },
+    });
+    if (!current) throw new BadRequestException('Conta não encontrada.');
+
+    const data: Prisma.PlatformAccountUpdateInput = {};
+
+    if (body.name !== undefined) {
+      const name = String(body.name ?? '').trim();
+      if (name.length < 2 || name.length > 120) {
+        throw new BadRequestException('Nome deve ter entre 2 e 120 caracteres.');
+      }
+      data.name = name;
     }
+
+    if (body.fiscalDocument !== undefined || body.fiscalDocumentKind !== undefined) {
+      const kind = (body.fiscalDocumentKind ??
+        current.fiscalDocumentKind) as FiscalDocumentKind;
+      const raw =
+        body.fiscalDocument !== undefined
+          ? String(body.fiscalDocument)
+          : current.fiscalDocument ?? '';
+      if (!raw.trim()) {
+        throw new BadRequestException('Informe o CPF ou o CNPJ completo.');
+      }
+      const digits = assertValidFiscalDocument(kind, raw);
+      data.fiscalDocumentKind = kind;
+      data.fiscalDocument = digits;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Nada para atualizar.');
+    }
+
     await this.prisma.platformAccount.update({
       where: { id: req.platformUser.sub },
-      data: { name },
+      data,
     });
-    return { ok: true as const, name };
+    return { ok: true as const };
   }
 
   @Get('me/store-orders')
@@ -108,6 +141,8 @@ export class AccountsMeController {
       status: a.status,
       stripeOnboardingComplete: a.stripeOnboardingComplete,
       hasStripeAccount: Boolean(a.stripeAccountId),
+      fiscalDocumentKind: a.fiscalDocumentKind,
+      fiscalDocument: a.fiscalDocument,
       supplierProfile: a.supplierProfile,
       executorProfile: a.executorProfile,
     };
