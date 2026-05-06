@@ -902,7 +902,7 @@ export function AdminNovaPecaCard({
             {lines.map((line, idx) => {
               const rowSupplies = suppliesForSupplier(supplies, line.supplierEmail);
               return (
-                <div key={idx} className="flex flex-wrap items-end gap-2">
+                <div key={idx} className="flex flex-wrap items-center gap-2">
                 <FornecedorPicker
                   options={supplierOptions}
                   value={line.supplierEmail}
@@ -932,9 +932,9 @@ export function AdminNovaPecaCard({
                   disabled={pending || rowSupplies.length === 0}
                   ariaLabel={`Insumo na linha ${idx + 1}`}
                 />
-                <div className="flex flex-wrap items-end gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
-                    className="w-28"
+                    className="h-11 min-h-0 w-28 rounded-md px-3 py-0 text-sm tabular-nums leading-none"
                     inputMode="decimal"
                     value={line.quantidade}
                     onChange={(e) => {
