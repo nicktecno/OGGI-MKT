@@ -124,5 +124,13 @@ Detalhes: [docs/infrastructure.md](docs/infrastructure.md).
 2. **Web (`apps/web/.env.local`)**: `STRIPE_SECRET_KEY=sk_test_…` e `NEXT_PUBLIC_APP_URL=http://localhost:3000` (ou URL pública do Vercel, sem `/` no fim) para redirecionar o Checkout.
 3. **API (`apps/api/.env`)**: a mesma `STRIPE_SECRET_KEY` para Connect + webhook; crie um endpoint de webhook apontando para `https://<sua-api>/webhooks/stripe` e defina `STRIPE_WEBHOOK_SECRET=whsec_…`.
 4. **Local com Stripe CLI**: `stripe listen --forward-to localhost:4000/webhooks/stripe` e use o `whsec` exibido em `STRIPE_WEBHOOK_SECRET` na API. Evento tratado: `account.updated` (atualiza onboarding Connect no banco).
-5. **Checkout na loja**: com `STRIPE_SECRET_KEY` no Next, cliente (`CUSTOMER`) logado vê **“Pagar com Stripe (teste)”** no `/checkout` — Checkout Session em BRL; sucesso em `/checkout/obrigado?session_id=…` (esvazia o carrinho local). O botão **“Confirmar sem pagamento (demo)”** continua disponível.
+5. **Checkout na loja**: com `STRIPE_SECRET_KEY` no Next, cliente (`CUSTOMER`) logado vê **“Pagar com Stripe (teste)”** no `/checkout` — Checkout Session em BRL; sucesso em `/checkout/obrigado?session_id=…` (esvazia o carrinho local, baixa estoque na API e dispara e-mails se a API tiver Resend/SMTP). O botão **“Confirmar sem pagamento (demo)”** também notifica cliente e admins.
 6. **Connect** (fornecedor/executor): inalterado na UX; URLs de retorno usam o painel certo (`/painel/fornecedor` ou `/painel/executor`) a partir de `STRIPE_CONNECT_BASE_URL` ou do primeiro `FRONTEND_URL`.
+
+## E-mail (Resend) na API
+
+Na **`apps/api/.env`**: `RESEND_API_KEY=re_...` e `MAIL_FROM="Nome <onboarding@resend.dev>"` (ou domínio verificado na Resend). Sem isso, o servidor regista aviso em log e não envia. Cobertura: cadastro cliente (boas-vindas), cadastro parceiro pendente (admin), aprovação/recusa de parceiro, pedidos de costureira, atribuições/fornecedores, pedidos da loja (demo e Stripe).
+
+## ViaCEP no front
+
+Formulários com CEP (checkout, cadastro, perfis fornecedor/costureira, combinação admin) incluem **“Buscar CEP (ViaCEP)”** — consulta pública `viacep.com.br`, sem chave.

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   ServiceUnavailableException,
@@ -12,6 +13,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { SupplyQuantityKind } from '@prisma/client';
 import Stripe from 'stripe';
 import { InternalApiGuard } from '../commerce/internal-api.guard';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupplyService } from '../supply/supply.service';
 
@@ -22,6 +24,7 @@ export class InternalPlatformController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly supply: SupplyService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   private async listAllStripeCharges(
@@ -297,6 +300,8 @@ export class InternalPlatformController {
     @Param('id') id: string,
     @Body() body: { reviewedByEmail?: string },
   ) {
+    const acc = await this.prisma.platformAccount.findUnique({ where: { id } });
+    if (!acc) throw new NotFoundException('Conta não encontrada.');
     await this.prisma.platformAccount.update({
       where: { id },
       data: {
@@ -306,6 +311,13 @@ export class InternalPlatformController {
         rejectionReason: null,
       },
     });
+    if (acc.role === 'SUPPLIER' || acc.role === 'EXECUTOR') {
+      this.notifications.fireAndForgetAccountApproved({
+        email: acc.email,
+        name: acc.name,
+        role: acc.role,
+      });
+    }
     return { ok: true };
   }
 
@@ -314,15 +326,26 @@ export class InternalPlatformController {
     @Param('id') id: string,
     @Body() body: { reason?: string; reviewedByEmail?: string },
   ) {
+    const acc = await this.prisma.platformAccount.findUnique({ where: { id } });
+    if (!acc) throw new NotFoundException('Conta não encontrada.');
+    const reason = body.reason?.trim() || 'Cadastro recusado.';
     await this.prisma.platformAccount.update({
       where: { id },
       data: {
         status: 'REJECTED',
         reviewedAt: new Date(),
         reviewedByEmail: body.reviewedByEmail?.trim() || 'admin@demo.local',
-        rejectionReason: body.reason?.trim() || 'Cadastro recusado.',
+        rejectionReason: reason,
       },
     });
+    if (acc.role === 'SUPPLIER' || acc.role === 'EXECUTOR') {
+      this.notifications.fireAndForgetAccountRejected({
+        email: acc.email,
+        name: acc.name,
+        role: acc.role,
+        reason,
+      });
+    }
     return { ok: true };
   }
 }

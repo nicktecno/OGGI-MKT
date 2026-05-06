@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CommerceModule } from './commerce/commerce.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationsInternalController } from './notifications/notifications-internal.controller';
 import { HealthController } from './health/health.controller';
 import { MelhorEnvioModule } from './melhor-envio/melhor-envio.module';
 import { PlatformModule } from './platform/platform.module';
@@ -30,7 +31,7 @@ import { SupplyModule } from './supply/supply.module';
       },
     ]),
   ],
-  controllers: [AppController, HealthController],
+  controllers: [AppController, HealthController, NotificationsInternalController],
   providers: [
     AppService,
     {

@@ -243,4 +243,164 @@ export class NotificationsService {
       this.logger.error('onExecutionRequestRejected', err),
     );
   }
+
+  /** Cadastro de parceiro aprovado — avisa o próprio usuário. */
+  async onPlatformAccountApproved(input: { email: string; name: string; role: string }): Promise<void> {
+    const base = this.baseUrl();
+    const painel =
+      input.role === 'SUPPLIER'
+        ? `${base}/painel/fornecedor`
+        : input.role === 'EXECUTOR'
+          ? `${base}/painel/executor`
+          : `${base}/painel`;
+    const papel =
+      input.role === 'SUPPLIER' ? 'Fornecedor' : input.role === 'EXECUTOR' ? 'Costureira' : input.role;
+    const subject = `Cadastro aprovado — ${papel}`;
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Seu cadastro como ${papel} na plataforma foi aprovado. Já pode aceder ao painel completo.\n\n` +
+      `Entrar: ${base}/entrar\n` +
+      `Painel: ${painel}\n`;
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail aprovado ${input.email}`, e);
+    }
+  }
+
+  /** Cadastro de parceiro recusado — avisa o próprio usuário. */
+  async onPlatformAccountRejected(input: {
+    email: string;
+    name: string;
+    role: string;
+    reason: string;
+  }): Promise<void> {
+    const base = this.baseUrl();
+    const papel =
+      input.role === 'SUPPLIER' ? 'Fornecedor' : input.role === 'EXECUTOR' ? 'Costureira' : input.role;
+    const subject = `Cadastro não aprovado — ${papel}`;
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Seu cadastro como ${papel} não foi aprovado neste momento.\n\n` +
+      `Motivo: ${input.reason}\n\n` +
+      `Em caso de dúvida, responda a este e-mail ou contacte o suporte da loja.\n\n` +
+      `Página inicial: ${base}/\n`;
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail recusa cadastro ${input.email}`, e);
+    }
+  }
+
+  /** Cliente criou conta na loja (ativo imediato). */
+  async onCustomerRegisteredWelcome(input: { email: string; name: string }): Promise<void> {
+    const base = this.baseUrl();
+    const subject = 'Bem-vindo à loja';
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Sua conta de cliente foi criada com sucesso. Já pode entrar e comprar peças da vitrine.\n\n` +
+      `Entrar: ${base}/entrar\n` +
+      `Loja: ${base}/loja\n`;
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail boas-vindas cliente ${input.email}`, e);
+    }
+  }
+
+  /** Pedido da loja (demo ou Stripe) — cliente + resumo para admins. */
+  async onStoreOrderPlaced(input: {
+    channel: 'demo' | 'stripe';
+    customerEmail: string;
+    customerName?: string;
+    lines: { productName: string; quantity: number; unitPriceBrl: number }[];
+    delivery?: {
+      recipientName: string;
+      phone: string;
+      cep: string;
+      street: string;
+      number: string;
+      complement?: string;
+      neighborhood: string;
+      city: string;
+      uf: string;
+    };
+    stripeSessionId?: string;
+    totalBrl?: number;
+  }): Promise<void> {
+    const base = this.baseUrl();
+    const modo = input.channel === 'stripe' ? 'Pagamento Stripe (teste ou live)' : 'Confirmação demo (sem gateway)';
+    const lista = input.lines
+      .map((l) => `• ${l.productName} × ${l.quantity} — ${l.unitPriceBrl.toFixed(2)} BRL / un.`)
+      .join('\n');
+    const total =
+      typeof input.totalBrl === 'number' && Number.isFinite(input.totalBrl)
+        ? input.totalBrl.toFixed(2)
+        : input.lines.reduce((s, l) => s + l.quantity * l.unitPriceBrl, 0).toFixed(2);
+    let entrega = '';
+    if (input.delivery) {
+      const d = input.delivery;
+      entrega =
+        `\nEntrega:\n${d.recipientName} · ${d.phone}\n` +
+        `${d.street}, ${d.number}${d.complement ? ` — ${d.complement}` : ''}\n` +
+        `${d.neighborhood} — ${d.city}/${d.uf} · CEP ${d.cep}\n`;
+    }
+    const subject =
+      input.channel === 'stripe'
+        ? `Compra confirmada (Stripe)${input.stripeSessionId ? ` · ${input.stripeSessionId.slice(0, 24)}...` : ''}`
+        : 'Pedido confirmado (demo)';
+    const textCliente =
+      `Olá${input.customerName ? `, ${input.customerName}` : ''},\n\n` +
+      `Recebemos o seu pedido na loja (${modo}).\n\n` +
+      `Itens:\n${lista}\n\n` +
+      `Total aproximado: R$ ${total}\n` +
+      entrega +
+      (input.stripeSessionId ? `\nReferência: ${input.stripeSessionId}\n` : '') +
+      `\nLoja: ${base}/loja\n`;
+
+    try {
+      await this.mail.send({ to: input.customerEmail, subject, text: textCliente });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail cliente pedido ${input.customerEmail}`, e);
+    }
+
+    const admins = await this.adminEmails();
+    if (admins.length === 0) return;
+    const textAdmin =
+      `Novo pedido na loja (${modo}).\n\n` +
+      `Cliente: ${input.customerEmail}${input.customerName ? ` (${input.customerName})` : ''}\n\n` +
+      `Itens:\n${lista}\n\n` +
+      `Total: R$ ${total}\n` +
+      entrega +
+      (input.stripeSessionId ? `\nStripe session: ${input.stripeSessionId}\n` : '') +
+      `\nPainel: ${base}/painel/admin\n`;
+
+    try {
+      await this.mail.send({ to: admins, subject: `[Admin] ${subject}`, text: textAdmin });
+    } catch (e) {
+      this.logger.error('Falha ao e-mail admins (pedido loja)', e);
+    }
+  }
+
+  fireAndForgetAccountApproved(input: Parameters<NotificationsService['onPlatformAccountApproved']>[0]): void {
+    void this.onPlatformAccountApproved(input).catch((err) =>
+      this.logger.error('onPlatformAccountApproved', err),
+    );
+  }
+
+  fireAndForgetAccountRejected(input: Parameters<NotificationsService['onPlatformAccountRejected']>[0]): void {
+    void this.onPlatformAccountRejected(input).catch((err) =>
+      this.logger.error('onPlatformAccountRejected', err),
+    );
+  }
+
+  fireAndForgetStoreOrder(input: Parameters<NotificationsService['onStoreOrderPlaced']>[0]): void {
+    void this.onStoreOrderPlaced(input).catch((err) => this.logger.error('onStoreOrderPlaced', err));
+  }
+
+  fireAndForgetCustomerWelcome(input: Parameters<NotificationsService['onCustomerRegisteredWelcome']>[0]): void {
+    void this.onCustomerRegisteredWelcome(input).catch((err) =>
+      this.logger.error('onCustomerRegisteredWelcome', err),
+    );
+  }
 }

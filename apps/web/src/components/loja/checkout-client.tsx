@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { confirmCheckoutDemoAction } from "@/app/(public)/checkout/checkout-actions";
+import { CepLookupButton } from "@/components/address/cep-lookup-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,7 @@ import {
 import type { CartState } from "@/lib/cart-types";
 import type { Role } from "@/lib/auth-types";
 import { CART_CHANGED_EVENT, cartTotal, clearCart, readCart } from "@/lib/cart-storage";
+import { onlyCepDigits } from "@/lib/viacep";
 import { cn, formatBrl } from "@/lib/utils";
 
 type Props = {
@@ -250,15 +252,32 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                   autoComplete="tel"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="cd-cep">CEP</Label>
-                <Input
-                  id="cd-cep"
-                  value={delivery.cep ?? ""}
-                  onChange={(e) => onDeliveryField("cep", e.target.value)}
-                  autoComplete="postal-code"
-                  placeholder="00000-000"
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                  <Input
+                    id="cd-cep"
+                    className="sm:max-w-[14rem]"
+                    value={delivery.cep ?? ""}
+                    onChange={(e) => onDeliveryField("cep", e.target.value)}
+                    autoComplete="postal-code"
+                    placeholder="00000-000"
+                  />
+                  <CepLookupButton
+                    cep={delivery.cep ?? ""}
+                    onFill={(v) => {
+                      setDelivery((prev) => ({
+                        ...prev,
+                        cep: onlyCepDigits(v.cep),
+                        street: v.logradouro || prev.street,
+                        neighborhood: v.bairro || prev.neighborhood,
+                        city: v.localidade || prev.city,
+                        uf: (v.uf || prev.uf || "").slice(0, 2).toUpperCase(),
+                        complement: v.complemento || prev.complement,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="cd-rua">Rua / logradouro</Label>

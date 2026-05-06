@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { CepLookupButton } from "@/components/address/cep-lookup-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { patchExecutorProfileAction } from "@/app/(painel)/painel/_actions/platform-me-actions";
 import type { PlatformMe } from "@/lib/platform-account-server";
+import { onlyCepDigits } from "@/lib/viacep";
 
 type Props = { initial: NonNullable<PlatformMe["executorProfile"]> };
 
@@ -49,9 +51,27 @@ export function ExecutorProfileForm({ initial }: Props) {
           <Label>Nome público (vitrine)</Label>
           <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="bg-background" />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label>CEP</Label>
-          <Input value={cep} onChange={(e) => setCep(e.target.value)} className="bg-background" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <Input
+              value={cep}
+              onChange={(e) => setCep(e.target.value)}
+              className="max-w-[14rem] bg-background"
+            />
+            <CepLookupButton
+              cep={cep}
+              disabled={pending}
+              onFill={(v) => {
+                setCep(onlyCepDigits(v.cep));
+                if (v.logradouro) setAddressLine1(v.logradouro);
+                if (v.localidade) setCity(v.localidade);
+                if (v.uf) setStateUf(v.uf.slice(0, 2).toUpperCase());
+                const extra = [v.complemento, v.bairro ? `Bairro: ${v.bairro}` : ""].filter(Boolean).join(" · ");
+                if (extra) setAddressComplement((c) => (c?.trim() ? `${c.trim()} · ${extra}` : extra));
+              }}
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label>Telefone</Label>

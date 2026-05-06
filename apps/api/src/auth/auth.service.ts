@@ -51,6 +51,10 @@ export class AuthService {
           termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.CUSTOMER,
         },
       });
+      this.notifications.fireAndForgetCustomerWelcome({
+        email: account.email,
+        name: account.name,
+      });
       return { user: this.serializePublic(account) };
     }
 

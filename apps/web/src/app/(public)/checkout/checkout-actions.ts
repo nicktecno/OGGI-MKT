@@ -1,8 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCommerceState, persistCheckoutReserve } from "@/lib/commerce-backend";
-import { isCheckoutDeliveryComplete, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
+import {
+  getCommerceState,
+  notifyStoreOrderCompleted,
+  persistCheckoutReserve,
+} from "@/lib/commerce-backend";
+import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
 import { getSession } from "@/lib/session";
 
@@ -47,6 +51,31 @@ export async function confirmCheckoutDemoAction(
     const msg = e instanceof Error ? e.message : "Não foi possível reservar o estoque.";
     return { ok: false, error: msg };
   }
+
+  const deliveryNorm = normalizeCheckoutDelivery(d);
+  const totalBrl = validated.cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+  await notifyStoreOrderCompleted({
+    channel: "demo",
+    customerEmail: session.email,
+    customerName: session.name,
+    lines: validated.cart.map((l) => ({
+      productName: l.productName,
+      quantity: l.quantity,
+      unitPriceBrl: l.unitPrice,
+    })),
+    delivery: {
+      recipientName: deliveryNorm.recipientName,
+      phone: deliveryNorm.phone,
+      cep: deliveryNorm.cep,
+      street: deliveryNorm.street,
+      number: deliveryNorm.number,
+      complement: deliveryNorm.complement || undefined,
+      neighborhood: deliveryNorm.neighborhood,
+      city: deliveryNorm.city,
+      uf: deliveryNorm.uf,
+    },
+    totalBrl,
+  });
 
   revalidatePath("/loja");
   revalidatePath("/carrinho");

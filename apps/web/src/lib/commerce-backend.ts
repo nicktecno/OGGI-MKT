@@ -968,3 +968,40 @@ export async function persistCheckoutReserve(lines: CheckoutReserveLine[]): Prom
     assignments: next,
   }));
 }
+
+/** Corpo enviado à API Nest para e-mails de pedido (Resend / SMTP). */
+export type StoreOrderNotifyPayload = {
+  channel: "demo" | "stripe";
+  customerEmail: string;
+  customerName?: string;
+  lines: { productName: string; quantity: number; unitPriceBrl: number }[];
+  delivery?: {
+    recipientName: string;
+    phone: string;
+    cep: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    uf: string;
+  };
+  stripeSessionId?: string;
+  totalBrl?: number;
+};
+
+/** Notifica cliente e admins por e-mail (só com API + `RESEND_API_KEY` / SMTP na Nest). */
+export async function notifyStoreOrderCompleted(payload: StoreOrderNotifyPayload): Promise<void> {
+  if (!commerceUsesDatabase()) return;
+  try {
+    const res = await internalFetch("/internal/notifications/store-order", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error("[notifyStoreOrderCompleted]", await readApiError(res));
+    }
+  } catch (e) {
+    console.error("[notifyStoreOrderCompleted]", e);
+  }
+}
