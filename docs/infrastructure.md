@@ -24,6 +24,8 @@
 2. **Runtime**: Docker. **Root Directory**: vazio (raiz do repo) — existe um `Dockerfile` na raiz que compila `apps/api`. Alternativa: Root Directory `apps/api` e Dockerfile `Dockerfile` (o ficheiro dentro de `apps/api`).
 3. Preencher **Environment** com as variáveis da secção abaixo. **`DATABASE_URL` tem de ser a connection string do Neon** (nunca `localhost` — no Render não há Postgres na própria máquina do serviço). No Vercel, `COMMERCE_API_URL` = URL pública `https://….onrender.com` (ou domínio próprio).
 
+O `Dockerfile` da API **não** grava `DATABASE_URL` na imagem (só usa URLs fictícias na linha do `prisma generate` / `npm run build`). O Render tem de injetar `DATABASE_URL` e `DATABASE_DIRECT_URL` no **runtime** do Web Service.
+
 #### Neon: pooler vs migrações Prisma
 
 Se `DATABASE_URL` usar o **host com `-pooler-`** (PgBouncer), `prisma migrate deploy` na subida do contentor pode falhar com timeout em **`pg_advisory_lock`**. O schema Prisma define `directUrl` → variável **`DATABASE_DIRECT_URL`**: no dashboard Neon, copie a connection string **direct** (sem pooler / “Connection pooling off”) com o mesmo user, password e database. No Render, defina **as duas** variáveis. Em Postgres local ou se só usar URL directa, pode repetir o mesmo valor nas duas.

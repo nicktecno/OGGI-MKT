@@ -9,17 +9,19 @@ COPY apps/api/package*.json ./
 RUN npm install --no-audit --no-fund
 
 COPY apps/api/prisma ./prisma/
-# `prisma generate` só valida o schema; URLs fictícias bastam no build (runtime usa env real no Render).
-ARG DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
-ARG DATABASE_DIRECT_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
-ENV DATABASE_URL=$DATABASE_URL \
-    DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL
-RUN npx prisma generate
+# Só nesta linha: não persistir ENV na imagem — senão o runtime pode usar 127.0.0.1 e o migrate falha (P1001).
+# `npm run build` corre `prebuild` → `prisma generate`; precisa das mesmas vars nessa RUN.
+RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public" \
+    DATABASE_DIRECT_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public" \
+    npx prisma generate
 
 COPY apps/api/tsconfig*.json apps/api/nest-cli.json ./
 COPY apps/api/src ./src/
 COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh && npm run build
+RUN chmod +x docker-entrypoint.sh \
+  && DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public" \
+     DATABASE_DIRECT_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public" \
+     npm run build
 
 EXPOSE 4000
 ENV NODE_ENV=production
