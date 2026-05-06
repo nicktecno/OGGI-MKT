@@ -31,10 +31,63 @@ class PatchExecutorProfileDto {
   stateUf?: string;
 }
 
+class PatchMeDto {
+  name?: string;
+}
+
 @Controller('accounts')
 @UseGuards(PlatformJwtGuard)
 export class AccountsMeController {
   constructor(private readonly prisma: PrismaService) {}
+
+  @Patch('me')
+  async patchMe(@Req() req: Request & { platformUser: PlatformJwtUser }, @Body() body: PatchMeDto) {
+    if (body.name === undefined) {
+      throw new BadRequestException('Nada para atualizar.');
+    }
+    const name = String(body.name ?? '').trim();
+    if (name.length < 2 || name.length > 120) {
+      throw new BadRequestException('Nome deve ter entre 2 e 120 caracteres.');
+    }
+    await this.prisma.platformAccount.update({
+      where: { id: req.platformUser.sub },
+      data: { name },
+    });
+    return { ok: true as const, name };
+  }
+
+  @Get('me/store-orders')
+  async myStoreOrders(@Req() req: Request & { platformUser: PlatformJwtUser }) {
+    if (req.platformUser.role !== 'CUSTOMER') {
+      throw new BadRequestException('Somente contas de cliente podem ver pedidos da loja.');
+    }
+    const orders = await this.prisma.storeCustomerOrder.findMany({
+      where: { accountId: req.platformUser.sub },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        lines: {
+          orderBy: { productName: 'asc' },
+        },
+      },
+    });
+    return orders.map((o) => ({
+      id: o.id,
+      created_at: o.createdAt.toISOString(),
+      channel: o.channel,
+      stripe_session_id: o.stripeSessionId,
+      total_brl: o.totalBrl,
+      delivery: o.delivery,
+      lines: o.lines.map((l) => ({
+        listing_id: l.listingId,
+        product_slug: l.productSlug,
+        product_name: l.productName,
+        quantity: l.quantity,
+        unit_price_brl: l.unitPriceBrl,
+        composite_product_id: l.compositeProductId,
+      })),
+    }));
+  }
 
   @Get('me')
   async me(@Req() req: Request & { platformUser: PlatformJwtUser }) {

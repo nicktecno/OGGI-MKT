@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import type { PlatformAccount } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -96,6 +97,11 @@ export class AuthService {
         name: account.name,
         role: 'SUPPLIER',
       });
+      this.notifications.fireAndForgetPendingPartnerAck({
+        email: account.email,
+        name: account.name,
+        role: 'SUPPLIER',
+      });
       return { user: this.serializePublic(account) };
     }
 
@@ -136,7 +142,73 @@ export class AuthService {
       name: account.name,
       role: 'EXECUTOR',
     });
+    this.notifications.fireAndForgetPendingPartnerAck({
+      email: account.email,
+      name: account.name,
+      role: 'EXECUTOR',
+    });
     return { user: this.serializePublic(account) };
+  }
+
+  async requestPasswordReset(email: string): Promise<{ ok: true }> {
+    const normalized = email.trim().toLowerCase();
+    const account = await this.prisma.platformAccount.findUnique({
+      where: { email: normalized },
+    });
+    if (!account) {
+      return { ok: true };
+    }
+    const rawToken = randomBytes(32).toString('base64url');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { email: normalized, usedAt: null },
+    });
+    await this.prisma.passwordResetToken.create({
+      data: {
+        email: normalized,
+        tokenHash,
+        expiresAt,
+      },
+    });
+    const raw = process.env.FRONTEND_URL?.split(',')[0]?.trim() || 'http://localhost:3000';
+    const base = raw.replace(/\/$/, '');
+    const resetUrl = `${base}/recuperar-senha?token=${encodeURIComponent(rawToken)}`;
+    this.notifications.fireAndForgetPasswordResetRequested({
+      email: normalized,
+      name: account.name,
+      resetUrl,
+    });
+    return { ok: true };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ ok: true }> {
+    const trimmed = token.trim();
+    if (trimmed.length < 32) {
+      throw new BadRequestException('Link inválido ou expirado.');
+    }
+    const tokenHash = createHash('sha256').update(trimmed).digest('hex');
+    const row = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
+    if (!row || row.usedAt || row.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('Link inválido ou expirado.');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.$transaction([
+      this.prisma.platformAccount.update({
+        where: { email: row.email },
+        data: { passwordHash },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: row.id },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.passwordResetToken.deleteMany({
+        where: { email: row.email, id: { not: row.id } },
+      }),
+    ]);
+    return { ok: true };
   }
 
   async login(dto: LoginDto) {

@@ -292,6 +292,45 @@ export class NotificationsService {
     }
   }
 
+  /** Fornecedor/costureira: confirmação de que o cadastro foi recebido e está em análise. */
+  async onPendingPartnerRegistrationAck(input: {
+    email: string;
+    name: string;
+    role: 'SUPPLIER' | 'EXECUTOR';
+  }): Promise<void> {
+    const base = this.baseUrl();
+    const papel =
+      input.role === 'SUPPLIER' ? 'fornecedor' : input.role === 'EXECUTOR' ? 'costureira (executor)' : input.role;
+    const subject = 'Cadastro recebido — em análise';
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Recebemos seu cadastro como ${papel}. Nossa equipe vai analisar os dados; quando for aprovado, você receberá outro e-mail e já poderá usar o painel completo.\n\n` +
+      `Enquanto isso, pode entrar com o mesmo e-mail e senha; algumas áreas podem ficar limitadas até a aprovação.\n\n` +
+      `Entrar: ${base}/entrar\n`;
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail cadastro pendente (parceiro) ${input.email}`, e);
+    }
+  }
+
+  /** Link único para redefinir senha (expira em 1h). */
+  async onPasswordResetRequested(input: { email: string; name: string; resetUrl: string }): Promise<void> {
+    const base = this.baseUrl();
+    const subject = 'Redefinir sua senha';
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Recebemos um pedido para redefinir a senha da sua conta. Se foi você, use o link abaixo (válido por tempo limitado):\n\n` +
+      `${input.resetUrl}\n\n` +
+      `Se você não pediu, ignore este e-mail; sua senha permanece a mesma.\n\n` +
+      `Entrar: ${base}/entrar\n`;
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail reset senha ${input.email}`, e);
+    }
+  }
+
   /** Cliente criou conta na loja (ativo imediato). */
   async onCustomerRegisteredWelcome(input: { email: string; name: string }): Promise<void> {
     const base = this.baseUrl();
@@ -401,6 +440,22 @@ export class NotificationsService {
   fireAndForgetCustomerWelcome(input: Parameters<NotificationsService['onCustomerRegisteredWelcome']>[0]): void {
     void this.onCustomerRegisteredWelcome(input).catch((err) =>
       this.logger.error('onCustomerRegisteredWelcome', err),
+    );
+  }
+
+  fireAndForgetPendingPartnerAck(
+    input: Parameters<NotificationsService['onPendingPartnerRegistrationAck']>[0],
+  ): void {
+    void this.onPendingPartnerRegistrationAck(input).catch((err) =>
+      this.logger.error('onPendingPartnerRegistrationAck', err),
+    );
+  }
+
+  fireAndForgetPasswordResetRequested(
+    input: Parameters<NotificationsService['onPasswordResetRequested']>[0],
+  ): void {
+    void this.onPasswordResetRequested(input).catch((err) =>
+      this.logger.error('onPasswordResetRequested', err),
     );
   }
 }

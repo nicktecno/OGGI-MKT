@@ -15,7 +15,7 @@ export function dashboardPathForRole(role: Role): string {
     case "EXECUTOR":
       return "/painel/executor";
     case "CUSTOMER":
-      return "/loja";
+      return "/painel/cliente";
     default:
       return "/";
   }
@@ -29,6 +29,8 @@ export function roleForPainelSegment(segment: string): Role | null {
       return "SUPPLIER";
     case "executor":
       return "EXECUTOR";
+    case "cliente":
+      return "CUSTOMER";
     default:
       return null;
   }

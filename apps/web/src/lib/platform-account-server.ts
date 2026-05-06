@@ -31,6 +31,42 @@ export type PlatformMe = {
   } | null;
 };
 
+export type StoreOrderLineDto = {
+  listing_id: string;
+  product_slug: string;
+  product_name: string;
+  quantity: number;
+  unit_price_brl: number;
+  composite_product_id: string;
+};
+
+export type StoreCustomerOrderDto = {
+  id: string;
+  created_at: string;
+  channel: string;
+  stripe_session_id: string | null;
+  total_brl: number | null;
+  delivery: unknown;
+  lines: StoreOrderLineDto[];
+};
+
+export async function fetchCustomerStoreOrders(): Promise<StoreCustomerOrderDto[] | null> {
+  if (!commerceUsesDatabase()) return null;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  try {
+    const res = await fetch(`${serverApiUrl()}/accounts/me/store-orders`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (res.status === 401 || res.status === 403) return [];
+    if (!res.ok) return null;
+    return (await res.json()) as StoreCustomerOrderDto[];
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchPlatformMe(): Promise<PlatformMe | null> {
   if (!commerceUsesDatabase()) return null;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { CheckoutClearAfterPayment } from "@/components/loja/checkout-clear-after-payment";
 import { buttonVariants } from "@/components/ui/button";
 import { finalizeStripePaidCheckoutInventory } from "@/lib/stripe-checkout-finalize";
 import { getStripeServer } from "@/lib/stripe-server";
+import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ type Props = {
 
 export default async function CheckoutObrigadoPage({ searchParams }: Props) {
   const { session_id: sessionId } = await searchParams;
+  const userSession = await getSession();
   const stripe = getStripeServer();
 
   if (!sessionId || !stripe) {
@@ -57,6 +60,9 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
     const inv = await finalizeStripePaidCheckoutInventory(sessionId);
     if (!inv.ok) {
       inventoryMessage = inv.message;
+    } else {
+      revalidatePath("/painel/cliente");
+      revalidatePath("/painel/cliente/pedidos");
     }
   }
 
@@ -94,6 +100,11 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
         <Link href="/loja" className={cn(buttonVariants())}>
           Voltar à loja
         </Link>
+        {paid && userSession?.role === "CUSTOMER" ? (
+          <Link href="/painel/cliente/pedidos" className={cn(buttonVariants({ variant: "outline" }))}>
+            Meus pedidos
+          </Link>
+        ) : null}
         <Link href="/checkout" className={cn(buttonVariants({ variant: "outline" }))}>
           Checkout
         </Link>

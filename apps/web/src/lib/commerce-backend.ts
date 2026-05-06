@@ -931,15 +931,53 @@ export async function persistCreateCompositeProduct(
 
 export type CheckoutReserveLine = { listing_id: string; quantity: number };
 
+export type CheckoutCustomerOrderPayload = {
+  account_id: string;
+  customer_email: string;
+  customer_name?: string;
+  channel: "demo" | "stripe";
+  stripe_session_id?: string | null;
+  total_brl?: number | null;
+  delivery?: {
+    recipientName: string;
+    phone: string;
+    cep: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    uf: string;
+  };
+};
+
 /** Baixa `available_quantity` das ofertas (cookie demo ou API Nest). */
-export async function persistCheckoutReserve(lines: CheckoutReserveLine[]): Promise<void> {
+export async function persistCheckoutReserve(
+  lines: CheckoutReserveLine[],
+  customerOrder?: CheckoutCustomerOrderPayload,
+): Promise<void> {
   if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
     throw new Error("Lista de linhas inválida.");
   }
   if (commerceUsesDatabase()) {
     const res = await internalFetch("/internal/commerce/checkout/reserve", {
       method: "POST",
-      body: JSON.stringify({ lines }),
+      body: JSON.stringify({
+        lines,
+        ...(customerOrder
+          ? {
+              customer_order: {
+                account_id: customerOrder.account_id,
+                customer_email: customerOrder.customer_email,
+                customer_name: customerOrder.customer_name,
+                channel: customerOrder.channel === "stripe" ? "STRIPE" : "DEMO",
+                stripe_session_id: customerOrder.stripe_session_id ?? null,
+                total_brl: customerOrder.total_brl ?? null,
+                delivery: customerOrder.delivery ?? null,
+              },
+            }
+          : {}),
+      }),
     });
     if (!res.ok) throw new Error(await readApiError(res));
     return;

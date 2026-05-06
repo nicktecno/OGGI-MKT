@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  commerceUsesDatabase,
   getCommerceState,
   notifyStoreOrderCompleted,
   persistCheckoutReserve,
@@ -45,15 +46,38 @@ export async function confirmCheckoutDemoAction(
     return { ok: false, error: validated.error };
   }
 
+  const deliveryNorm = normalizeCheckoutDelivery(d);
+  const totalBrl = validated.cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+
+  const customerOrder =
+    session.sub && commerceUsesDatabase()
+      ? {
+          account_id: session.sub,
+          customer_email: session.email,
+          customer_name: session.name,
+          channel: "demo" as const,
+          stripe_session_id: null as string | null,
+          total_brl: totalBrl,
+          delivery: {
+            recipientName: deliveryNorm.recipientName,
+            phone: deliveryNorm.phone,
+            cep: deliveryNorm.cep,
+            street: deliveryNorm.street,
+            number: deliveryNorm.number,
+            complement: deliveryNorm.complement || undefined,
+            neighborhood: deliveryNorm.neighborhood,
+            city: deliveryNorm.city,
+            uf: deliveryNorm.uf,
+          },
+        }
+      : undefined;
+
   try {
-    await persistCheckoutReserve(validated.reserveLines);
+    await persistCheckoutReserve(validated.reserveLines, customerOrder);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Não foi possível reservar o estoque.";
     return { ok: false, error: msg };
   }
-
-  const deliveryNorm = normalizeCheckoutDelivery(d);
-  const totalBrl = validated.cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
   await notifyStoreOrderCompleted({
     channel: "demo",
     customerEmail: session.email,
@@ -80,5 +104,7 @@ export async function confirmCheckoutDemoAction(
   revalidatePath("/loja");
   revalidatePath("/carrinho");
   revalidatePath("/checkout");
+  revalidatePath("/painel/cliente");
+  revalidatePath("/painel/cliente/pedidos");
   return { ok: true };
 }

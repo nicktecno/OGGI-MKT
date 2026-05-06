@@ -735,11 +735,37 @@ export class CommerceService {
   /**
    * Baixa estoque vendável (`availableQuantity`) por linha de checkout.
    * Transação atómica; falha se alguma linha não estiver PUBLISHED ou sem estoque.
+   * Opcionalmente grava pedido na loja (cliente) com linhas a partir do catálogo.
    */
-  async reserveCheckoutLines(lines: { listing_id: string; quantity: number }[]): Promise<void> {
+  async reserveCheckoutLines(
+    lines: { listing_id: string; quantity: number }[],
+    customerOrder?: {
+      account_id: string;
+      customer_email: string;
+      customer_name?: string;
+      channel: 'DEMO' | 'STRIPE';
+      stripe_session_id?: string | null;
+      total_brl?: number | null;
+      delivery?: unknown;
+    },
+  ): Promise<void> {
     if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
       throw new BadRequestException('Lista de linhas inválida (máx. 20).');
     }
+
+    const stripeSid =
+      customerOrder?.stripe_session_id && String(customerOrder.stripe_session_id).trim().length > 0
+        ? String(customerOrder.stripe_session_id).trim()
+        : null;
+    if (stripeSid) {
+      const existing = await this.prisma.storeCustomerOrder.findFirst({
+        where: { stripeSessionId: stripeSid },
+      });
+      if (existing) {
+        return;
+      }
+    }
+
     await this.prisma.$transaction(async (tx) => {
       for (const row of lines) {
         const id = typeof row.listing_id === 'string' ? row.listing_id.trim() : '';
@@ -765,6 +791,70 @@ export class CommerceService {
             'Estoque insuficiente ou oferta indisponível para uma das linhas do pedido.',
           );
         }
+      }
+
+      if (!customerOrder) return;
+
+      const cid = String(customerOrder.account_id ?? '').trim();
+      const emailNorm = String(customerOrder.customer_email ?? '').trim().toLowerCase();
+      if (!cid || !emailNorm) {
+        throw new BadRequestException('Dados do cliente incompletos para registrar o pedido.');
+      }
+      const acc = await tx.platformAccount.findUnique({ where: { id: cid } });
+      if (!acc || acc.role !== 'CUSTOMER' || acc.email.toLowerCase() !== emailNorm) {
+        throw new BadRequestException('Identificação do cliente inválida para registrar o pedido.');
+      }
+
+      const channel = customerOrder.channel === 'STRIPE' ? 'STRIPE' : 'DEMO';
+      const totalBrl =
+        typeof customerOrder.total_brl === 'number' && Number.isFinite(customerOrder.total_brl)
+          ? customerOrder.total_brl
+          : null;
+      const deliveryJson =
+        customerOrder.delivery !== undefined && customerOrder.delivery !== null
+          ? (customerOrder.delivery as Prisma.InputJsonValue)
+          : undefined;
+
+      const order = await tx.storeCustomerOrder.create({
+        data: {
+          accountId: acc.id,
+          customerEmail: acc.email,
+          customerName: customerOrder.customer_name?.trim() || acc.name,
+          channel,
+          stripeSessionId: stripeSid,
+          totalBrl,
+          ...(deliveryJson !== undefined ? { delivery: deliveryJson } : {}),
+        },
+      });
+
+      for (const row of lines) {
+        const listingId = typeof row.listing_id === 'string' ? row.listing_id.trim() : '';
+        const q = row.quantity;
+        const assignment = await tx.productionAssignment.findUnique({
+          where: { id: listingId },
+          select: { compositeProductId: true },
+        });
+        if (!assignment) {
+          throw new BadRequestException('Oferta não encontrada para linha do pedido.');
+        }
+        const product = await tx.compositeProduct.findUnique({
+          where: { id: assignment.compositeProductId },
+          select: { nome: true, slug: true, precoVendaPublico: true },
+        });
+        if (!product) {
+          throw new BadRequestException('Produto não encontrado para linha do pedido.');
+        }
+        await tx.storeOrderLine.create({
+          data: {
+            orderId: order.id,
+            listingId,
+            productSlug: product.slug,
+            productName: product.nome,
+            quantity: q,
+            unitPriceBrl: product.precoVendaPublico,
+            compositeProductId: assignment.compositeProductId,
+          },
+        });
       }
     });
   }

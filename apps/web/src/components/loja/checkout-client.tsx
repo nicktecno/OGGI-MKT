@@ -104,8 +104,11 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
             Voltar à loja
           </Link>
           {session?.role === "CUSTOMER" ? (
-            <Link href="/loja" className={cn(buttonVariants({ variant: "outline" }))}>
-              Continuar na loja
+            <Link
+              href="/painel/cliente/pedidos"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Meus pedidos
             </Link>
           ) : (
             <Link href={dashboardHref} className={cn(buttonVariants({ variant: "outline" }))}>

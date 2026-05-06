@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    const roleNeedsModeration = session.role === "SUPPLIER" || session.role === "EXECUTOR";
+    const roleNeedsModeration =
+      session.role === "SUPPLIER" || session.role === "EXECUTOR";
     const status = session.accountStatus ?? "ACTIVE";
 
     if (roleNeedsModeration && status === "PENDING_ADMIN_REVIEW") {

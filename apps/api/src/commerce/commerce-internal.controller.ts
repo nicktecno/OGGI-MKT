@@ -220,9 +220,21 @@ export class CommerceInternalController {
   /** Reserva estoque após checkout (demo ou pós-pagamento Stripe). */
   @Post('checkout/reserve')
   async reserveCheckout(
-    @Body() body: { lines: { listing_id: string; quantity: number }[] },
+    @Body()
+    body: {
+      lines: { listing_id: string; quantity: number }[];
+      customer_order?: {
+        account_id: string;
+        customer_email: string;
+        customer_name?: string;
+        channel: 'DEMO' | 'STRIPE';
+        stripe_session_id?: string | null;
+        total_brl?: number | null;
+        delivery?: unknown;
+      };
+    },
   ) {
-    await this.commerce.reserveCheckoutLines(body?.lines ?? []);
+    await this.commerce.reserveCheckoutLines(body?.lines ?? [], body?.customer_order);
     return { ok: true as const };
   }
 }

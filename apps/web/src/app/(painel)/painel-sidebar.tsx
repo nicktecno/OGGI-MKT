@@ -144,6 +144,32 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     );
   }
 
+  if (role === "CUSTOMER") {
+    const pedidosActive = pathname === "/painel/cliente/pedidos";
+    const perfilActive = pathname === "/painel/cliente/perfil";
+    const inicioActive =
+      pathname === "/painel/cliente" || pathname === "/painel/cliente/";
+    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
+
+    return (
+      <SidebarTabRail aria-label="Menu da conta">
+        <Link href="/painel/cliente" prefetch className={sidebarTabClass(inicioActive)}>
+          <span className="min-w-0 flex-1">Início</span>
+        </Link>
+        <Link href="/painel/cliente/pedidos" prefetch className={sidebarTabClass(pedidosActive)}>
+          <span className="min-w-0 flex-1">Meus pedidos</span>
+        </Link>
+        <Link href="/painel/cliente/perfil" prefetch className={sidebarTabClass(perfilActive)}>
+          <span className="min-w-0 flex-1">Perfil</span>
+        </Link>
+        <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
+        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
+          <span className="min-w-0 flex-1">Loja</span>
+        </Link>
+      </SidebarTabRail>
+    );
+  }
+
   const overviewActive =
     pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
   const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");

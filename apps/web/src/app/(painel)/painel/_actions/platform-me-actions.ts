@@ -81,6 +81,25 @@ export async function patchSupplierProfileAction(body: {
   revalidatePath("/painel/fornecedor");
 }
 
+export async function patchCustomerProfileAction(body: { name: string }) {
+  if (!commerceUsesDatabase()) {
+    throw new Error("API não configurada.");
+  }
+  const token = await bearer();
+  if (!token) throw new Error("Sessão expirada.");
+  const res = await fetch(`${serverApiUrl()}/accounts/me`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name: body.name.trim() }),
+  });
+  if (!res.ok) throw new Error((await res.text()) || "Não foi possível atualizar.");
+  revalidatePath("/painel/cliente");
+  revalidatePath("/painel/cliente/perfil");
+}
+
 export async function patchExecutorProfileAction(body: {
   displayName?: string;
   cep?: string;

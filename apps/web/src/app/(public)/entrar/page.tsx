@@ -11,14 +11,15 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ next?: string; cadastro?: string }>;
+  searchParams: Promise<{ next?: string; cadastro?: string; senha?: string }>;
 };
 
 export default async function EntrarPage({ searchParams }: PageProps) {
-  const { next, cadastro } = await searchParams;
+  const { next, cadastro, senha } = await searchParams;
   const redirectTo = safeInternalPath(next, "/");
   const showPendingHint = cadastro === "pendente";
   const showClienteHint = cadastro === "cliente";
+  const showSenhaRedefinida = senha === "redefinida";
 
   return (
     <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
@@ -50,6 +51,11 @@ export default async function EntrarPage({ searchParams }: PageProps) {
             <p className="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center text-sm text-muted-foreground">
               Cadastro recebido. Use o e-mail e a senha que você criou para entrar; o painel completo
               libera após aprovação do admin.
+            </p>
+          ) : null}
+          {showSenhaRedefinida ? (
+            <p className="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center text-sm text-muted-foreground">
+              Senha atualizada. Entre com o e-mail e a nova senha.
             </p>
           ) : null}
           {redirectTo !== "/" ? (

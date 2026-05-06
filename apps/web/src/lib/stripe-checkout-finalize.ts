@@ -5,6 +5,7 @@ import {
   type CheckoutReserveLine,
 } from "@/lib/commerce-backend";
 import { getStripeServer } from "@/lib/stripe-server";
+import { getSession } from "@/lib/session";
 
 const META_KEY = "stock_settled";
 
@@ -21,20 +22,20 @@ export async function finalizeStripePaidCheckoutInventory(
     return { ok: false, message: "Stripe não configurado." };
   }
 
-  let session: Stripe.Checkout.Session;
+  let stripeCheckoutSession: Stripe.Checkout.Session;
   try {
-    session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
+    stripeCheckoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
       expand: ["customer_details"],
     });
   } catch {
     return { ok: false, message: "Sessão de checkout inválida." };
   }
 
-  if (session.payment_status !== "paid") {
+  if (stripeCheckoutSession.payment_status !== "paid") {
     return { ok: true };
   }
 
-  const piRef = session.payment_intent;
+  const piRef = stripeCheckoutSession.payment_intent;
   const piId =
     typeof piRef === "string" ? piRef : piRef && typeof piRef === "object" && "id" in piRef ? piRef.id : null;
 
@@ -83,33 +84,53 @@ export async function finalizeStripePaidCheckoutInventory(
     return { ok: false, message: "Sessão sem itens com identificador de estoque." };
   }
 
+  const cust = stripeCheckoutSession.customer_details;
+  const customerEmail =
+    (typeof stripeCheckoutSession.customer_email === "string" &&
+    stripeCheckoutSession.customer_email.includes("@")
+      ? stripeCheckoutSession.customer_email
+      : null) ??
+    (cust && typeof cust.email === "string" && cust.email.includes("@") ? cust.email : null);
+
+  const customerName =
+    cust && typeof cust.name === "string" && cust.name.trim() ? cust.name.trim() : undefined;
+
+  const userSession = await getSession();
+  const totalBrlPaid =
+    typeof stripeCheckoutSession.amount_total === "number" && stripeCheckoutSession.amount_total > 0
+      ? stripeCheckoutSession.amount_total / 100
+      : undefined;
+
+  const customerOrderPersist =
+    userSession?.sub &&
+    userSession.role === "CUSTOMER" &&
+    customerEmail &&
+    userSession.email.trim().toLowerCase() === customerEmail.trim().toLowerCase()
+      ? {
+          account_id: userSession.sub,
+          customer_email: customerEmail,
+          customer_name: customerName ?? userSession.name,
+          channel: "stripe" as const,
+          stripe_session_id: checkoutSessionId,
+          total_brl: totalBrlPaid ?? null,
+        }
+      : undefined;
+
   try {
-    await persistCheckoutReserve(lines);
+    await persistCheckoutReserve(lines, customerOrderPersist);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Falha ao baixar estoque.";
     return { ok: false, message: msg };
   }
 
-  const cust = session.customer_details;
-  const customerEmail =
-    (typeof session.customer_email === "string" && session.customer_email.includes("@")
-      ? session.customer_email
-      : null) ??
-    (cust && typeof cust.email === "string" && cust.email.includes("@") ? cust.email : null);
-
   if (customerEmail && emailLines.length > 0) {
-    const customerName =
-      cust && typeof cust.name === "string" && cust.name.trim() ? cust.name.trim() : undefined;
     await notifyStoreOrderCompleted({
       channel: "stripe",
       customerEmail,
       customerName,
       lines: emailLines,
       stripeSessionId: checkoutSessionId,
-      totalBrl:
-        typeof session.amount_total === "number" && session.amount_total > 0
-          ? session.amount_total / 100
-          : undefined,
+      totalBrl: totalBrlPaid,
     });
   }
 
