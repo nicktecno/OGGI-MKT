@@ -6,6 +6,8 @@
 export type DemoSupplyItem = {
   id: string;
   supplierEmail: string;
+  /** Razão social ou nome de conta — para UI (catálogo admin, pickers). */
+  supplier_name?: string | null;
   nome: string;
   sku_interno: string;
   unidade: string;
@@ -135,10 +137,36 @@ export function executorOptionsFromDemoCommerce(state: {
   return list.length > 0 ? list : DEMO_EXECUTOR_PICKER_FALLBACK;
 }
 
+export type SupplierPickerOption = { email: string; label: string };
+
+/** Fornecedores distintos do catálogo com nome para exibição (fallback: e-mail). */
+export function supplierOptionsFromCatalog(supplies: DemoSupplyItem[]): SupplierPickerOption[] {
+  const byKey = new Map<string, { email: string; label: string }>();
+  for (const s of supplies) {
+    const email = s.supplierEmail?.trim();
+    if (!email) continue;
+    const k = email.toLowerCase();
+    const nameRow = s.supplier_name?.trim();
+    const labelCandidate = nameRow && nameRow.length > 0 ? nameRow : email;
+    const prev = byKey.get(k);
+    if (!prev) {
+      byKey.set(k, { email, label: labelCandidate });
+    } else {
+      const prevIsEmailOnly = prev.label.toLowerCase() === prev.email.toLowerCase();
+      const candIsName = labelCandidate.toLowerCase() !== email.toLowerCase();
+      if (prevIsEmailOnly && candIsName) byKey.set(k, { email: prev.email, label: labelCandidate });
+    }
+  }
+  return [...byKey.values()].sort((a, b) =>
+    a.label.localeCompare(b.label, "pt", { sensitivity: "base" }),
+  );
+}
+
 export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-linho-offwhite",
     supplierEmail: "fornecedor@demo.local",
+    supplier_name: "Bruno Tecidos Ltda",
     nome: "Linho premium off-white",
     sku_interno: "TEC-LIN-OW-240",
     unidade: "m",
@@ -156,6 +184,7 @@ export const DEMO_SUPPLY_ITEMS: DemoSupplyItem[] = [
   {
     id: "supply-ziper-invisivel-40",
     supplierEmail: "fornecedor@demo.local",
+    supplier_name: "Bruno Tecidos Ltda",
     nome: "Zíper invisível 40 cm — preto",
     sku_interno: "AVI-ZIP-INV-040-BLK",
     unidade: "pc",

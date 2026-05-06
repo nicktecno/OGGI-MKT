@@ -16,8 +16,10 @@ import {
   compositePrecoLojaPlanejado,
   mergeSupplyCatalog,
   resolveCompositeLines,
+  supplierOptionsFromCatalog,
   type DemoCompositeProduct,
   type DemoSupplyItem,
+  type SupplierPickerOption,
   type DemoExecutionRequest,
   type DemoProductionAssignment,
   type ExecutorPickerOption,
@@ -218,6 +220,12 @@ function NovaPecaImagemPrepRow({
   );
 }
 
+function suppliesForSupplier(supplies: DemoSupplyItem[], supplierEmail: string): DemoSupplyItem[] {
+  const norm = supplierEmail.trim().toLowerCase();
+  if (!norm) return [];
+  return supplies.filter((s) => s.supplierEmail.trim().toLowerCase() === norm);
+}
+
 function InsumoThumb({ url, className }: { url?: string | null; className?: string }) {
   const base = "h-9 w-9 shrink-0 rounded-md border border-border bg-muted/40 object-cover";
   if (url?.trim()) {
@@ -239,6 +247,174 @@ function InsumoThumb({ url, className }: { url?: string | null; className?: stri
 }
 
 type MenuCoords = { top: number; left: number; width: number; maxH: number };
+
+type NovaPecaInsumoLine = { supplierEmail: string; supplyItemId: string; quantidade: string };
+
+function initialNovaPecaLine(supplies: DemoSupplyItem[]): NovaPecaInsumoLine {
+  const opts = supplierOptionsFromCatalog(supplies);
+  const e = opts[0]?.email ?? "";
+  const id = supplies.find((s) => s.supplierEmail.trim().toLowerCase() === e.toLowerCase())?.id ?? "";
+  return { supplierEmail: e, supplyItemId: id, quantidade: "1" };
+}
+
+function FornecedorPicker({
+  options,
+  value,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  options: SupplierPickerOption[];
+  value: string;
+  onChange: (email: string) => void;
+  disabled: boolean;
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [menu, setMenu] = useState<MenuCoords>({ top: 0, left: 0, width: 240, maxH: 280 });
+
+  const updateMenuPosition = () => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const btn = wrap.querySelector("button[type='button']");
+    if (!(btn instanceof HTMLElement)) return;
+    const r = btn.getBoundingClientRect();
+    const gap = 6;
+    const margin = 10;
+    const vh = window.innerHeight;
+    const spaceBelow = vh - r.bottom - margin;
+    const spaceAbove = r.top - margin;
+    const openDown = spaceBelow >= 120 || spaceBelow >= spaceAbove;
+    const rawMax = openDown ? spaceBelow - gap : spaceAbove - gap;
+    const maxH = Math.min(320, Math.max(120, rawMax));
+    const top = openDown ? r.bottom + gap : r.top - maxH - gap;
+    setMenu({
+      top,
+      left: r.left,
+      width: Math.max(r.width, 200),
+      maxH,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updateMenuPosition();
+    const onReposition = () => updateMenuPosition();
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+    return () => {
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      if (listRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const listbox =
+    open && typeof document !== "undefined" ? (
+      <ul
+        ref={listRef}
+        role="listbox"
+        style={{
+          position: "fixed",
+          top: menu.top,
+          left: menu.left,
+          width: menu.width,
+          maxHeight: menu.maxH,
+          zIndex: 200,
+        }}
+        className="overflow-y-auto overscroll-contain rounded-md border border-border bg-popover py-1 text-sm shadow-lg"
+      >
+        {options.map((opt) => (
+          <li key={opt.email.toLowerCase()} className="px-1">
+            <button
+              type="button"
+              role="option"
+              aria-selected={value.trim().toLowerCase() === opt.email.trim().toLowerCase()}
+              className={cn(
+                "flex w-full min-w-0 flex-col gap-0.5 rounded-sm px-2 py-2 text-left hover:bg-muted/80",
+                value.trim().toLowerCase() === opt.email.trim().toLowerCase() && "bg-accent/15",
+              )}
+              onClick={() => {
+                onChange(opt.email);
+                setOpen(false);
+              }}
+            >
+              <span className="min-w-0 truncate font-medium text-foreground">{opt.label}</span>
+              {opt.label.trim().toLowerCase() !== opt.email.trim().toLowerCase() ? (
+                <span className="min-w-0 truncate text-xs text-muted-foreground">{opt.email}</span>
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : null;
+
+  const pickerDisabled = disabled || options.length === 0;
+  const selectedOpt = options.find((o) => o.email.trim().toLowerCase() === value.trim().toLowerCase());
+
+  return (
+    <div ref={wrapRef} className="relative min-w-[12rem] max-w-[min(100%,22rem)] shrink-0">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        disabled={pickerDisabled}
+        onClick={() => {
+          if (pickerDisabled) return;
+          setOpen((o) => !o);
+        }}
+        className={cn(
+          "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-2 text-left text-sm shadow-sm",
+          "transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          pickerDisabled && "pointer-events-none opacity-60",
+        )}
+      >
+        <span className="min-w-0 flex-1 truncate text-left">
+          {selectedOpt ? (
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate font-medium text-foreground">{selectedOpt.label}</span>
+              {selectedOpt.label.trim().toLowerCase() !== selectedOpt.email.trim().toLowerCase() ? (
+                <span className="truncate text-xs text-muted-foreground">{selectedOpt.email}</span>
+              ) : null}
+            </span>
+          ) : value.trim() ? (
+            <span className="truncate text-foreground">{value}</span>
+          ) : (
+            <span className="text-muted-foreground">Fornecedor…</span>
+          )}
+        </span>
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      {listbox ? createPortal(listbox, document.body) : null}
+    </div>
+  );
+}
 
 function InsumoPicker({
   supplies,
@@ -422,15 +598,14 @@ function AdminNovaPecaCard({
 }) {
   const novaScope = "nova-peca";
   const novaSaving = adminActionLoading(pending, pendingScope, novaScope);
+  const supplierOptions = useMemo(() => supplierOptionsFromCatalog(supplies), [supplies]);
   const [nome, setNome] = useState("");
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
   const [desc, setDesc] = useState("");
   const [imagensPrep, setImagensPrep] = useState<NovaPecaImagePrep[]>([]);
   const [novaImagemFieldKey, setNovaImagemFieldKey] = useState(0);
-  const [lines, setLines] = useState<Array<{ supplyItemId: string; quantidade: string }>>(() =>
-    supplies[0] ? [{ supplyItemId: supplies[0].id, quantidade: "1" }] : [{ supplyItemId: "", quantidade: "1" }],
-  );
+  const [lines, setLines] = useState<NovaPecaInsumoLine[]>(() => [initialNovaPecaLine(supplies)]);
   const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>(() => ["P", "M", "G"]);
   const [tamanhosError, setTamanhosError] = useState<string | null>(null);
   const [novaPecaFormError, setNovaPecaFormError] = useState<string | null>(null);
@@ -440,7 +615,8 @@ function AdminNovaPecaCard({
     setLines((prev) => {
       if (prev.length !== 1) return prev;
       if (prev[0].supplyItemId) return prev;
-      return [{ supplyItemId: supplies[0].id, quantidade: prev[0].quantidade || "1" }];
+      const init = initialNovaPecaLine(supplies);
+      return [{ ...init, quantidade: prev[0].quantidade || "1" }];
     });
   }, [supplies]);
 
@@ -548,7 +724,7 @@ function AdminNovaPecaCard({
               setDesc("");
               setImagensPrep([]);
               setNovaImagemFieldKey((k) => k + 1);
-              setLines([{ supplyItemId: supplies[0].id, quantidade: "1" }]);
+              setLines([initialNovaPecaLine(supplies)]);
               setTamanhosSelecionados(["P", "M", "G"]);
               setNovaPecaFormError(null);
             }, novaScope);
@@ -701,15 +877,41 @@ function AdminNovaPecaCard({
           ) : null}
           <div className="space-y-3">
             <Label>Insumos e quantidades</Label>
-            {lines.map((line, idx) => (
-              <div key={idx} className="flex flex-wrap items-end gap-2">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Em cada linha, escolha o <strong className="text-foreground">fornecedor</strong> e depois o{" "}
+              <strong className="text-foreground">insumo</strong> desse fornecedor (só aparecem itens dele).
+            </p>
+            {lines.map((line, idx) => {
+              const rowSupplies = suppliesForSupplier(supplies, line.supplierEmail);
+              return (
+                <div key={idx} className="flex flex-wrap items-end gap-2">
+                <FornecedorPicker
+                  options={supplierOptions}
+                  value={line.supplierEmail}
+                  onChange={(email) =>
+                    setLines((prev) =>
+                      prev.map((x, i) => {
+                        if (i !== idx) return x;
+                        const pool = suppliesForSupplier(supplies, email);
+                        const keep = pool.some((s) => s.id === x.supplyItemId);
+                        return {
+                          ...x,
+                          supplierEmail: email,
+                          supplyItemId: keep ? x.supplyItemId : (pool[0]?.id ?? ""),
+                        };
+                      }),
+                    )
+                  }
+                  disabled={pending}
+                  ariaLabel={`Fornecedor na linha ${idx + 1}`}
+                />
                 <InsumoPicker
-                  supplies={supplies}
+                  supplies={rowSupplies}
                   value={line.supplyItemId}
                   onChange={(v) =>
                     setLines((prev) => prev.map((x, i) => (i === idx ? { ...x, supplyItemId: v } : x)))
                   }
-                  disabled={pending}
+                  disabled={pending || rowSupplies.length === 0}
                   ariaLabel={`Insumo na linha ${idx + 1}`}
                 />
                 <Input
@@ -733,15 +935,30 @@ function AdminNovaPecaCard({
                     Remover
                   </Button>
                 ) : null}
-              </div>
-            ))}
+                </div>
+              );
+            })}
             <Button
               type="button"
               variant="secondary"
               size="sm"
               disabled={pending}
               onClick={() =>
-                setLines((prev) => [...prev, { supplyItemId: supplies[0]?.id ?? "", quantidade: "1" }])
+                setLines((prev) => {
+                  const next =
+                    prev.length > 0
+                      ? (() => {
+                          const e = prev[prev.length - 1]!.supplierEmail;
+                          const pool = suppliesForSupplier(supplies, e);
+                          return {
+                            supplierEmail: e,
+                            supplyItemId: pool[0]?.id ?? "",
+                            quantidade: "1",
+                          };
+                        })()
+                      : initialNovaPecaLine(supplies);
+                  return [...prev, next];
+                })
               }
             >
               Adicionar insumo

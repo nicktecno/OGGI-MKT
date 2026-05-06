@@ -50,11 +50,23 @@ export class InternalPlatformController {
   async supplyCatalog() {
     const rows = await this.prisma.supplyItem.findMany({
       where: { ativo: true },
-      include: { supplier: { select: { email: true } } },
+      include: {
+        supplier: {
+          select: {
+            email: true,
+            name: true,
+            supplierProfile: { select: { businessName: true } },
+          },
+        },
+      },
     });
     return rows.map((r) => ({
       id: r.id,
       supplierEmail: r.supplier.email,
+      supplier_name:
+        r.supplier.supplierProfile?.businessName?.trim() ||
+        r.supplier.name?.trim() ||
+        r.supplier.email,
       nome: r.nome,
       sku_interno: r.skuInterno,
       unidade: r.unidade,
