@@ -394,18 +394,18 @@ export class CommerceService {
   async createCompositeProduct(body: {
     nome: string;
     slug?: string;
-    sku: string;
+    /** Se vazio ou omitido, gera automaticamente a partir do id da peça (ex.: `MS-A1B2C3D4E5F6`). */
+    sku?: string;
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
   },
   cover?: { buffer: Buffer; mimeType: string },
-  ): Promise<{ id: string; slug: string }> {
+  ): Promise<{ id: string; slug: string; sku: string }> {
     const nome = body.nome.trim();
-    const sku = body.sku.trim();
+    const skuInput = typeof body.sku === 'string' ? body.sku.trim() : '';
     const desc = body.descricao_curta.trim();
     if (nome.length < 2) throw new BadRequestException('Nome muito curto.');
-    if (!sku) throw new BadRequestException('SKU é obrigatório.');
     if (desc.length < 4) throw new BadRequestException('Descrição muito curta.');
     if (!body.linhas?.length) {
       throw new BadRequestException('Inclua pelo menos um insumo na montagem.');
@@ -459,6 +459,7 @@ export class CommerceService {
     );
 
     const id = `cp-${randomUUID().slice(0, 12)}`;
+    const sku = skuInput || `MS-${id.slice(3).toUpperCase()}`;
     await this.prisma.compositeProduct.create({
       data: {
         id,
@@ -494,7 +495,7 @@ export class CommerceService {
       }
     }
 
-    return { id, slug };
+    return { id, slug, sku };
   }
 
   private slugifyNome(nome: string): string {
@@ -728,6 +729,43 @@ export class CommerceService {
         availableQuantity: qty,
         unitsProduced: nextUnits,
       },
+    });
+  }
+
+  /**
+   * Baixa estoque vendável (`availableQuantity`) por linha de checkout.
+   * Transação atómica; falha se alguma linha não estiver PUBLISHED ou sem estoque.
+   */
+  async reserveCheckoutLines(lines: { listing_id: string; quantity: number }[]): Promise<void> {
+    if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
+      throw new BadRequestException('Lista de linhas inválida (máx. 20).');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      for (const row of lines) {
+        const id = typeof row.listing_id === 'string' ? row.listing_id.trim() : '';
+        const q = row.quantity;
+        if (!id) {
+          throw new BadRequestException('listing_id inválido.');
+        }
+        if (!Number.isInteger(q) || q < 1 || q > 99) {
+          throw new BadRequestException('Quantidade inválida.');
+        }
+        const r = await tx.productionAssignment.updateMany({
+          where: {
+            id,
+            status: 'PUBLISHED',
+            availableQuantity: { gte: q },
+          },
+          data: {
+            availableQuantity: { decrement: q },
+          },
+        });
+        if (r.count !== 1) {
+          throw new ConflictException(
+            'Estoque insuficiente ou oferta indisponível para uma das linhas do pedido.',
+          );
+        }
+      }
     });
   }
 

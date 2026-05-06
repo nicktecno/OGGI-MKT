@@ -598,8 +598,6 @@ export function AdminNovaPecaCard({
   const novaSaving = adminActionLoading(pending, pendingScope, novaScope);
   const supplierOptions = useMemo(() => supplierOptionsFromCatalog(supplies), [supplies]);
   const [nome, setNome] = useState("");
-  const [slug, setSlug] = useState("");
-  const [sku, setSku] = useState("");
   const [desc, setDesc] = useState("");
   const [imagensPrep, setImagensPrep] = useState<NovaPecaImagePrep[]>([]);
   const [novaImagemFieldKey, setNovaImagemFieldKey] = useState(0);
@@ -645,7 +643,9 @@ export function AdminNovaPecaCard({
         <CardTitle className="font-serif text-xl">Cadastro da peça (sem preços)</CardTitle>
         <CardDescription className="text-base leading-relaxed">
           Monte o modelo com <strong className="text-foreground">insumos dos fornecedores</strong>, quantidades,
-          descrição, SKU, tamanhos e fotos. <strong className="text-foreground">Não inclui valores</strong> — custos
+          descrição, tamanhos e fotos. O <strong className="text-foreground">SKU</strong> e o{" "}
+          <strong className="text-foreground">slug da URL</strong> são gerados automaticamente a partir do nome ao
+          salvar. <strong className="text-foreground">Não inclui valores</strong> — custos
           dos insumos, taxas e pacote ao cliente ficam na aba <strong className="text-foreground">Preços</strong>. O
           frete B2B entra no total só após atribuir costureira ou aprovar pedido.
           {marketplaceImagesEnabled
@@ -665,10 +665,6 @@ export function AdminNovaPecaCard({
             }));
             if (!nome.trim()) {
               setNovaPecaFormError("Indique o nome da peça.");
-              return;
-            }
-            if (!sku.trim()) {
-              setNovaPecaFormError("Indique o SKU.");
               return;
             }
             if (!desc.trim()) {
@@ -709,15 +705,15 @@ export function AdminNovaPecaCard({
               const result = await createCompositeProductAction(
                 {
                   nome: nome.trim(),
-                  slug: slug.trim() || undefined,
-                  sku: sku.trim(),
                   descricao_curta: desc.trim(),
                   linhas: linhasParsed,
                   variacoes_tamanho,
                 },
                 capa,
               );
-              toast.success("Modelo criado", { description: `Slug: ${result.slug}` });
+              toast.success("Modelo criado", {
+                description: `Slug: ${result.slug} · SKU: ${result.sku}`,
+              });
               if (marketplaceImagesEnabled && imagens.length > 1) {
                 for (let i = 1; i < imagens.length; i++) {
                   const prep = imagens[i];
@@ -735,8 +731,6 @@ export function AdminNovaPecaCard({
                 }
               }
               setNome("");
-              setSlug("");
-              setSku("");
               setDesc("");
               setImagensPrep([]);
               setNovaImagemFieldKey((k) => k + 1);
@@ -760,31 +754,6 @@ export function AdminNovaPecaCard({
                 onChange={(e) => {
                   setNovaPecaFormError(null);
                   setNome(e.target.value);
-                }}
-                disabled={pending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nova-sku">SKU</Label>
-              <Input
-                id="nova-sku"
-                value={sku}
-                onChange={(e) => {
-                  setNovaPecaFormError(null);
-                  setSku(e.target.value);
-                }}
-                disabled={pending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nova-slug">Slug na URL (opcional)</Label>
-              <Input
-                id="nova-slug"
-                placeholder="gerado a partir do nome se vazio"
-                value={slug}
-                onChange={(e) => {
-                  setNovaPecaFormError(null);
-                  setSlug(e.target.value);
                 }}
                 disabled={pending}
               />

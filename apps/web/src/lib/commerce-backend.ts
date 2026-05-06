@@ -798,23 +798,27 @@ function slugifyNomeWeb(nome: string): string {
   return s || `peca-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+/** SKU interno gerado quando o admin não informa um (prefixo MS + sufixo do id `cp-…`). */
+export function autoSkuForNewCompositeProduct(id: string): string {
+  return `MS-${id.slice(3).toUpperCase()}`;
+}
+
 export async function persistCreateCompositeProduct(
   input: {
     nome: string;
     slug?: string;
-    sku: string;
+    /** Se omitido ou vazio, o SKU é gerado no servidor (API ou cookie demo). */
+    sku?: string;
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];
   },
   /** Capa opcional: enviar o `File` da Server Action diretamente no `FormData` (evita reconstruir `File` no Node). */
   coverFile?: File | null,
-): Promise<{ id: string; slug: string }> {
+): Promise<{ id: string; slug: string; sku: string }> {
   const nome = input.nome.trim();
-  const sku = input.sku.trim();
   const desc = input.descricao_curta.trim();
   if (nome.length < 2) throw new Error("Nome muito curto.");
-  if (!sku) throw new Error("SKU é obrigatório.");
   if (desc.length < 4) throw new Error("Descrição muito curta.");
   if (!input.linhas?.length) throw new Error("Inclua pelo menos um insumo.");
   const variacoes_tamanho = normalizeVariacoesTamanho(input.variacoes_tamanho);
@@ -823,10 +827,11 @@ export async function persistCreateCompositeProduct(
   }
 
   if (commerceUsesDatabase()) {
+    const skuTrim = input.sku?.trim();
     const payload = {
       nome,
       slug: input.slug?.trim() || undefined,
-      sku,
+      ...(skuTrim ? { sku: skuTrim } : {}),
       descricao_curta: desc,
       linhas: input.linhas.map((l) => ({
         supply_item_id: l.supply_item_id,
@@ -844,7 +849,12 @@ export async function persistCreateCompositeProduct(
         body: fd,
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      return (await res.json()) as { id: string; slug: string };
+      const created = (await res.json()) as { id: string; slug: string; sku?: string };
+      return {
+        id: created.id,
+        slug: created.slug,
+        sku: created.sku ?? autoSkuForNewCompositeProduct(created.id),
+      };
     }
 
     const res = await internalFetch("/internal/commerce/products", {
@@ -852,7 +862,12 @@ export async function persistCreateCompositeProduct(
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(await readApiError(res));
-    return (await res.json()) as { id: string; slug: string };
+    const created = (await res.json()) as { id: string; slug: string; sku?: string };
+    return {
+      id: created.id,
+      slug: created.slug,
+      sku: created.sku ?? autoSkuForNewCompositeProduct(created.id),
+    };
   }
 
   const state = await getCommerceStateFromCookies();
@@ -884,11 +899,12 @@ export async function persistCreateCompositeProduct(
   }
 
   const id = `cp-${crypto.randomUUID().slice(0, 12)}`;
+  const skuFinal = input.sku?.trim() || autoSkuForNewCompositeProduct(id);
   const product: DemoCompositeProduct = {
     id,
     slug,
     nome,
-    sku,
+    sku: skuFinal,
     descricao_curta: desc,
     linhas,
     executor_fee_planejada: 0,
@@ -910,5 +926,45 @@ export async function persistCreateCompositeProduct(
     ...d,
     addedProducts: [...(d.addedProducts ?? []), product],
   }));
-  return { id, slug };
+  return { id, slug, sku: skuFinal };
+}
+
+export type CheckoutReserveLine = { listing_id: string; quantity: number };
+
+/** Baixa `available_quantity` das ofertas (cookie demo ou API Nest). */
+export async function persistCheckoutReserve(lines: CheckoutReserveLine[]): Promise<void> {
+  if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
+    throw new Error("Lista de linhas inválida.");
+  }
+  if (commerceUsesDatabase()) {
+    const res = await internalFetch("/internal/commerce/checkout/reserve", {
+      method: "POST",
+      body: JSON.stringify({ lines }),
+    });
+    if (!res.ok) throw new Error(await readApiError(res));
+    return;
+  }
+  const state = await getCommerceStateFromCookies();
+  const next = structuredClone(state.productionAssignments);
+  for (const row of lines) {
+    const id = typeof row.listing_id === "string" ? row.listing_id.trim() : "";
+    const q = row.quantity;
+    if (!id || !Number.isInteger(q) || q < 1 || q > 99) {
+      throw new Error("Dados de reserva inválidos.");
+    }
+    const idx = next.findIndex((a) => a.id === id);
+    if (idx === -1) throw new Error("Oferta não encontrada.");
+    const a = next[idx]!;
+    if (a.status !== "PUBLISHED") {
+      throw new Error("Uma das ofertas não está mais publicada.");
+    }
+    if (a.available_quantity < q) {
+      throw new Error("Estoque insuficiente para concluir o pedido.");
+    }
+    next[idx] = { ...a, available_quantity: a.available_quantity - q };
+  }
+  await updateCommerceDelta((d) => ({
+    ...d,
+    assignments: next,
+  }));
 }

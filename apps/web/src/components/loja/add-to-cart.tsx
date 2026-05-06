@@ -73,7 +73,8 @@ export function AddToCartActions({ item, className }: Props) {
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          No checkout você entra ou usa uma conta demo; o pedido fica vinculado à sessão.
+          No checkout você informa entrega, revisa o carrinho e paga (Stripe teste) ou confirma em modo
+          demo — com conta cliente e estoque atualizado no servidor.
         </p>
       )}
     </div>

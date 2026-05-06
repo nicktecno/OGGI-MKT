@@ -35,4 +35,5 @@ export {
   persistRejectExecutionRequest,
   persistSetProductActive,
   persistSetProductAdminPaused,
+  persistCheckoutReserve,
 } from "./commerce-backend";

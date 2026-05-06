@@ -35,7 +35,7 @@ export default async function CheckoutPage() {
         <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Checkout</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
           {session
-            ? `Olá, ${session.name ?? session.email}. Confirme o resumo e finalize o pedido demo.`
+            ? `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, revise o carrinho e escolha pagamento com Stripe (teste) ou confirmação demo.`
             : "Faça login para vincular este carrinho à sua conta. Novo por aqui? Use a conta cliente demo indicada ao lado do formulário."}
         </p>
       </header>

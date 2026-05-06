@@ -98,18 +98,6 @@ export default async function HomePage() {
               >
                 Ver ofertas em destaque
               </Link>
-              <Link href="/loja" className={cn(buttonVariants({ variant: "outline", size: "xl" }), "min-w-[11rem] justify-center border-foreground/15 bg-background/40 backdrop-blur-sm hover:bg-background/70")}>
-                Vitrine completa
-              </Link>
-              <Link
-                href="/entrar"
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "xl" }),
-                  "min-w-[10rem] justify-center text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Entrar
-              </Link>
             </div>
           </div>
         </div>

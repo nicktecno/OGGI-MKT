@@ -55,7 +55,8 @@ export async function createCompositeProductAction(
   input: {
     nome: string;
     slug?: string;
-    sku: string;
+    /** Omitido: o servidor gera o SKU automaticamente. */
+    sku?: string;
     descricao_curta: string;
     linhas: { supply_item_id: string; quantidade: number }[];
     variacoes_tamanho: string[];

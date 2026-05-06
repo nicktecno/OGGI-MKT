@@ -37,7 +37,7 @@ export class CommerceInternalController {
     body: {
       nome: string;
       slug?: string;
-      sku: string;
+      sku?: string;
       descricao_curta: string;
       linhas: { supply_item_id: string; quantidade: number }[];
       variacoes_tamanho: string[];
@@ -72,7 +72,7 @@ export class CommerceInternalController {
     let body: {
       nome: string;
       slug?: string;
-      sku: string;
+      sku?: string;
       descricao_curta: string;
       linhas: { supply_item_id: string; quantidade: number }[];
       variacoes_tamanho: string[];
@@ -215,5 +215,14 @@ export class CommerceInternalController {
     @Body() body: { available_quantity: number },
   ) {
     return this.commerce.publishAssignment(id, body);
+  }
+
+  /** Reserva estoque após checkout (demo ou pós-pagamento Stripe). */
+  @Post('checkout/reserve')
+  async reserveCheckout(
+    @Body() body: { lines: { listing_id: string; quantity: number }[] },
+  ) {
+    await this.commerce.reserveCheckoutLines(body?.lines ?? []);
+    return { ok: true as const };
   }
 }
