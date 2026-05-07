@@ -812,6 +812,50 @@ export class CommerceService {
   }
 
   /**
+   * Frete B2B insumos já embutido em `precoVendaPublico` (por unidade) × quantidade — útil para metadata
+   * de pagamento e repasse Connect (fica com a plataforma; ver decisões de produto).
+   */
+  async checkoutFreteInsumosBreakdown(
+    lines: { listing_id: string; quantity: number }[],
+  ): Promise<{
+    total_frete_insumos_brl: number;
+    lines: { listing_id: string; frete_insumos_brl: number }[];
+  }> {
+    if (!Array.isArray(lines) || lines.length === 0 || lines.length > 20) {
+      throw new BadRequestException('Lista de linhas inválida.');
+    }
+    let sum = 0;
+    const out: { listing_id: string; frete_insumos_brl: number }[] = [];
+    for (const row of lines) {
+      const listingId = String(row.listing_id ?? '').trim();
+      const q = row.quantity;
+      if (!listingId || !Number.isInteger(q) || q < 1 || q > 99) {
+        throw new BadRequestException('Linha de carrinho inválida.');
+      }
+      const assignment = await this.prisma.productionAssignment.findUnique({
+        where: { id: listingId },
+      });
+      if (!assignment || assignment.status !== 'PUBLISHED') {
+        throw new NotFoundException('Oferta não disponível.');
+      }
+      const product = await this.prisma.compositeProduct.findUnique({
+        where: { id: assignment.compositeProductId },
+      });
+      if (!product || !product.ativo || product.adminPausado) {
+        throw new NotFoundException('Produto não disponível.');
+      }
+      const perUnit = Math.max(0, product.freteInsumosAtribuicaoReais ?? 0);
+      const lineFrete = Math.round(perUnit * q * 100) / 100;
+      sum += lineFrete;
+      out.push({ listing_id: listingId, frete_insumos_brl: lineFrete });
+    }
+    return {
+      total_frete_insumos_brl: Math.round(sum * 100) / 100,
+      lines: out,
+    };
+  }
+
+  /**
    * Baixa estoque vendável (`availableQuantity`) por linha de checkout.
    * Transação atómica; falha se alguma linha não estiver PUBLISHED ou sem estoque.
    * Opcionalmente grava pedido na loja (cliente) com linhas a partir do catálogo.

@@ -5,6 +5,7 @@ import { resolvePublicRedirectOrigin } from "@/lib/public-redirect-origin";
 import { getStripeServer } from "@/lib/stripe-server";
 import {
   commerceUsesDatabase,
+  fetchCheckoutFreteInsumosBreakdownPublic,
   fetchCheckoutShippingQuotePublic,
   getCommerceState,
 } from "@/lib/commerce-backend";
@@ -104,6 +105,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
+  /** Componente de frete insumo→costureira embutido no preço (para split Connect: fica na plataforma). */
+  let freteInsumosTotalBrl: number | undefined;
+  try {
+    if (commerceUsesDatabase()) {
+      freteInsumosTotalBrl = (
+        await fetchCheckoutFreteInsumosBreakdownPublic(reserveLines)
+      ).total_frete_insumos_brl;
+    }
+  } catch {
+    /* metadata opcional; não bloqueia checkout */
+  }
+
   const lineItems = lines.map((l) => ({
     quantity: l.quantity,
     price_data: {
@@ -153,13 +166,21 @@ export async function POST(req: Request) {
         customer_email: session.email,
         cep_destino: cepDestino,
         shipping_brl: String(freightBrl),
+        ...(freteInsumosTotalBrl !== undefined
+          ? { frete_insumos_total_brl: String(freteInsumosTotalBrl) }
+          : {}),
         listing_ids: lines
           .map((l) => l.listingId)
           .join(",")
           .slice(0, 450),
       },
       payment_intent_data: {
-        metadata: { customer_email: session.email },
+        metadata: {
+          customer_email: session.email,
+          ...(freteInsumosTotalBrl !== undefined
+            ? { frete_insumos_total_brl: String(freteInsumosTotalBrl) }
+            : {}),
+        },
       },
     });
     if (!checkoutSession.url) {

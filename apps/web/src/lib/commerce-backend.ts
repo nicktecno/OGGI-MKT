@@ -90,6 +90,49 @@ export async function fetchCheckoutShippingQuotePublic(
   return { total_frete_brl: json.total_frete_brl, lines: json.lines };
 }
 
+/** Frete B2B insumos embutido no preço (× quantidade), por linha — alinha repasse Connect à decisão de produto #12. */
+export async function fetchCheckoutFreteInsumosBreakdownPublic(
+  lines: { listing_id: string; quantity: number }[],
+): Promise<{
+  total_frete_insumos_brl: number;
+  lines: { listing_id: string; frete_insumos_brl: number }[];
+}> {
+  const base = serverApiUrl().trim().replace(/\/$/, "");
+  if (!base) {
+    throw new Error("Defina COMMERCE_API_URL.");
+  }
+  const res = await fetch(`${base}/public/commerce/frete-insumos-breakdown`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ lines }),
+    cache: "no-store",
+  });
+  const text = await res.text();
+  let json: {
+    total_frete_insumos_brl?: number;
+    lines?: { listing_id: string; frete_insumos_brl: number }[];
+    message?: string | string[];
+  };
+  try {
+    json = JSON.parse(text) as typeof json;
+  } catch {
+    throw new Error(text || `Erro ${res.status}`);
+  }
+  if (!res.ok) {
+    const m = json.message;
+    const msg =
+      typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : text || `Erro ${res.status}`;
+    throw new Error(msg);
+  }
+  if (typeof json.total_frete_insumos_brl !== "number" || !Array.isArray(json.lines)) {
+    throw new Error("Resposta inválida.");
+  }
+  return {
+    total_frete_insumos_brl: json.total_frete_insumos_brl,
+    lines: json.lines,
+  };
+}
+
 export async function readApiError(res: Response): Promise<string> {
   try {
     const j = (await res.json()) as { message?: string | string[] };

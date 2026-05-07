@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CommerceService } from './commerce.service';
+import { CheckoutFreteInsumosDto } from './dto/checkout-frete-insumos.dto';
 import { CheckoutShippingQuoteDto } from './dto/checkout-shipping-quote.dto';
 
 @Controller('public/commerce')
@@ -12,5 +13,12 @@ export class CommercePublicController {
   @Post('shipping-quote')
   shippingQuote(@Body() body: CheckoutShippingQuoteDto) {
     return this.commerce.checkoutShippingQuote(body.cep_destino, body.lines);
+  }
+
+  /** Total de frete fornecedor→costureira embutido no preço (por linha do carrinho) — repasse Connect / auditoria. */
+  @Throttle({ default: { limit: 45, ttl: 60_000 } })
+  @Post('frete-insumos-breakdown')
+  freteInsumosBreakdown(@Body() body: CheckoutFreteInsumosDto) {
+    return this.commerce.checkoutFreteInsumosBreakdown(body.lines);
   }
 }
