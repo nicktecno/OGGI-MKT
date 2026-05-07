@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Administração",
 };
 
+/** Catálogo e estado vêm da API com `no-store`; evita erro de “Dynamic server usage” no build. */
+export const dynamic = "force-dynamic";
+
 export default function AdminPainelLayout({ children }: { children: React.ReactNode }) {
   const apiOn = commerceUsesDatabase();
   const persistenceCopy = apiOn
