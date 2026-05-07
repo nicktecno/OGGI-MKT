@@ -23,6 +23,7 @@ import { SITE_NAME } from "@/lib/site";
 import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fields";
 import { capTaxIdDigits, stripTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
+import { trackSignUp } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type RoleChoice = "SUPPLIER" | "EXECUTOR";
@@ -126,6 +127,15 @@ export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
         setError(data.error ?? "Não foi possível cadastrar");
         return;
       }
+      trackSignUp({
+        method: "email",
+        role:
+          accountPath === "CUSTOMER"
+            ? "customer"
+            : role === "SUPPLIER"
+              ? "supplier"
+              : "executor",
+      });
       router.push(
         accountPath === "CUSTOMER" ? "/entrar?cadastro=cliente" : "/entrar?cadastro=pendente",
       );

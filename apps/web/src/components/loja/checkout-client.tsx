@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { confirmCheckoutDemoAction } from "@/app/(public)/checkout/checkout-actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import {
 import type { CartState } from "@/lib/cart-types";
 import type { Role } from "@/lib/auth-types";
 import { CART_CHANGED_EVENT, cartTotal, clearCart, readCart } from "@/lib/cart-storage";
+import { trackBeginCheckout } from "@/lib/analytics";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import { cn, formatBrl } from "@/lib/utils";
 
@@ -74,6 +75,7 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
   } | null>(null);
   const [payQuoteLoading, setPayQuoteLoading] = useState(false);
   const [payQuoteError, setPayQuoteError] = useState<string | null>(null);
+  const beginCheckoutReported = useRef(false);
 
   const cartFingerprint = useMemo(
     () => cart.lines.map((l) => `${l.listingId}:${l.quantity}`).join("|"),
@@ -101,6 +103,25 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
       setPayQuoteError(null);
     }
   }, [session]);
+
+  useEffect(() => {
+    if (step === "address") beginCheckoutReported.current = false;
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== "pay" || !payTotals || cart.lines.length === 0) return;
+    if (beginCheckoutReported.current) return;
+    beginCheckoutReported.current = true;
+    trackBeginCheckout({
+      value: payTotals.total,
+      items: cart.lines.map((l) => ({
+        item_id: l.listingId,
+        item_name: l.productName,
+        price: l.unitPrice,
+        quantity: l.quantity,
+      })),
+    });
+  }, [step, payTotals, cart.lines]);
 
   useEffect(() => {
     if (step !== "pay" || !session || cart.lines.length === 0) return;

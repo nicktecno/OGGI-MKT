@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { trackAddToCart } from "@/lib/analytics";
 import { addOrMergeLine } from "@/lib/cart-storage";
 import { cn } from "@/lib/utils";
 
@@ -30,12 +31,26 @@ export function AddToCartActions({ item, className }: Props) {
   function add(qty: number) {
     if (soldOut) return;
     addOrMergeLine({ ...item, quantity: qty });
+    trackAddToCart({
+      listingId: item.listingId,
+      productName: item.productName,
+      productSlug: item.productSlug,
+      price: item.unitPrice,
+      quantity: qty,
+    });
     setHint("Adicionado ao carrinho.");
   }
 
   function buyNow() {
     if (soldOut) return;
     addOrMergeLine({ ...item, quantity: 1 });
+    trackAddToCart({
+      listingId: item.listingId,
+      productName: item.productName,
+      productSlug: item.productSlug,
+      price: item.unitPrice,
+      quantity: 1,
+    });
     router.push("/checkout");
   }
 

@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LottieLoading } from "@/components/ui/lottie-loading";
+import { trackGenerateLead } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 export function ContactForm() {
@@ -44,6 +45,7 @@ export function ContactForm() {
         setError(data.error ?? "Não foi possível enviar.");
         return;
       }
+      trackGenerateLead({ method: "contact_form" });
       setSuccess(true);
       setMessage("");
       setSubject("");

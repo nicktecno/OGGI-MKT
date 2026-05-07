@@ -7,6 +7,7 @@ import {
   getSiteUrl,
 } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
+import { Analytics } from "@/components/analytics/analytics";
 import { SonnerToaster } from "@/components/ui/sonner-toaster";
 import "./globals.css";
 
@@ -97,6 +98,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} min-h-screen font-sans text-base text-foreground antialiased selection:bg-accent/20 selection:text-foreground`}
       >
         <SonnerToaster />
+        <Analytics />
         {children}
       </body>
     </html>

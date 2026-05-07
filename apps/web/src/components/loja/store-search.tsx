@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trackSearch } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type StoreSearchProps = {
@@ -26,6 +27,7 @@ export function StoreSearch({
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const q = String(fd.get("q") ?? "").trim();
+    if (q) trackSearch(q);
     const url = q ? `/loja?q=${encodeURIComponent(q)}` : "/loja";
     router.push(url);
   }

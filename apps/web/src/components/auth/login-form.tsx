@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackLogin } from "@/lib/analytics";
 import { SITE_NAME } from "@/lib/site";
 
 type LoginFormProps = {
@@ -42,6 +43,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         setError(data.error ?? "Não foi possível entrar");
         return;
       }
+      trackLogin({ method: "email" });
       window.location.assign(data.redirect ?? "/");
     } catch {
       setError("Erro de rede. Tente novamente.");

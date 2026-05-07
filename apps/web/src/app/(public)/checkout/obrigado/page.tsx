@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { CheckoutPurchaseAnalytics } from "@/components/analytics/checkout-purchase-analytics";
 import { CheckoutClearAfterPayment } from "@/components/loja/checkout-clear-after-payment";
 import { buttonVariants } from "@/components/ui/button";
 import { finalizeStripePaidCheckoutInventory } from "@/lib/stripe-checkout-finalize";
@@ -40,13 +41,15 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
 
   let paid = false;
   let amountDisplay: string | null = null;
+  let valueBrl: number | null = null;
   try {
     const s = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items"],
     });
     paid = s.payment_status === "paid";
     if (typeof s.amount_total === "number" && s.amount_total > 0) {
-      amountDisplay = (s.amount_total / 100).toLocaleString("pt-BR", {
+      valueBrl = s.amount_total / 100;
+      amountDisplay = valueBrl.toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL",
       });
@@ -68,6 +71,7 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
+      <CheckoutPurchaseAnalytics paid={paid} transactionId={sessionId} valueBrl={valueBrl} />
       {paid ? (
         <>
           <CheckoutClearAfterPayment />

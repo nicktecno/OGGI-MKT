@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ProductViewAnalytics } from "@/components/analytics/product-view-analytics";
 import { AddToCartActions } from "@/components/loja/add-to-cart";
 import { ProductShippingQuote } from "@/components/loja/product-shipping-quote";
 import { ProductPageGallery } from "@/components/loja/product-page-gallery";
@@ -105,6 +106,11 @@ export default async function ProdutoLojaPage({ params }: Props) {
       </div>
 
       <article className="mx-auto max-w-6xl px-6 py-12">
+        <ProductViewAnalytics
+          listingId={listing.id}
+          productName={product.nome}
+          price={product.preco_venda_publico}
+        />
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
           <div className="space-y-4">
             <ProductPageGallery productName={product.nome} imageUrls={galleryUrls} />
