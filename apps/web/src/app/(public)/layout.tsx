@@ -1,3 +1,4 @@
+import { LayoutDashboard, LogIn, Mail, Store } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SiteJsonLd } from "@/components/seo/site-json-ld";
@@ -44,27 +45,51 @@ export default async function PublicLayout({ children }: { children: React.React
               <HeaderStoreSearch />
             </Suspense>
           </div>
-          <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-8 md:gap-x-10">
+          <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-3 min-[1000px]:gap-x-10">
             <Link
               href="/loja"
-              className="shrink-0 text-[0.8125rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
+              title="Loja"
+              aria-label="Loja"
+              className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-accent sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
             >
-              Loja
+              <Store
+                className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
+                aria-hidden
+              />
+              <span className="inline text-[0.8125rem] font-semibold uppercase tracking-[0.18em] sm:hidden min-[1000px]:inline">
+                Loja
+              </span>
             </Link>
             <Link
               href="/contato"
-              className="shrink-0 text-[0.8125rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
+              title="Contato"
+              aria-label="Contato"
+              className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-accent sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
             >
-              Contato
+              <Mail
+                className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
+                aria-hidden
+              />
+              <span className="inline text-[0.8125rem] font-semibold uppercase tracking-[0.18em] sm:hidden min-[1000px]:inline">
+                Contato
+              </span>
             </Link>
             <HeaderCartLink />
             {session && userInHeader ? (
               <>
                 <Link
                   href={dashboardPathForRole(session.role)}
-                  className="shrink-0 text-[0.8125rem] font-medium uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+                  title="Painel"
+                  aria-label="Painel"
+                  className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
                 >
-                  Painel
+                  <LayoutDashboard
+                    className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
+                    aria-hidden
+                  />
+                  <span className="inline text-[0.8125rem] font-medium uppercase tracking-[0.16em] sm:hidden min-[1000px]:inline">
+                    Painel
+                  </span>
                 </Link>
                 <span
                   className="hidden max-w-[10rem] shrink-0 truncate text-xs text-muted-foreground/90 lg:inline"
@@ -77,12 +102,19 @@ export default async function PublicLayout({ children }: { children: React.React
             ) : (
               <Link
                 href="/entrar"
+                title="Entrar"
+                aria-label="Entrar"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "default" }),
-                  "shrink-0 rounded-full px-6 text-xs font-medium uppercase tracking-[0.14em]",
+                  "inline-flex h-auto w-auto shrink-0 items-center justify-center rounded-full px-6 sm:h-9 sm:w-9 sm:px-0 min-[1000px]:h-auto min-[1000px]:w-auto min-[1000px]:px-6",
+                  "text-xs font-medium uppercase tracking-[0.14em]",
                 )}
               >
-                Entrar
+                <LogIn
+                  className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
+                  aria-hidden
+                />
+                <span className="inline sm:hidden min-[1000px]:inline">Entrar</span>
               </Link>
             )}
           </nav>
