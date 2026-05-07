@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,26 +29,11 @@ export function LogoutButton({ className }: LogoutButtonProps) {
       type="button"
       variant="outline"
       size="default"
-      title="Sair"
-      aria-label={loading ? "A sair…" : "Sair"}
-      className={cn(
-        "max-[999px]:h-9 max-[999px]:w-9 max-[999px]:shrink-0 max-[999px]:rounded-full max-[999px]:p-0",
-        className,
-      )}
+      className={cn(className)}
       onClick={logout}
       disabled={loading}
     >
-      {loading ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin min-[1000px]:hidden" aria-hidden />
-          <span className="hidden min-[1000px]:inline">Saindo…</span>
-        </>
-      ) : (
-        <>
-          <LogOut className="h-4 w-4 min-[1000px]:hidden" aria-hidden />
-          <span className="max-[999px]:sr-only">Sair</span>
-        </>
-      )}
+      {loading ? "Saindo…" : "Sair"}
     </Button>
   );
 }
