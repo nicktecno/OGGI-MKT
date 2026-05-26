@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoadingFallback } from "@/components/ui/page-loading-fallback";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { PainelSessionBadge } from "@/components/painel/painel-session-badge";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
@@ -35,9 +36,14 @@ export default async function PainelLayout({ children }: { children: React.React
             accountStatus={session.accountStatus}
           />
         </div>
-        <Suspense fallback={<PainelAsideLoadingFallback />}>
-          <PainelSidebarWithNavCounts role={session.role} painelHome={painelHome} />
-        </Suspense>
+        <div className="flex flex-1 flex-col gap-4 md:min-h-0">
+          <Suspense fallback={<PainelAsideLoadingFallback />}>
+            <PainelSidebarWithNavCounts role={session.role} painelHome={painelHome} />
+          </Suspense>
+          <div className="mt-auto pt-2 md:pb-1">
+            <LogoutButton variant="panel" />
+          </div>
+        </div>
       </aside>
       <div className="flex-1 bg-gradient-to-br from-background via-background to-muted/25">
         <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">

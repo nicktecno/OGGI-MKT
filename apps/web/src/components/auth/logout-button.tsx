@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 
 type LogoutButtonProps = {
   className?: string;
+  /** `panel`: largura total na barra lateral do painel; `header`: comportamento responsivo do site. */
+  variant?: "header" | "panel";
 };
 
-/** Texto em &lt;sm e ≥1000px; ícone entre sm e 999px. */
-export function LogoutButton({ className }: LogoutButtonProps) {
+/** Texto em &lt;sm e ≥1000px; ícone entre sm e 999px (variante header). */
+export function LogoutButton({ className, variant = "header" }: LogoutButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -26,15 +28,19 @@ export function LogoutButton({ className }: LogoutButtonProps) {
     }
   }
 
+  const isPanel = variant === "panel";
+
   return (
     <Button
       type="button"
-      variant="outline"
+      variant={isPanel ? "ghost" : "outline"}
       size="default"
       title="Sair"
       aria-label={loading ? "A sair…" : "Sair"}
       className={cn(
-        "shrink-0 sm:h-9 sm:w-9 sm:rounded-full sm:p-0 min-[1000px]:h-auto min-[1000px]:w-auto min-[1000px]:px-5 min-[1000px]:py-2",
+        isPanel
+          ? "h-auto w-full justify-start gap-2 rounded-md border border-border/50 bg-muted/35 py-2.5 pl-2.5 pr-3 text-sm font-medium text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-background hover:text-foreground dark:bg-muted/25"
+          : "shrink-0 sm:h-9 sm:w-9 sm:rounded-full sm:p-0 min-[1000px]:h-auto min-[1000px]:w-auto min-[1000px]:px-5 min-[1000px]:py-2",
         className,
       )}
       onClick={logout}
@@ -42,13 +48,19 @@ export function LogoutButton({ className }: LogoutButtonProps) {
     >
       {loading ? (
         <>
-          <Loader2 className="hidden h-4 w-4 animate-spin sm:inline min-[1000px]:hidden" aria-hidden />
-          <span className="inline sm:hidden min-[1000px]:inline">Saindo…</span>
+          <Loader2
+            className={cn("h-4 w-4 animate-spin", !isPanel && "hidden sm:inline min-[1000px]:hidden")}
+            aria-hidden
+          />
+          <span className={cn(!isPanel && "inline sm:hidden min-[1000px]:inline")}>Saindo…</span>
         </>
       ) : (
         <>
-          <LogOut className="hidden h-4 w-4 sm:inline min-[1000px]:hidden" aria-hidden />
-          <span className="inline sm:hidden min-[1000px]:inline">Sair</span>
+          <LogOut
+            className={cn("h-4 w-4 shrink-0", !isPanel && "hidden sm:inline min-[1000px]:hidden")}
+            aria-hidden
+          />
+          <span className={cn(!isPanel && "inline sm:hidden min-[1000px]:inline")}>Sair</span>
         </>
       )}
     </Button>
