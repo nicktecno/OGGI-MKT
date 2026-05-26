@@ -8,7 +8,6 @@ import {
   notifyStoreOrderCompleted,
   persistCheckoutReserve,
 } from "@/lib/commerce-backend";
-import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
 import { cartLineLabel } from "@/lib/cart-line-label";
 import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
@@ -62,17 +61,15 @@ export async function confirmCheckoutDemoAction(
 
   let freightBrl = 0;
   try {
-    if (commerceUsesDatabase()) {
-      freightBrl = (
-        await fetchCheckoutShippingQuotePublic(deliveryNorm.cep, validated.reserveLines)
-      ).total_frete_brl;
-    } else {
-      freightBrl = quoteCheckoutShippingFromState(
-        state,
-        validated.reserveLines,
-        deliveryNorm.cep,
-      ).total_frete_brl;
+    if (!commerceUsesDatabase()) {
+      return {
+        ok: false,
+        error: "Cotação de frete exige API configurada (COMMERCE_API_URL) e Melhor Envio.",
+      };
     }
+    freightBrl = (
+      await fetchCheckoutShippingQuotePublic(deliveryNorm.cep, validated.reserveLines)
+    ).total_frete_brl;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Não foi possível cotar o frete.";
     return { ok: false, error: msg };

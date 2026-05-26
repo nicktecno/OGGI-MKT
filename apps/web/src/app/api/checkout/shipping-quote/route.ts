@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import {
   commerceUsesDatabase,
   fetchCheckoutShippingQuotePublic,
-  getCommerceState,
 } from "@/lib/commerce-backend";
-import {
-  isMelhorEnvioFreightFailureMessage,
-  quoteCheckoutShippingFromState,
-} from "@/lib/checkout-shipping-quote";
 
 export async function POST(req: Request) {
   let body: { cep_destino?: string; lines?: { listing_id: string; quantity: number }[] };
@@ -23,21 +18,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Informe o carrinho." }, { status: 400 });
   }
 
+  if (!commerceUsesDatabase()) {
+    return NextResponse.json(
+      {
+        message:
+          "Cotação de frete exige API configurada (COMMERCE_API_URL) e Melhor Envio autorizado.",
+      },
+      { status: 503 },
+    );
+  }
+
   try {
-    if (commerceUsesDatabase()) {
-      try {
-        const q = await fetchCheckoutShippingQuotePublic(cep, lines);
-        return NextResponse.json(q);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (!isMelhorEnvioFreightFailureMessage(msg)) throw e;
-        const state = await getCommerceState();
-        const q = quoteCheckoutShippingFromState(state, lines, cep);
-        return NextResponse.json(q);
-      }
-    }
-    const state = await getCommerceState();
-    const q = quoteCheckoutShippingFromState(state, lines, cep);
+    const q = await fetchCheckoutShippingQuotePublic(cep, lines);
     return NextResponse.json(q);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro ao cotar frete.";

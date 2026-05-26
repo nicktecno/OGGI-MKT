@@ -8,9 +8,7 @@ import {
   commerceUsesDatabase,
   fetchCheckoutFreteInsumosBreakdownPublic,
   fetchCheckoutShippingQuotePublic,
-  getCommerceState,
 } from "@/lib/commerce-backend";
-import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
 
 const MAX_LINES = 20;
 
@@ -96,12 +94,13 @@ export async function POST(req: Request) {
   const reserveLines = lines.map((l) => ({ listing_id: l.listingId, quantity: l.quantity }));
   let freightBrl = 0;
   try {
-    if (commerceUsesDatabase()) {
-      freightBrl = (await fetchCheckoutShippingQuotePublic(cepDestino, reserveLines)).total_frete_brl;
-    } else {
-      const state = await getCommerceState();
-      freightBrl = quoteCheckoutShippingFromState(state, reserveLines, cepDestino).total_frete_brl;
+    if (!commerceUsesDatabase()) {
+      return NextResponse.json(
+        { error: "Cotação de frete exige API configurada (COMMERCE_API_URL) e Melhor Envio." },
+        { status: 503 },
+      );
     }
+    freightBrl = (await fetchCheckoutShippingQuotePublic(cepDestino, reserveLines)).total_frete_brl;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Não foi possível cotar o frete.";
     return NextResponse.json({ error: msg }, { status: 400 });

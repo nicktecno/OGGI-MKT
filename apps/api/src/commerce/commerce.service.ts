@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
@@ -13,7 +14,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { marketplaceUploadContentType } from '../storage/marketplace-upload-mime';
 import { MelhorEnvioService } from '../melhor-envio/melhor-envio.service';
 import { R2StorageService } from '../storage/r2-storage.service';
-import { stubFreteB2B } from '../supply/package-shipping.util';
 import { SupplierFulfillmentService } from '../supply/supplier-fulfillment.service';
 
 /** Resposta alinhada a `DemoCommerceState` do app web (snake_case). */
@@ -736,8 +736,7 @@ export class CommerceService {
   }
 
   /**
-   * Frete B2C estimado: CEP da oferta (postagem) → CEP do cliente.
-   * Mesma estimativa stub que o B2B até integrar Melhor Envio no checkout.
+   * Frete B2C: CEP da oferta (postagem) → CEP do cliente via Melhor Envio.
    */
   async checkoutShippingQuote(
     cepDestinoRaw: string,
@@ -745,8 +744,6 @@ export class CommerceService {
   ): Promise<{
     total_frete_brl: number;
     lines: { listing_id: string; frete_brl: number }[];
-    /** true quando usou estimativa interna (Melhor Envio indisponível ou falhou). */
-    freight_estimated?: boolean;
   }> {
     const cepDest = cepDestinoRaw.replace(/\D/g, '').slice(0, 8);
     if (cepDest.length !== 8) {
@@ -756,8 +753,11 @@ export class CommerceService {
       throw new BadRequestException('Lista de linhas inválida.');
     }
     const useMelhorEnvio = await this.melhorEnvio.hasShippingCredentials();
-    const strictMelhorEnvio = process.env.MELHOR_ENVIO_CHECKOUT_STRICT === 'true';
-    let freightEstimated = false;
+    if (!useMelhorEnvio) {
+      throw new ServiceUnavailableException(
+        'Cotação de frete indisponível: configure Melhor Envio (OAuth ou MELHOR_ENVIO_ACCESS_TOKEN).',
+      );
+    }
     let total = 0;
     const out: { listing_id: string; frete_brl: number }[] = [];
     for (const row of lines) {
@@ -786,58 +786,28 @@ export class CommerceService {
         pesoKg: Math.max(0.01, product.pacotePesoKg) * q,
       };
       let frete: number;
-      if (useMelhorEnvio) {
-        try {
-          frete = await this.melhorEnvio.quoteCheapestProductShipping({
-            fromPostalCode: cepOrig,
-            toPostalCode: cepDest,
-            productId: `${listingId}-${product.slug}`,
-            widthCm: pack.larguraCm,
-            heightCm: pack.alturaCm,
-            lengthCm: pack.comprimentoCm,
-            weightKg: Math.max(0.01, product.pacotePesoKg),
-            insuranceValueBrl: product.precoVendaPublico * q,
-            quantity: q,
-          });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          if (strictMelhorEnvio) {
-            this.log.warn(`Melhor Envio falhou para linha ${listingId}: ${msg}`);
-            throw e;
-          }
-          this.log.warn(
-            `Melhor Envio falhou para linha ${listingId}, usando estimativa de frete: ${msg}`,
-          );
-          frete = stubFreteB2B({
-            cepOrigem: cepOrig,
-            cepDestino: cepDest,
-            alturaCm: pack.alturaCm,
-            larguraCm: pack.larguraCm,
-            comprimentoCm: pack.comprimentoCm,
-            pesoKg: pack.pesoKg,
-          });
-          freightEstimated = true;
-        }
-      } else {
-        frete = stubFreteB2B({
-          cepOrigem: cepOrig,
-          cepDestino: cepDest,
-          alturaCm: pack.alturaCm,
-          larguraCm: pack.larguraCm,
-          comprimentoCm: pack.comprimentoCm,
-          pesoKg: pack.pesoKg,
+      try {
+        frete = await this.melhorEnvio.quoteCheapestProductShipping({
+          fromPostalCode: cepOrig,
+          toPostalCode: cepDest,
+          productId: `${listingId}-${product.slug}`,
+          widthCm: pack.larguraCm,
+          heightCm: pack.alturaCm,
+          lengthCm: pack.comprimentoCm,
+          weightKg: Math.max(0.01, product.pacotePesoKg),
+          insuranceValueBrl: product.precoVendaPublico * q,
+          quantity: q,
         });
-        freightEstimated = true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.log.warn(`Melhor Envio falhou para linha ${listingId}: ${msg}`);
+        throw e;
       }
       total += frete;
       out.push({ listing_id: listingId, frete_brl: frete });
     }
     const rounded = Math.round(total * 100) / 100;
-    return {
-      total_frete_brl: rounded,
-      lines: out,
-      ...(freightEstimated ? { freight_estimated: true } : {}),
-    };
+    return { total_frete_brl: rounded, lines: out };
   }
 
   /**

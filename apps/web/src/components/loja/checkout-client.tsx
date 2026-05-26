@@ -81,7 +81,6 @@ export function CheckoutClient({
     subtotal: number;
     freight: number;
     total: number;
-    freightEstimated?: boolean;
   } | null>(null);
   const [payQuoteLoading, setPayQuoteLoading] = useState(false);
   const [payQuoteError, setPayQuoteError] = useState<string | null>(null);
@@ -166,7 +165,6 @@ export function CheckoutClient({
         });
         const data = (await res.json()) as {
           total_frete_brl?: number;
-          freight_estimated?: boolean;
           message?: string;
         };
         if (!res.ok) {
@@ -189,12 +187,7 @@ export function CheckoutClient({
         const freight = data.total_frete_brl;
         const total = Math.round((subtotal + freight) * 100) / 100;
         if (!cancelled) {
-          setPayTotals({
-            subtotal,
-            freight,
-            total,
-            freightEstimated: data.freight_estimated === true,
-          });
+          setPayTotals({ subtotal, freight, total });
           setPayQuoteError(null);
         }
       } catch {
@@ -561,15 +554,9 @@ export function CheckoutClient({
                     <span className="font-mono">{formatBrl(payTotals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Frete estimado</span>
+                    <span className="text-muted-foreground">Frete</span>
                     <span className="font-mono">{formatBrl(payTotals.freight)}</span>
                   </div>
-                  {payTotals.freightEstimated ? (
-                    <p className="text-left text-xs leading-relaxed text-muted-foreground">
-                      Valor calculado por estimativa interna (Melhor Envio não respondeu nesta rota).
-                      O frete final pode ser ajustado após a confirmação do pedido.
-                    </p>
-                  ) : null}
                   <p className="border-t border-border pt-2 font-serif text-xl font-medium">
                     Total {formatBrl(payTotals.total)}
                   </p>

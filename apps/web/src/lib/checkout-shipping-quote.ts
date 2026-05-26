@@ -32,11 +32,7 @@ export function quoteCheckoutShippingFromState(
   state: DemoCommerceState,
   lines: { listing_id: string; quantity: number }[],
   cepDestinoRaw: string,
-): {
-  total_frete_brl: number;
-  lines: CheckoutShippingQuoteLineResult[];
-  freight_estimated?: boolean;
-} {
+): { total_frete_brl: number; lines: CheckoutShippingQuoteLineResult[] } {
   const cepDest = cepDestinoRaw.replace(/\D/g, "").slice(0, 8);
   if (cepDest.length !== 8) {
     throw new Error("CEP de destino inválido.");
@@ -69,21 +65,5 @@ export function quoteCheckoutShippingFromState(
     total += frete;
     out.push({ listing_id: listingId, frete_brl: frete });
   }
-  return {
-    total_frete_brl: Math.round(total * 100) / 100,
-    lines: out,
-    freight_estimated: true,
-  };
-}
-
-/** Falha de cotação ME na API — permite estimativa local no Next. */
-export function isMelhorEnvioFreightFailureMessage(message: string): boolean {
-  const m = message.toLowerCase();
-  return (
-    m.includes("melhor envio") ||
-    m.includes("não cotou") ||
-    m.includes("nao cotou") ||
-    m.includes("não retornou preços") ||
-    m.includes("nao retornou precos")
-  );
+  return { total_frete_brl: Math.round(total * 100) / 100, lines: out };
 }

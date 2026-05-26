@@ -62,7 +62,6 @@ export async function fetchCheckoutShippingQuotePublic(
 ): Promise<{
   total_frete_brl: number;
   lines: { listing_id: string; frete_brl: number }[];
-  freight_estimated?: boolean;
 }> {
   const base = serverApiUrl().trim().replace(/\/$/, "");
   if (!base) {
@@ -96,11 +95,10 @@ export async function fetchCheckoutShippingQuotePublic(
   if (typeof json.total_frete_brl !== "number" || !Array.isArray(json.lines)) {
     throw new Error("Resposta de cotação inválida.");
   }
-  return {
-    total_frete_brl: json.total_frete_brl,
-    lines: json.lines,
-    ...(json.freight_estimated === true ? { freight_estimated: true } : {}),
-  };
+  if (json.freight_estimated === true) {
+    throw new Error("Cotação de frete indisponível. Verifique Melhor Envio e tente novamente.");
+  }
+  return { total_frete_brl: json.total_frete_brl, lines: json.lines };
 }
 
 /** Frete B2B insumos embutido no preço (× quantidade), por linha — alinha repasse Connect à decisão de produto #12. */
