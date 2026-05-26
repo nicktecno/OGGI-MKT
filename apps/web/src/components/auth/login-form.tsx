@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { trackLogin } from "@/lib/analytics";
 import { hideDemoCredentialsUi } from "@/lib/deployment-env";
@@ -87,16 +88,14 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
                 Esqueci minha senha
               </Link>
             </div>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="bg-background"
             />
           </div>
           {error ? (

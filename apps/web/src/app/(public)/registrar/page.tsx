@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { RegisterForm } from "@/components/auth/register-form";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
+import { parseRegisterPartnerPreset } from "@/lib/register-preset";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
 
@@ -10,7 +11,13 @@ export const metadata: Metadata = {
   description: `Cadastre-se como fornecedor de insumos ou executor (costureira) na ${SITE_NAME} e integre a vitrine de moda artesanal.`,
 };
 
-export default function RegistrarPage() {
+type Props = {
+  searchParams: Promise<{ parceiro?: string }>;
+};
+
+export default async function RegistrarPage({ searchParams }: Props) {
+  const { parceiro } = await searchParams;
+  const partnerPreset = parseRegisterPartnerPreset(parceiro);
   const apiEnabled = commerceUsesDatabase();
 
   return (
@@ -38,7 +45,7 @@ export default function RegistrarPage() {
               e a integração servidor-a-servidor ativadas na configuração do deploy.
             </p>
           ) : null}
-          <RegisterForm apiEnabled={apiEnabled} />
+          <RegisterForm apiEnabled={apiEnabled} partnerPreset={partnerPreset} />
         </div>
       </div>
     </div>

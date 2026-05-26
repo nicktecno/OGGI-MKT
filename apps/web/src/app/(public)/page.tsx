@@ -8,6 +8,7 @@ import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
+import { Scissors, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -100,6 +101,83 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section
+        className="border-b border-border/70 bg-gradient-to-b from-muted/30 via-card/40 to-background py-16 md:py-20"
+        aria-labelledby="home-parceiros-heading"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.38em] text-accent">
+              Parceiros
+            </p>
+            <h2
+              id="home-parceiros-heading"
+              className="mt-3 font-serif text-2xl font-medium tracking-tight md:text-3xl"
+            >
+              Você costura ou fornece insumos?
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+              Cadastre-se na {SITE_NAME}, passe pela aprovação da equipe e integre a vitrine — costureiras
+              publicam ofertas; fornecedores cadastram tecidos e materiais.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            <Link
+              href="/registrar?parceiro=costureira"
+              className="group flex flex-col rounded-2xl border border-border/70 bg-card/90 p-6 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-luxury focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Scissors className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="mt-5 font-serif text-xl font-medium tracking-tight text-foreground">
+                Sou costureira
+              </span>
+              <span className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                Ateliê ou produção sob medida: cadastre seu perfil, endereço de postagem e participe das
+                peças aprovadas na loja.
+              </span>
+              <span
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "mt-6 w-full justify-center sm:w-auto sm:self-start",
+                )}
+              >
+                Cadastrar como costureira
+              </span>
+            </Link>
+            <Link
+              href="/registrar?parceiro=fornecedor"
+              className="group flex flex-col rounded-2xl border border-border/70 bg-card/90 p-6 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-luxury focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Truck className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="mt-5 font-serif text-xl font-medium tracking-tight text-foreground">
+                Sou fornecedor de insumos
+              </span>
+              <span className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                Tecidos, aviamentos e materiais: cadastre seus produtos para a equipe montar as peças da
+                vitrine.
+              </span>
+              <span
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "mt-6 w-full justify-center sm:w-auto sm:self-start",
+                )}
+              >
+                Cadastrar como fornecedor
+              </span>
+            </Link>
+          </div>
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Já tem conta?{" "}
+            <Link href="/entrar" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Entrar
+            </Link>
+          </p>
         </div>
       </section>
 

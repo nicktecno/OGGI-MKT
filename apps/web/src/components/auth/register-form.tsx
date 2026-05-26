@@ -24,15 +24,33 @@ import { FiscalDocumentFields } from "@/components/platform/fiscal-document-fiel
 import { capTaxIdDigits, stripTaxIdDigits, type FiscalDocumentKind } from "@/lib/fiscal-document";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import { trackSignUp } from "@/lib/analytics";
+import type { RegisterPartnerPreset } from "@/lib/register-preset";
 import { cn } from "@/lib/utils";
 
 type RoleChoice = "SUPPLIER" | "EXECUTOR";
 type AccountPath = "CUSTOMER" | "PROFESSIONAL";
 
-export function RegisterForm({ apiEnabled }: { apiEnabled: boolean }) {
+function initialAccountPath(preset?: RegisterPartnerPreset): AccountPath {
+  return preset ? "PROFESSIONAL" : "CUSTOMER";
+}
+
+function initialRole(preset?: RegisterPartnerPreset): RoleChoice {
+  return preset === "fornecedor" ? "SUPPLIER" : "EXECUTOR";
+}
+
+export function RegisterForm({
+  apiEnabled,
+  partnerPreset,
+}: {
+  apiEnabled: boolean;
+  /** Vindo de `?parceiro=costureira` ou `?parceiro=fornecedor` na URL. */
+  partnerPreset?: RegisterPartnerPreset;
+}) {
   const router = useRouter();
-  const [accountPath, setAccountPath] = useState<AccountPath>("CUSTOMER");
-  const [role, setRole] = useState<RoleChoice>("EXECUTOR");
+  const [accountPath, setAccountPath] = useState<AccountPath>(() =>
+    initialAccountPath(partnerPreset),
+  );
+  const [role, setRole] = useState<RoleChoice>(() => initialRole(partnerPreset));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
