@@ -46,7 +46,7 @@ export function ProductPageGallery({ productName, imageUrls }: Props) {
 
   if (n === 0) {
     return (
-      <div className="relative flex aspect-[3/4] items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 text-sm text-muted-foreground">
+      <div className="relative mx-auto flex aspect-[3/4] w-full max-w-[17.5rem] items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 text-sm text-muted-foreground sm:max-w-xs lg:mx-0 lg:max-w-sm">
         Sem imagens
       </div>
     );
@@ -54,7 +54,7 @@ export function ProductPageGallery({ productName, imageUrls }: Props) {
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="mx-auto w-full max-w-[17.5rem] space-y-3 sm:max-w-xs lg:mx-0 lg:max-w-sm">
         <div className="group/hero relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-muted/30 shadow-sm">
           <button
             type="button"
@@ -68,7 +68,7 @@ export function ProductPageGallery({ productName, imageUrls }: Props) {
               fill
               priority
               className="object-cover transition-transform duration-300 group-hover/hero:scale-[1.02]"
-              sizes="(max-width: 1024px) 100vw, 55vw"
+              sizes="(max-width: 640px) 280px, 384px"
             />
             <span className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
               <ZoomIn className="h-3.5 w-3.5" />

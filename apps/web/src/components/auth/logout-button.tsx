@@ -4,6 +4,8 @@ import { Loader2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { clearCart } from "@/lib/cart-storage";
+import { clearCheckoutDelivery } from "@/lib/checkout-delivery-storage";
 import { cn } from "@/lib/utils";
 
 type LogoutButtonProps = {
@@ -21,6 +23,8 @@ export function LogoutButton({ className, variant = "header" }: LogoutButtonProp
     setLoading(true);
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      clearCart();
+      clearCheckoutDelivery();
       router.push("/");
       router.refresh();
     } finally {

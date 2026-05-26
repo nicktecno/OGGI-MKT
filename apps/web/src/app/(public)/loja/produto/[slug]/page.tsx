@@ -111,7 +111,7 @@ export default async function ProdutoLojaPage({ params }: Props) {
           productName={product.nome}
           price={product.preco_venda_publico}
         />
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-12">
           <div className="space-y-4">
             <ProductPageGallery productName={product.nome} imageUrls={galleryUrls} />
             <p className="text-xs uppercase tracking-wider text-muted-foreground">

@@ -32,3 +32,8 @@ export function readCheckoutDeliveryComplete(): CheckoutDelivery | null {
   if (!isCheckoutDeliveryComplete(d)) return null;
   return normalizeCheckoutDelivery(d);
 }
+
+export function clearCheckoutDelivery(): void {
+  if (!isBrowser()) return;
+  sessionStorage.removeItem(KEY);
+}
