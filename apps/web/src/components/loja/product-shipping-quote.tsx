@@ -27,6 +27,7 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [freightBrl, setFreightBrl] = useState<number | null>(null);
+  const [freightEstimated, setFreightEstimated] = useState(false);
 
   if (maxQuantity < 1) return null;
 
@@ -41,6 +42,7 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
     setLoading(true);
     setError(null);
     setFreightBrl(null);
+    setFreightEstimated(false);
     try {
       const res = await fetch("/api/checkout/shipping-quote", {
         method: "POST",
@@ -50,7 +52,11 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
           lines: [{ listing_id: listingId, quantity: q }],
         }),
       });
-      const data = (await res.json()) as { total_frete_brl?: number; message?: string };
+      const data = (await res.json()) as {
+        total_frete_brl?: number;
+        freight_estimated?: boolean;
+        message?: string;
+      };
       if (!res.ok) {
         setError(typeof data.message === "string" ? data.message : "Não foi possível calcular o frete.");
         return;
@@ -60,6 +66,7 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
         return;
       }
       setFreightBrl(data.total_frete_brl);
+      setFreightEstimated(data.freight_estimated === true);
     } catch {
       setError("Erro de rede. Tente de novo.");
     } finally {
@@ -115,10 +122,18 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
           </p>
         ) : null}
         {freightBrl !== null ? (
-          <p className="text-sm text-foreground">
-            Frete estimado:{" "}
-            <span className="font-serif text-lg font-medium tabular-nums">{formatBrl(freightBrl)}</span>
-          </p>
+          <div className="space-y-1 text-sm text-foreground">
+            <p>
+              Frete estimado:{" "}
+              <span className="font-serif text-lg font-medium tabular-nums">{formatBrl(freightBrl)}</span>
+            </p>
+            {freightEstimated ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Valor por estimativa interna (a transportadora não retornou cotação para esta rota). O
+                frete final pode ser confirmado ao finalizar a compra.
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <Button type="button" variant="secondary" disabled={loading} onClick={() => void handleQuote()}>
           {loading ? "Calculando…" : "Calcular frete"}

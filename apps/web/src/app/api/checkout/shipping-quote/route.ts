@@ -4,7 +4,10 @@ import {
   fetchCheckoutShippingQuotePublic,
   getCommerceState,
 } from "@/lib/commerce-backend";
-import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
+import {
+  isMelhorEnvioFreightFailureMessage,
+  quoteCheckoutShippingFromState,
+} from "@/lib/checkout-shipping-quote";
 
 export async function POST(req: Request) {
   let body: { cep_destino?: string; lines?: { listing_id: string; quantity: number }[] };
@@ -22,8 +25,16 @@ export async function POST(req: Request) {
 
   try {
     if (commerceUsesDatabase()) {
-      const q = await fetchCheckoutShippingQuotePublic(cep, lines);
-      return NextResponse.json(q);
+      try {
+        const q = await fetchCheckoutShippingQuotePublic(cep, lines);
+        return NextResponse.json(q);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!isMelhorEnvioFreightFailureMessage(msg)) throw e;
+        const state = await getCommerceState();
+        const q = quoteCheckoutShippingFromState(state, lines, cep);
+        return NextResponse.json(q);
+      }
     }
     const state = await getCommerceState();
     const q = quoteCheckoutShippingFromState(state, lines, cep);
