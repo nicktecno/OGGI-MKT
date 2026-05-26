@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { commerceUsesDatabase } from "@/lib/demo-runtime";
+import { serverApiUrl } from "@/lib/server-api-url";
 import { cn } from "@/lib/utils";
+import { AdminMelhorEnvioOAuthBanner } from "./admin-melhor-envio-oauth-banner";
 import { AdminSectionFallback } from "./admin-section-fallback";
 
 export const metadata: Metadata = {
@@ -13,6 +15,10 @@ export const dynamic = "force-dynamic";
 
 export default function AdminPainelLayout({ children }: { children: React.ReactNode }) {
   const apiOn = commerceUsesDatabase();
+  const apiBase = serverApiUrl();
+  const melhorEnvioOAuthStartUrl = apiBase
+    ? `${apiBase.replace(/\/$/, "")}/integrations/melhor-envio/start`
+    : null;
   const persistenceCopy = apiOn
     ? "As alterações são salvas no banco de dados pela API do servidor — o mesmo fluxo de produção."
     : "No modo demonstração sem API, as alterações ficam só neste navegador até você limpar os dados do site. Com a API e o banco ligados no deploy, tudo passa a ser persistido no servidor.";
@@ -44,6 +50,11 @@ export default function AdminPainelLayout({ children }: { children: React.ReactN
           </p>
         </div>
       </div>
+      {apiOn && melhorEnvioOAuthStartUrl ? (
+        <Suspense fallback={null}>
+          <AdminMelhorEnvioOAuthBanner oauthStartUrl={melhorEnvioOAuthStartUrl} />
+        </Suspense>
+      ) : null}
       <Suspense fallback={<AdminSectionFallback />}>{children}</Suspense>
     </div>
   );

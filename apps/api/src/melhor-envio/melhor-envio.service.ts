@@ -221,7 +221,11 @@ export class MelhorEnvioService {
   private formatMeApiError(status: number, json: unknown | null, text: string): string {
     if (status === 401) {
       const base = this.getApiBase();
-      return `Melhor Envio recusou o token (401). Confira se o OAuth foi feito no mesmo ambiente que MELHOR_ENVIO_API_BASE (${base}) e renove em /integrations/melhor-envio/start.`;
+      const envTok = this.config.get<string>('MELHOR_ENVIO_ACCESS_TOKEN')?.trim();
+      if (envTok) {
+        return `Melhor Envio recusou MELHOR_ENVIO_ACCESS_TOKEN (401). Remova essa variável no Render e use OAuth em ${base}/integrations/melhor-envio/start, ou cole um token gerado no app de produção (${base}).`;
+      }
+      return `Melhor Envio recusou o token OAuth (401). O token no banco foi emitido em outro ambiente ou expirou. Com MELHOR_ENVIO_API_BASE=${base}, abra ${base}/integrations/melhor-envio/start e autorize de novo (app Melhor Envio de produção).`;
     }
     if (json && typeof json === 'object') {
       const o = json as Record<string, unknown>;
