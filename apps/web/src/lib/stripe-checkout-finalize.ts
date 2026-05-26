@@ -28,7 +28,7 @@ export async function finalizeStripePaidCheckoutInventory(
       expand: ["customer_details"],
     });
   } catch {
-    return { ok: false, message: "Sessão de checkout inválida." };
+    return { ok: false, message: "Sessão de pagamento inválida." };
   }
 
   if (stripeCheckoutSession.payment_status !== "paid") {

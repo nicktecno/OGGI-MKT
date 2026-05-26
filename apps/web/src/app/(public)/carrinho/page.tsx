@@ -29,12 +29,12 @@ export default function CarrinhoPage() {
       <header className="mt-8 space-y-2 border-b border-border/60 pb-8">
         <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Carrinho</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
-          Revise os itens e siga para o checkout. No checkout você informa a entrega, confere o frete e
+          Revise os itens e siga para finalizar a compra. Ali você informa a entrega, confere o frete e
           conclui com cartão (quando o pagamento Stripe estiver ativo neste site) ou com a opção de
           confirmação sem cartão, para testes — sempre com login de cliente.
         </p>
         <Link href="/checkout" className={cn(buttonVariants(), "mt-4 inline-flex w-fit")}>
-          Ir ao checkout
+          Finalizar compra
         </Link>
       </header>
 

@@ -45,7 +45,7 @@ export default async function PainelClientePedidosPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comprador</p>
         <h1 className="font-serif text-3xl font-medium tracking-tight">Meus pedidos</h1>
         <p className="max-w-xl text-muted-foreground leading-relaxed">
-          Pedidos concluídos com a API e banco de dados configurados aparecem aqui após o checkout.
+          Pedidos concluídos com a API e banco de dados configurados aparecem aqui após finalizar a compra.
         </p>
       </header>
 

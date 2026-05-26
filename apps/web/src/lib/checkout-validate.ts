@@ -14,7 +14,8 @@ function isCartLine(x: unknown): x is CartLine {
     typeof l.unitPrice === "number" &&
     typeof l.quantity === "number" &&
     typeof l.maxQuantity === "number" &&
-    typeof l.executorNome === "string"
+    typeof l.executorNome === "string" &&
+    (typeof l.size === "undefined" || typeof l.size === "string")
   );
 }
 

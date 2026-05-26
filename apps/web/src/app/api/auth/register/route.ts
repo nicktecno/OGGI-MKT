@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
+import {
+  sendRegistrationConfirmationEmail,
+  type RegistrationEmailRole,
+  type RegistrationEmailStatus,
+} from "@/lib/registration-email";
 import { serverApiUrl } from "@/lib/server-api-url";
+
+function isRegistrationRole(role: string): role is RegistrationEmailRole {
+  return role === "CUSTOMER" || role === "SUPPLIER" || role === "EXECUTOR";
+}
+
+function isRegistrationStatus(status: string): status is RegistrationEmailStatus {
+  return status === "ACTIVE" || status === "PENDING_ADMIN_REVIEW" || status === "REJECTED";
+}
 
 export async function POST(req: Request) {
   if (!commerceUsesDatabase()) {
@@ -46,5 +59,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err }, { status: res.status });
   }
 
-  return NextResponse.json({ ok: true, user: json.user, registrationEmailSent: json.registrationEmailSent });
+  let registrationEmailSent = json.registrationEmailSent === true;
+
+  if (!registrationEmailSent && json.user && typeof json.user === "object") {
+    const u = json.user as Record<string, unknown>;
+    const email = typeof u.email === "string" ? u.email : "";
+    const name = typeof u.name === "string" ? u.name : "";
+    const role = typeof u.role === "string" ? u.role : "";
+    const status = typeof u.status === "string" ? u.status : "";
+    if (
+      email &&
+      name &&
+      isRegistrationRole(role) &&
+      isRegistrationStatus(status)
+    ) {
+      registrationEmailSent = await sendRegistrationConfirmationEmail({
+        email,
+        name,
+        role,
+        status,
+      });
+    }
+  }
+
+  return NextResponse.json({ ok: true, user: json.user, registrationEmailSent });
 }

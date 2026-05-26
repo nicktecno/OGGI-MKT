@@ -8,8 +8,8 @@ import { isStripeLiveMode, stripePaymentsConfigured } from "@/lib/stripe-server"
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Checkout",
-  description: `Checkout — ${SITE_NAME}`,
+  title: "Finalizar compra",
+  description: `Finalizar compra — ${SITE_NAME}`,
   robots: { index: false, follow: false },
 };
 
@@ -31,11 +31,11 @@ export default async function CheckoutPage() {
           Loja
         </Link>
         <span className="mx-2 text-border">/</span>
-        <span className="text-foreground">Checkout</span>
+        <span className="text-foreground">Finalizar compra</span>
       </nav>
 
       <header className="mt-8 space-y-2 border-b border-border/60 pb-8">
-        <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Checkout</h1>
+        <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Finalizar compra</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
           {session
             ? `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, confira o frete e o total e escolha pagar com cartão (Stripe) ou confirmar sem cartão, conforme as opções exibidas abaixo.`

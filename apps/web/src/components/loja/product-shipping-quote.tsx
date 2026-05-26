@@ -72,7 +72,7 @@ export function ProductShippingQuote({ listingId, maxQuantity, className }: Prop
       <CardHeader className="pb-3">
         <CardTitle className="font-serif text-lg">Calcular frete</CardTitle>
         <CardDescription>
-          Estimativa de envio desta oferta até o CEP informado (mesma base do checkout).
+          Estimativa de envio desta oferta até o CEP informado (mesma base usada ao finalizar a compra).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   getAccountTerms,
   resolveRegisterTermsRole,
@@ -339,15 +340,15 @@ export function RegisterForm({
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="reg-pass">Senha (mín. 8 caracteres)</Label>
-              <Input
+              <PasswordInput
                 id="reg-pass"
-                type="password"
+                name="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="bg-background"
+                disabled={loading}
               />
             </div>
           </div>

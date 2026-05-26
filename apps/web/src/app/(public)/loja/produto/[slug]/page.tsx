@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ProductViewAnalytics } from "@/components/analytics/product-view-analytics";
-import { AddToCartActions } from "@/components/loja/add-to-cart";
+import { ProductPurchaseSection } from "@/components/loja/product-purchase-section";
 import { ProductShippingQuote } from "@/components/loja/product-shipping-quote";
 import { ProductPageGallery } from "@/components/loja/product-page-gallery";
 import {
@@ -129,23 +129,6 @@ export default async function ProdutoLojaPage({ params }: Props) {
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
               {product.descricao_curta}
             </p>
-            {tamanhosVitrine.length > 0 ? (
-              <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Tamanhos
-                </p>
-                <ul className="mt-2 flex flex-wrap gap-2" aria-label="Tamanhos disponíveis">
-                  {tamanhosVitrine.map((t) => (
-                    <li
-                      key={t}
-                      className="rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm font-medium tabular-nums text-foreground"
-                    >
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
             <p className="mt-8 font-serif text-3xl font-medium tabular-nums text-foreground">
               {formatBrl(product.preco_venda_publico)}
             </p>
@@ -155,8 +138,9 @@ export default async function ProdutoLojaPage({ params }: Props) {
               oferta.
             </p>
 
-            <AddToCartActions
+            <ProductPurchaseSection
               className="mt-10"
+              sizes={tamanhosVitrine}
               item={{
                 listingId: listing.id,
                 productSlug: product.slug,

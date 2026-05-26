@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import type { CartLine } from "@/lib/cart-types";
+import { cartLineLabel } from "@/lib/cart-line-label";
 import { resolvePublicRedirectOrigin } from "@/lib/public-redirect-origin";
 import { getStripeServer } from "@/lib/stripe-server";
 import {
@@ -23,7 +24,8 @@ function isCartLine(x: unknown): x is CartLine {
     typeof l.unitPrice === "number" &&
     typeof l.quantity === "number" &&
     typeof l.maxQuantity === "number" &&
-    typeof l.executorNome === "string"
+    typeof l.executorNome === "string" &&
+    (typeof l.size === "undefined" || typeof l.size === "string")
   );
 }
 
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
   }
   if (session.role !== "CUSTOMER") {
     return NextResponse.json(
-      { error: "Somente contas de cliente podem usar o checkout pago da loja." },
+      { error: "Somente contas de cliente podem finalizar compra com pagamento na loja." },
       { status: 403 },
     );
   }
@@ -123,8 +125,10 @@ export async function POST(req: Request) {
       currency: "brl" as const,
       unit_amount: Math.round(l.unitPrice * 100),
       product_data: {
-        name: `${l.productName} (${l.executorNome})`,
-        metadata: { listingId: l.listingId, slug: l.productSlug },
+        name: l.size
+          ? `${cartLineLabel(l)} (${l.executorNome})`
+          : `${l.productName} (${l.executorNome})`,
+        metadata: { listingId: l.listingId, slug: l.productSlug, ...(l.size ? { size: l.size } : {}) },
       },
     },
   }));

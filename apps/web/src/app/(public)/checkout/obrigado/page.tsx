@@ -33,7 +33,7 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
           Falta o identificador da sessão ou o Stripe não está configurado neste ambiente.
         </p>
         <Link href="/checkout" className={cn(buttonVariants(), "mt-8 inline-flex")}>
-          Voltar ao checkout
+          Voltar para finalizar compra
         </Link>
       </main>
     );
@@ -96,7 +96,7 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
           <h1 className="font-serif text-2xl font-medium text-foreground">Pagamento pendente ou inválido</h1>
           <p className="mt-3 text-muted-foreground">
             Não encontramos uma sessão paga com esse link. Se fechou a janela do Stripe antes de
-            concluir, tente novamente no checkout.
+            concluir, tente finalizar a compra novamente.
           </p>
         </>
       )}
@@ -110,7 +110,7 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
           </Link>
         ) : null}
         <Link href="/checkout" className={cn(buttonVariants({ variant: "outline" }))}>
-          Checkout
+          Finalizar compra
         </Link>
       </div>
     </main>

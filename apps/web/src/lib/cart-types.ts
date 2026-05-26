@@ -4,6 +4,8 @@ export type CartLine = {
   listingId: string;
   productSlug: string;
   productName: string;
+  /** Tamanho escolhido na vitrine (P, M, G, etc.). */
+  size?: string;
   unitPrice: number;
   quantity: number;
   maxQuantity: number;

@@ -38,7 +38,7 @@ const customerTerms: AccountTermsBlock = {
     {
       heading: "3. Pagamentos e entregas",
       body:
-        "Pagamentos são processados por meios indicados no checkout (incluindo processadores como o Stripe, quando aplicável). Prazos e condições de entrega seguem o que for informado no pedido e às políticas da transportadora ou parceiro logístico.",
+        "Pagamentos são processados por meios indicados ao finalizar a compra (incluindo processadores como o Stripe, quando aplicável). Prazos e condições de entrega seguem o que for informado no pedido e às políticas da transportadora ou parceiro logístico.",
     },
     {
       heading: "4. Limitação de responsabilidade",
@@ -48,7 +48,7 @@ const customerTerms: AccountTermsBlock = {
     {
       heading: "5. Alterações",
       body:
-        "Estes termos podem ser atualizados. Versões futuras poderão exigir novo aceite em login ou checkout; a versão vigente no momento do cadastro fica registrada em seu perfil.",
+        "Estes termos podem ser atualizados. Versões futuras poderão exigir novo aceite em login ou ao finalizar a compra; a versão vigente no momento do cadastro fica registrada em seu perfil.",
     },
   ],
 };

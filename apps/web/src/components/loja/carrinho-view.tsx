@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { CartState } from "@/lib/cart-types";
+import { cartLineLabel } from "@/lib/cart-line-label";
 import {
   CART_CHANGED_EVENT,
   cartTotal,
@@ -50,7 +51,10 @@ export function CarrinhoView() {
     <div className="space-y-8">
       <ul className="divide-y divide-border rounded-xl border border-border/80 bg-card/40">
         {cart.lines.map((line) => (
-          <li key={line.listingId} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+          <li
+            key={`${line.listingId}-${line.size ?? ""}`}
+            className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6"
+          >
             {line.imageUrl ? (
               <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30 sm:h-24 sm:w-24">
                 <Image
@@ -69,7 +73,7 @@ export function CarrinhoView() {
                 href={`/loja/produto/${line.productSlug}`}
                 className="font-serif text-lg font-medium text-foreground hover:underline"
               >
-                {line.productName}
+                {cartLineLabel(line)}
               </Link>
               <p className="text-sm text-muted-foreground">{line.executorNome}</p>
               <p className="font-mono text-sm tabular-nums text-foreground">{formatBrl(line.unitPrice)} un.</p>
@@ -84,12 +88,17 @@ export function CarrinhoView() {
                   value={line.quantity}
                   onChange={(e) => {
                     const q = Number(e.target.value);
-                    setCart(setLineQuantity(line.listingId, Number.isFinite(q) ? q : 1));
+                    setCart(setLineQuantity(line.listingId, Number.isFinite(q) ? q : 1, line.size));
                   }}
                   className="h-10 w-16 rounded-lg border border-input bg-background px-2 text-center text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </label>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setCart(removeLine(line.listingId))}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setCart(removeLine(line.listingId, line.size))}
+              >
                 Remover
               </Button>
             </div>
@@ -107,7 +116,7 @@ export function CarrinhoView() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/checkout" className={cn(buttonVariants({ size: "lg" }))}>
-            Continuar para o checkout
+            Continuar para finalizar compra
           </Link>
           <Link href="/loja" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
             Adicionar mais peças

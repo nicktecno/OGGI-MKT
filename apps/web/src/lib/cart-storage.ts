@@ -1,4 +1,5 @@
 import type { CartLine, CartState } from "@/lib/cart-types";
+import { cartLinesMatch } from "@/lib/cart-line-label";
 
 export const CART_STORAGE_KEY = "moda_store_cart_v1";
 export const CART_CHANGED_EVENT = "moda-store-cart-changed";
@@ -30,7 +31,8 @@ function parse(raw: string | null): CartState {
         typeof (l as CartLine).unitPrice === "number" &&
         typeof (l as CartLine).quantity === "number" &&
         typeof (l as CartLine).maxQuantity === "number" &&
-        typeof (l as CartLine).executorNome === "string",
+        typeof (l as CartLine).executorNome === "string" &&
+        (typeof (l as CartLine).size === "undefined" || typeof (l as CartLine).size === "string"),
     );
     return { version: 1, lines };
   } catch {
@@ -63,7 +65,7 @@ export function addOrMergeLine(line: Omit<CartLine, "quantity"> & { quantity?: n
     Math.max(1, line.quantity ?? 1),
     Math.max(1, line.maxQuantity),
   );
-  const idx = prev.lines.findIndex((l) => l.listingId === line.listingId);
+  const idx = prev.lines.findIndex((l) => cartLinesMatch(l, line.listingId, line.size));
   let lines: CartLine[];
   if (idx === -1) {
     lines = [
@@ -72,6 +74,7 @@ export function addOrMergeLine(line: Omit<CartLine, "quantity"> & { quantity?: n
         listingId: line.listingId,
         productSlug: line.productSlug,
         productName: line.productName,
+        size: line.size,
         unitPrice: line.unitPrice,
         maxQuantity: line.maxQuantity,
         executorNome: line.executorNome,
@@ -91,11 +94,11 @@ export function addOrMergeLine(line: Omit<CartLine, "quantity"> & { quantity?: n
   return next;
 }
 
-export function setLineQuantity(listingId: string, quantity: number): CartState {
+export function setLineQuantity(listingId: string, quantity: number, size?: string): CartState {
   const prev = readCart();
   const lines = prev.lines
     .map((l) => {
-      if (l.listingId !== listingId) return l;
+      if (!cartLinesMatch(l, listingId, size)) return l;
       const q = Math.min(Math.max(0, quantity), l.maxQuantity);
       return { ...l, quantity: q };
     })
@@ -105,9 +108,9 @@ export function setLineQuantity(listingId: string, quantity: number): CartState 
   return next;
 }
 
-export function removeLine(listingId: string): CartState {
+export function removeLine(listingId: string, size?: string): CartState {
   const prev = readCart();
-  const lines = prev.lines.filter((l) => l.listingId !== listingId);
+  const lines = prev.lines.filter((l) => !cartLinesMatch(l, listingId, size));
   const next = { version: 1 as const, lines };
   writeCart(next);
   return next;

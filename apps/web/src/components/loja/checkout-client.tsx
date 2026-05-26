@@ -23,6 +23,7 @@ import {
   writeCheckoutDelivery,
 } from "@/lib/checkout-delivery-storage";
 import type { CartState } from "@/lib/cart-types";
+import { cartLineLabel } from "@/lib/cart-line-label";
 import type { Role } from "@/lib/auth-types";
 import { CART_CHANGED_EVENT, cartTotal, clearCart, readCart } from "@/lib/cart-storage";
 import { trackBeginCheckout } from "@/lib/analytics";
@@ -124,7 +125,7 @@ export function CheckoutClient({
       value: payTotals.total,
       items: cart.lines.map((l) => ({
         item_id: l.listingId,
-        item_name: l.productName,
+        item_name: cartLineLabel(l),
         price: l.unitPrice,
         quantity: l.quantity,
       })),
@@ -268,7 +269,7 @@ export function CheckoutClient({
               {cart.lines.map((l) => (
                 <li key={l.listingId} className="flex justify-between gap-4 px-4 py-3 text-sm">
                   <span className="min-w-0 text-foreground">
-                    <span className="font-medium">{l.productName}</span>
+                    <span className="font-medium">{cartLineLabel(l)}</span>
                     <span className="block text-muted-foreground">
                       {l.quantity}× {formatBrl(l.unitPrice)}
                     </span>
@@ -474,7 +475,7 @@ export function CheckoutClient({
             <CardContent className="space-y-2 text-sm">
               {cart.lines.map((l) => (
                 <div key={l.listingId} className="flex justify-between gap-2">
-                  <span className="min-w-0 truncate">{l.productName}</span>
+                  <span className="min-w-0 truncate">{cartLineLabel(l)}</span>
                   <span className="shrink-0 font-mono tabular-nums">{formatBrl(l.unitPrice * l.quantity)}</span>
                 </div>
               ))}
@@ -534,7 +535,7 @@ export function CheckoutClient({
                 {cart.lines.map((l) => (
                   <li key={l.listingId} className="flex justify-between gap-4 py-2">
                     <span>
-                      {l.productName} × {l.quantity}
+                      {cartLineLabel(l)} × {l.quantity}
                     </span>
                     <span className="font-mono tabular-nums">{formatBrl(l.unitPrice * l.quantity)}</span>
                   </li>

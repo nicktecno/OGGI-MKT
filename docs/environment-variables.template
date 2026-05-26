@@ -30,6 +30,10 @@ STRIPE_SECRET_KEY=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_R2_PUBLIC_BASE_URL=
 SERVER_API_URL=
+# E-mail de cadastro (fallback no Next se a API não enviar; idealmente também na API Render)
+RESEND_API_KEY=
+MAIL_FROM=
+MAIL_SITE_NAME=Moda Store
 
 # --- render (api): NÃO uses localhost. Cola a URL do Neon em DATABASE_URL. ---
 DATABASE_URL=

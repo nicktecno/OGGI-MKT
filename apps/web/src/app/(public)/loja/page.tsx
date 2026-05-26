@@ -84,7 +84,7 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
               Loja online — moda artesanal pronta para o carrinho
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
-              Preço à vista, estoque real por costureira e checkout em poucos cliques. Use a busca no topo para filtrar
+              Preço à vista, estoque real por costureira e finalizar compra em poucos cliques. Use a busca no topo para filtrar
               por nome, SKU ou cidade.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">

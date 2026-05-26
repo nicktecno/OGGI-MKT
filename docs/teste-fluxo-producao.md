@@ -169,13 +169,13 @@ Recomenda-se **4 pessoas** (ou 1 pessoa com 4 e-mails diferentes). O teste compl
 
 1. Abra **Loja** e escolha a peça publicada no teste.
 2. Clique em **Adicionar ao carrinho** (ou **Comprar agora**).
-3. Abra **Carrinho** → **Checkout** / finalizar compra.
+3. Abra **Carrinho** → **Finalizar compra**.
 
 ---
 
 ### 4.3 Entrega e frete
 
-1. No checkout, preencha **nome**, **telefone** e **endereço de entrega** (CEP válido).
+1. Em **Finalizar compra**, preencha **nome**, **telefone** e **endereço de entrega** (CEP válido).
 2. Avance até o passo de **pagamento**.
 3. Aguarde o sistema **calcular o frete** (pode levar alguns segundos).
 

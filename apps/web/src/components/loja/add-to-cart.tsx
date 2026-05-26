@@ -21,16 +21,27 @@ export type AddToCartPayload = {
 type Props = {
   item: AddToCartPayload;
   className?: string;
+  selectedSize?: string;
+  /** Quando definido, exige tamanho antes de adicionar ao carrinho. */
+  requireSize?: () => string | undefined;
 };
 
-export function AddToCartActions({ item, className }: Props) {
+export function AddToCartActions({ item, className, selectedSize, requireSize }: Props) {
   const router = useRouter();
   const [hint, setHint] = useState<string | null>(null);
   const soldOut = item.maxQuantity < 1;
 
+  function linePayload(qty: number) {
+    const size = requireSize?.() ?? selectedSize;
+    if (requireSize && !size) return null;
+    return { ...item, size, quantity: qty };
+  }
+
   function add(qty: number) {
     if (soldOut) return;
-    addOrMergeLine({ ...item, quantity: qty });
+    const line = linePayload(qty);
+    if (!line) return;
+    addOrMergeLine(line);
     trackAddToCart({
       listingId: item.listingId,
       productName: item.productName,
@@ -43,7 +54,9 @@ export function AddToCartActions({ item, className }: Props) {
 
   function buyNow() {
     if (soldOut) return;
-    addOrMergeLine({ ...item, quantity: 1 });
+    const line = linePayload(1);
+    if (!line) return;
+    addOrMergeLine(line);
     trackAddToCart({
       listingId: item.listingId,
       productName: item.productName,
@@ -79,7 +92,7 @@ export function AddToCartActions({ item, className }: Props) {
         <p className="text-sm text-muted-foreground" role="status">
           {hint}{" "}
           <Link href="/checkout" className="font-medium text-accent underline-offset-4 hover:underline">
-            Ir ao checkout
+            Finalizar compra
           </Link>
           {" · "}
           <Link href="/carrinho" className="underline-offset-4 hover:underline">
@@ -88,7 +101,7 @@ export function AddToCartActions({ item, className }: Props) {
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          No checkout você informa a entrega, vê o frete e conclui com cartão (quando disponível) ou
+          Ao finalizar a compra você informa a entrega, vê o frete e conclui com cartão (quando disponível) ou
           com a opção de confirmação sem pagamento para testes — sempre logado como cliente.
         </p>
       )}

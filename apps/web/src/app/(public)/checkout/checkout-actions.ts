@@ -9,6 +9,7 @@ import {
   persistCheckoutReserve,
 } from "@/lib/commerce-backend";
 import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
+import { cartLineLabel } from "@/lib/cart-line-label";
 import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
 import { hideDemoCredentialsUi } from "@/lib/deployment-env";
@@ -24,7 +25,7 @@ export async function confirmCheckoutDemoAction(
   if (hideDemoCredentialsUi() || isStripeLiveMode()) {
     return {
       ok: false,
-      error: "Checkout sem cartão não está disponível em produção. Use pagamento com cartão (Stripe).",
+      error: "Finalizar compra sem cartão não está disponível em produção. Use pagamento com cartão (Stripe).",
     };
   }
   const session = await getSession();
@@ -113,7 +114,7 @@ export async function confirmCheckoutDemoAction(
     customerEmail: session.email,
     customerName: session.name,
     lines: validated.cart.map((l) => ({
-      productName: l.productName,
+      productName: cartLineLabel(l),
       quantity: l.quantity,
       unitPriceBrl: l.unitPrice,
     })),

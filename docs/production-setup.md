@@ -71,8 +71,12 @@ Na **API (Render)** configure envio de e-mail. Sem isso, contas são criadas mas
 | Variável | Descrição |
 |----------|-----------|
 | `RESEND_API_KEY` | Chave em [resend.com](https://resend.com) (recomendado) |
-| `MAIL_FROM` | Remetente verificado, ex.: `Moda Store <noreply@seudominio.com.br>` |
+| `MAIL_FROM` | Remetente verificado, ex.: `Moda Store <noreply@seudominio.com.br>` (sem aspas extras) |
 | `MAIL_SITE_NAME` | Opcional — nome no assunto/corpo (padrão: Moda Store) |
+
+Configure na **API (Render)**. Se o e-mail ainda falhar na API, o **Next (Vercel)** tenta reenviar com as mesmas variáveis — pode duplicar `RESEND_API_KEY` e `MAIL_FROM` na Vercel como rede de segurança.
+
+**Resend em produção:** em [resend.com/domains](https://resend.com/domains) verifique o domínio do `MAIL_FROM`. Sem domínio verificado, o envio para e-mails de clientes costuma falhar (só funciona para testes limitados).
 
 Alternativa: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (e `SMTP_SECURE` se precisar).
 
@@ -87,4 +91,4 @@ Após deploy, faça um cadastro de teste e confira a caixa de entrada (e spam). 
 - [ ] `MELHOR_ENVIO_API_BASE=https://melhorenvio.com.br` + OAuth concluído
 - [ ] Cotação de frete no checkout responde com valores reais
 - [ ] `COMMERCE_API_URL`, `INTERNAL_API_SECRET`, `AUTH_SECRET` iguais entre Vercel e Render
-- [ ] `RESEND_API_KEY` + `MAIL_FROM` na API; e-mail de cadastro recebido em teste
+- [ ] `RESEND_API_KEY` + `MAIL_FROM` na API (e opcionalmente na Vercel); domínio verificado na Resend; e-mail de cadastro recebido em teste
