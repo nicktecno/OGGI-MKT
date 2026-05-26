@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trackLogin } from "@/lib/analytics";
+import { hideDemoCredentialsUi } from "@/lib/deployment-env";
 import { SITE_NAME } from "@/lib/site";
 
 type LoginFormProps = {
@@ -120,15 +121,17 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
             Criar conta
           </Link>
         </p>
-        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">Ambiente de exemplo:</span> várias contas de
-          teste usam a senha <code className="rounded bg-muted px-1">Demo#2026</code> — Admin{" "}
-          <code className="rounded bg-muted px-1">admin@demo.local</code>, fornecedores{" "}
-          <code className="rounded bg-muted px-1">fornecedor@demo.local</code> e{" "}
-          <code className="rounded bg-muted px-1">aviamentos@demo.local</code>, executor{" "}
-          <code className="rounded bg-muted px-1">executor@demo.local</code>, cliente loja{" "}
-          <code className="rounded bg-muted px-1">cliente@demo.local</code>.
-        </p>
+        {!hideDemoCredentialsUi() ? (
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">Ambiente de exemplo:</span> várias contas de
+            teste usam a senha <code className="rounded bg-muted px-1">Demo#2026</code> — Admin{" "}
+            <code className="rounded bg-muted px-1">admin@demo.local</code>, fornecedores{" "}
+            <code className="rounded bg-muted px-1">fornecedor@demo.local</code> e{" "}
+            <code className="rounded bg-muted px-1">aviamentos@demo.local</code>, executor{" "}
+            <code className="rounded bg-muted px-1">executor@demo.local</code>, cliente loja{" "}
+            <code className="rounded bg-muted px-1">cliente@demo.local</code>.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

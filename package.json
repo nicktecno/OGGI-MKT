@@ -11,6 +11,7 @@
     "build:web": "npm run build -w web",
     "db:migrate": "npm run prisma:deploy -w api",
     "db:seed": "npm run prisma:seed -w api",
+    "bootstrap:production": "npm run bootstrap:production -w api",
     "compose:up": "docker compose up -d --build",
     "compose:down": "docker compose down",
     "lint:api": "npm run lint -w api",

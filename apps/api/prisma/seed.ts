@@ -8,6 +8,13 @@ const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'Demo#2026';
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+    console.log(
+      'Seed de demonstração ignorado em produção. Use npm run bootstrap:production -w api para o admin oficial.',
+    );
+    return;
+  }
+
   await prisma.supplierFulfillmentLine.deleteMany();
   await prisma.supplyItem.deleteMany();
   await prisma.executionRequest.deleteMany();

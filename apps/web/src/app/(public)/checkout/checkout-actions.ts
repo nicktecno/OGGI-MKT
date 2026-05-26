@@ -11,6 +11,8 @@ import {
 import { quoteCheckoutShippingFromState } from "@/lib/checkout-shipping-quote";
 import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
+import { hideDemoCredentialsUi } from "@/lib/deployment-env";
+import { isStripeLiveMode } from "@/lib/stripe-server";
 import { getSession } from "@/lib/session";
 
 export type ConfirmDemoCheckoutResult = { ok: true } | { ok: false; error: string };
@@ -19,6 +21,12 @@ export async function confirmCheckoutDemoAction(
   lines: unknown,
   delivery: unknown,
 ): Promise<ConfirmDemoCheckoutResult> {
+  if (hideDemoCredentialsUi() || isStripeLiveMode()) {
+    return {
+      ok: false,
+      error: "Checkout sem cartão não está disponível em produção. Use pagamento com cartão (Stripe).",
+    };
+  }
   const session = await getSession();
   if (!session) {
     return { ok: false, error: "Faça login para finalizar o pedido." };

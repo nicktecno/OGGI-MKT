@@ -33,8 +33,10 @@ type Props = {
   session: { email: string; role: Role; name?: string } | null;
   /** Link do painel após pedido (papel atual). */
   dashboardHref: string;
-  /** `STRIPE_SECRET_KEY` definido no servidor (modo teste `sk_test_…` ou live). */
-  stripeSandbox: boolean;
+  /** `STRIPE_SECRET_KEY` definido no servidor. */
+  stripeEnabled: boolean;
+  stripeLive: boolean;
+  hideDemoUi: boolean;
 };
 
 function emptyDelivery(): Partial<CheckoutDelivery> {
@@ -58,7 +60,13 @@ function mergeDelivery(
   return { ...base, ...patch };
 }
 
-export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props) {
+export function CheckoutClient({
+  session,
+  dashboardHref,
+  stripeEnabled,
+  stripeLive,
+  hideDemoUi,
+}: Props) {
   const router = useRouter();
   const [cart, setCart] = useState<CartState>({ version: 1, lines: [] });
   const [done, setDone] = useState(false);
@@ -284,21 +292,23 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
               Abrir login em página cheia
             </Link>
           </p>
-          <div
-            id="conta-exemplo-checkout"
-            className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground"
-          >
-            <p className="font-medium text-foreground">Comprar sem cadastro próprio (exemplo)</p>
-            <p className="mt-2">
-              Você pode{" "}
-              <Link href="/registrar" className="font-medium text-foreground underline-offset-4 hover:underline">
-                criar conta
-              </Link>{" "}
-              ou, neste ambiente, entrar com o cliente de exemplo{" "}
-              <code className="rounded bg-muted px-1 font-mono text-xs">cliente@demo.local</code> e a
-              senha <code className="rounded bg-muted px-1">Demo#2026</code>.
-            </p>
-          </div>
+          {!hideDemoUi ? (
+            <div
+              id="conta-exemplo-checkout"
+              className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground"
+            >
+              <p className="font-medium text-foreground">Comprar sem cadastro próprio (exemplo)</p>
+              <p className="mt-2">
+                Você pode{" "}
+                <Link href="/registrar" className="font-medium text-foreground underline-offset-4 hover:underline">
+                  criar conta
+                </Link>{" "}
+                ou, neste ambiente, entrar com o cliente de exemplo{" "}
+                <code className="rounded bg-muted px-1 font-mono text-xs">cliente@demo.local</code> e a
+                senha <code className="rounded bg-muted px-1">Demo#2026</code>.
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -554,13 +564,13 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                 <p className="text-right font-serif text-xl font-medium tabular-nums">Total {formatBrl(total)}</p>
               )}
 
-              {stripeSandbox && session.role === "CUSTOMER" ? (
+              {stripeEnabled && session.role === "CUSTOMER" ? (
                 <div className="space-y-2 rounded-lg border border-border/80 bg-muted/15 p-4">
                   <p className="text-sm font-medium text-foreground">Pagar com cartão (Stripe)</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Você será redirecionado para o pagamento seguro. Quando este site estiver em modo
-                    de testes da Stripe, use apenas cartões de exemplo (como 4242…). Após a confirmação,
-                    o estoque da oferta é atualizado.
+                    {stripeLive
+                      ? "Você será redirecionado ao pagamento seguro. O valor cobrado é real; após a confirmação, o estoque da oferta é atualizado."
+                      : "Você será redirecionado ao pagamento seguro (modo teste Stripe). Use apenas cartões de exemplo (como 4242…). Após a confirmação, o estoque da oferta é atualizado."}
                   </p>
                   {stripeError ? (
                     <p className="text-sm text-destructive" role="alert">
@@ -622,9 +632,10 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
               ) : null}
 
               <div className="flex flex-wrap gap-3 pt-2">
+                {!hideDemoUi && !stripeLive ? (
                 <Button
                   size="lg"
-                  variant={stripeSandbox && session.role === "CUSTOMER" ? "outline" : "default"}
+                  variant={stripeEnabled && session.role === "CUSTOMER" ? "outline" : "default"}
                   disabled={
                     demoLoading ||
                     payQuoteLoading ||
@@ -660,14 +671,15 @@ export function CheckoutClient({ session, dashboardHref, stripeSandbox }: Props)
                 >
                   {demoLoading ? "Processando…" : "Confirmar sem cartão (teste)"}
                 </Button>
+                ) : null}
                 <Link href="/carrinho" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
                   Editar carrinho
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                “Confirmar sem cartão” grava o pedido e baixa o estoque como exercício, sem cobrança.
-                “Pagar com cartão” usa o Stripe; após o pagamento, a página de obrigado confirma e
-                aplica a mesma baixa de estoque.
+                {hideDemoUi || stripeLive
+                  ? "O pagamento com cartão usa o Stripe; após a confirmação, a página de obrigado atualiza o estoque."
+                  : "“Confirmar sem cartão” grava o pedido e baixa o estoque como exercício, sem cobrança. “Pagar com cartão” usa o Stripe; após o pagamento, a página de obrigado confirma e aplica a mesma baixa de estoque."}
               </p>
             </CardContent>
           </Card>

@@ -10,3 +10,13 @@ export function getStripeServer(): Stripe | null {
 export function stripePaymentsConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY?.trim());
 }
+
+export function isStripeLiveMode(): boolean {
+  const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  return key.startsWith("sk_live_");
+}
+
+export function isStripeTestMode(): boolean {
+  const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  return key.startsWith("sk_test_");
+}

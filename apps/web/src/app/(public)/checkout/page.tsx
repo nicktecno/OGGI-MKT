@@ -3,7 +3,8 @@ import Link from "next/link";
 import { CheckoutClient } from "@/components/loja/checkout-client";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
-import { stripePaymentsConfigured } from "@/lib/stripe-server";
+import { hideDemoCredentialsUi } from "@/lib/deployment-env";
+import { isStripeLiveMode, stripePaymentsConfigured } from "@/lib/stripe-server";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
 export default async function CheckoutPage() {
   const session = await getSession();
   const dashboardHref = session ? dashboardPathForRole(session.role) : "/loja";
-  const stripeSandbox = stripePaymentsConfigured();
+  const stripeEnabled = stripePaymentsConfigured();
+  const stripeLive = isStripeLiveMode();
+  const hideDemoUi = hideDemoCredentialsUi();
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:px-10">
@@ -36,7 +39,9 @@ export default async function CheckoutPage() {
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
           {session
             ? `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, confira o frete e o total e escolha pagar com cartão (Stripe) ou confirmar sem cartão, conforme as opções exibidas abaixo.`
-            : "Faça login para vincular este carrinho à sua conta. Ainda não tem cadastro? Crie em “Registrar” ou, neste ambiente, use a conta de cliente de exemplo indicada ao lado do login."}
+            : hideDemoUi
+              ? "Faça login para vincular este carrinho à sua conta. Ainda não tem cadastro? Crie em “Registrar”."
+              : "Faça login para vincular este carrinho à sua conta. Ainda não tem cadastro? Crie em “Registrar” ou, neste ambiente, use a conta de cliente de exemplo indicada ao lado do login."}
         </p>
       </header>
 
@@ -48,7 +53,9 @@ export default async function CheckoutPage() {
               : null
           }
           dashboardHref={dashboardHref}
-          stripeSandbox={stripeSandbox}
+          stripeEnabled={stripeEnabled}
+          stripeLive={stripeLive}
+          hideDemoUi={hideDemoUi}
         />
       </div>
     </main>

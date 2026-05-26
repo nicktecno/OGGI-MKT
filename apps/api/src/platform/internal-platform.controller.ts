@@ -309,7 +309,10 @@ export class InternalPlatformController {
       data: {
         status: 'ACTIVE',
         reviewedAt: new Date(),
-        reviewedByEmail: body.reviewedByEmail?.trim() || 'admin@demo.local',
+        reviewedByEmail:
+          body.reviewedByEmail?.trim() ||
+          process.env.PLATFORM_ADMIN_EMAIL?.trim() ||
+          'admin@modastore.com.br',
         rejectionReason: null,
       },
     });
@@ -336,7 +339,10 @@ export class InternalPlatformController {
       data: {
         status: 'REJECTED',
         reviewedAt: new Date(),
-        reviewedByEmail: body.reviewedByEmail?.trim() || 'admin@demo.local',
+        reviewedByEmail:
+          body.reviewedByEmail?.trim() ||
+          process.env.PLATFORM_ADMIN_EMAIL?.trim() ||
+          'admin@modastore.com.br',
         rejectionReason: reason,
       },
     });
