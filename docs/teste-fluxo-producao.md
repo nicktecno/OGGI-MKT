@@ -94,7 +94,7 @@ Recomenda-se **4 pessoas** (ou 1 pessoa com 4 e-mails diferentes). O teste compl
 3. Preencha e-mail, senha, dados da empresa e endereço.
 4. Envie o cadastro.
 
-**✓ Deu certo se:** mensagem de sucesso e instrução para aguardar aprovação (ou entrar após aprovação).
+**✓ Deu certo se:** mensagem de sucesso e instrução para aguardar aprovação (ou entrar após aprovação). Você deve receber um **e-mail** com assunto “Cadastro confirmado” (confira também a pasta de spam).
 
 ---
 
@@ -135,7 +135,7 @@ Recomenda-se **4 pessoas** (ou 1 pessoa com 4 e-mails diferentes). O teste compl
 2. Preencha dados e endereço de postagem.
 3. Aguarde **aprovação** do admin.
 
----
+**✓ Deu certo se:** recebeu e-mail “Cadastro confirmado” e, na tela de entrar, vê aviso de confirmação por e-mail.
 
 ### 3.2 Completar perfil
 
@@ -161,7 +161,7 @@ Recomenda-se **4 pessoas** (ou 1 pessoa com 4 e-mails diferentes). O teste compl
 2. Confirme e-mail e senha.
 3. **Entre** na conta.
 
-**✓ Deu certo se:** após login, consegue ir à **Loja**.
+**✓ Deu certo se:** recebeu e-mail “Cadastro confirmado” e consegue entrar na conta.
 
 ---
 

@@ -140,7 +140,11 @@ export function RegisterForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        registrationEmailSent?: boolean;
+      };
       if (!res.ok) {
         setError(data.error ?? "Não foi possível cadastrar");
         return;
@@ -154,8 +158,16 @@ export function RegisterForm({
               ? "supplier"
               : "executor",
       });
+      const emailQuery =
+        data.registrationEmailSent === true
+          ? "&email=confirmado"
+          : data.registrationEmailSent === false
+            ? "&email=pendente_envio"
+            : "";
       router.push(
-        accountPath === "CUSTOMER" ? "/entrar?cadastro=cliente" : "/entrar?cadastro=pendente",
+        accountPath === "CUSTOMER"
+          ? `/entrar?cadastro=cliente${emailQuery}`
+          : `/entrar?cadastro=pendente${emailQuery}`,
       );
     } catch {
       setError("Erro de rede. Tente novamente.");
@@ -224,7 +236,7 @@ export function RegisterForm({
               >
                 <span className="block text-sm font-semibold tracking-tight">Costureira</span>
                 <span className="mt-0.5 block text-[0.65rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  Executor
+                  Produção e vitrine
                 </span>
               </button>
 

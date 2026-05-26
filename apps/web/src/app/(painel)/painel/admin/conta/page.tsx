@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { roleDisplayLabel } from "@/lib/auth-types";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
 import type { FiscalDocumentKind } from "@/lib/fiscal-document";
 import { fetchPlatformMe } from "@/lib/platform-account-server";
@@ -31,7 +32,9 @@ export default async function AdminContaPage() {
   return (
     <div className="space-y-8">
       <header className="space-y-2 border-b border-border/60 pb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Administração</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {roleDisplayLabel("ADMIN")}
+        </p>
         <h1 className="font-serif text-3xl font-medium tracking-tight">Minha conta</h1>
         <p className="max-w-xl text-muted-foreground leading-relaxed">
           Nome e documento fiscal (CPF ou CNPJ) da conta de administrador.

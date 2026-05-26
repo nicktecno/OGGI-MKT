@@ -94,7 +94,7 @@ export function CadastrosModeracaoClient({ initial }: { initial: PendingPlatform
               <CardTitle className="font-serif text-lg md:text-xl">
                 {row.name}{" "}
                 <span className="font-sans text-sm font-normal text-muted-foreground">
-                  ({row.role === "SUPPLIER" ? "Fornecedor" : "Executor"})
+                  ({row.role === "SUPPLIER" ? "Fornecedor" : "Costureira"})
                 </span>
               </CardTitle>
               <CardDescription className="font-mono text-xs">{row.email}</CardDescription>

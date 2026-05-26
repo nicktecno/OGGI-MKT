@@ -48,7 +48,7 @@ export default async function AdminFinanceiroPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Resumo de vendas e repasses a partir da conta Stripe da plataforma, incluindo totais de comissão da
-            plataforma, executores e fornecedores.
+            plataforma, costureiras e fornecedores.
           </p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default async function AdminFinanceiroPage() {
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
                 <StatTile
-                  label="Executores"
+                  label="Costureiras"
                   value={centsToBrl(summary.metrics?.executores_receberam_centavos ?? 0)}
                 />
                 <StatTile

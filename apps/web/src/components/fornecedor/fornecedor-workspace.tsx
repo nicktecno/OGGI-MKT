@@ -74,8 +74,8 @@ export function FornecedorWorkspace({
           />
           <SectionLinkCard
             href={`${painelBase}?aba=entregas`}
-            title="Entregas aos executores"
-            description="Envios ao executor quando uma combinação usar os seus insumos — pacote e etiqueta quando o Melhor Envio estiver ligado."
+            title="Entregas às costureiras"
+            description="Envios à costureira quando uma combinação usar os seus insumos — pacote e etiqueta quando o Melhor Envio estiver ligado."
             meta={`${fulfillmentLines.length} linha(ns) de entrega`}
           />
         </div>

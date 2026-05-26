@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoadingFallback } from "@/components/ui/page-loading-fallback";
+import { PainelSessionBadge } from "@/components/painel/painel-session-badge";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
@@ -27,6 +28,12 @@ export default async function PainelLayout({ children }: { children: React.React
             {SITE_NAME}
           </Link>
           <p className="mt-1 text-[0.625rem] uppercase tracking-[0.28em] text-muted-foreground">Painel</p>
+          <PainelSessionBadge
+            email={session.email}
+            name={session.name}
+            role={session.role}
+            accountStatus={session.accountStatus}
+          />
         </div>
         <Suspense fallback={<PainelAsideLoadingFallback />}>
           <PainelSidebarWithNavCounts role={session.role} painelHome={painelHome} />

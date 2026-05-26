@@ -26,7 +26,7 @@ export const MOCK_USERS: Record<
   "executor@demo.local": {
     password: "Demo#2026",
     role: "EXECUTOR",
-    label: "Executor",
+    label: "Costureira",
     displayName: "Carla Mendes",
   },
   "cliente@demo.local": {

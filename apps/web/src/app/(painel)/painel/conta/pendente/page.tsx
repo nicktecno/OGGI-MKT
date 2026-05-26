@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { roleDisplayLabel } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -15,6 +16,9 @@ export default async function ContaPendentePage() {
       <h1 className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
         Cadastro em análise
       </h1>
+      <p className="text-sm font-medium text-primary">
+        Perfil: {session ? roleDisplayLabel(session.role) : "—"}
+      </p>
       <p className="text-muted-foreground">
         Recebemos o cadastro de <span className="font-medium text-foreground">{session?.email}</span>.
         Em breve a equipe revisa os dados e libera o acesso completo ao painel.

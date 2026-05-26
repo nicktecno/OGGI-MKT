@@ -64,7 +64,21 @@ Passos:
 
 Sandbox (`https://sandbox.melhorenvio.com.br`) é só para desenvolvimento.
 
-## 4. Checklist rápido
+## 4. E-mail transacional (cadastro, pedidos, senha)
+
+Na **API (Render)** configure envio de e-mail. Sem isso, contas são criadas mas **não** chega o e-mail de confirmação de cadastro.
+
+| Variável | Descrição |
+|----------|-----------|
+| `RESEND_API_KEY` | Chave em [resend.com](https://resend.com) (recomendado) |
+| `MAIL_FROM` | Remetente verificado, ex.: `Moda Store <noreply@seudominio.com.br>` |
+| `MAIL_SITE_NAME` | Opcional — nome no assunto/corpo (padrão: Moda Store) |
+
+Alternativa: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (e `SMTP_SECURE` se precisar).
+
+Após deploy, faça um cadastro de teste e confira a caixa de entrada (e spam). O assunto é **Cadastro confirmado — …**.
+
+## 5. Checklist rápido
 
 - [ ] `bootstrap:production` executado no Neon de produção
 - [ ] Contas `@demo.local` removidas
@@ -73,3 +87,4 @@ Sandbox (`https://sandbox.melhorenvio.com.br`) é só para desenvolvimento.
 - [ ] `MELHOR_ENVIO_API_BASE=https://melhorenvio.com.br` + OAuth concluído
 - [ ] Cotação de frete no checkout responde com valores reais
 - [ ] `COMMERCE_API_URL`, `INTERNAL_API_SECRET`, `AUTH_SECRET` iguais entre Vercel e Render
+- [ ] `RESEND_API_KEY` + `MAIL_FROM` na API; e-mail de cadastro recebido em teste

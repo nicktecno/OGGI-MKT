@@ -141,7 +141,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
           <span className="min-w-0 flex-1">Meus insumos</span>
         </Link>
         <Link href={`${painelHome}?aba=entregas`} prefetch className={sidebarTabClass(entregasActive)}>
-          <span className="min-w-0 flex-1">Entregas aos executores</span>
+          <span className="min-w-0 flex-1">Entregas às costureiras</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
         <Link href="/loja" className={sidebarTabClass(lojaActive)}>
@@ -172,6 +172,24 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
         <Link href="/loja" className={sidebarTabClass(lojaActive)}>
           <span className="min-w-0 flex-1">Loja</span>
+        </Link>
+      </SidebarTabRail>
+    );
+  }
+
+  if (role === "EXECUTOR") {
+    const overviewActive =
+      pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
+    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
+
+    return (
+      <SidebarTabRail aria-label="Menu da costureira">
+        <Link href={painelHome} className={sidebarTabClass(overviewActive)}>
+          <span className="min-w-0 flex-1">Visão geral</span>
+        </Link>
+        <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
+        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
+          <span className="min-w-0 flex-1">Loja pública</span>
         </Link>
       </SidebarTabRail>
     );

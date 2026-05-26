@@ -33,6 +33,19 @@ export class AuthService {
     };
   }
 
+  private async sendRegistrationConfirmationEmail(account: PlatformAccount): Promise<boolean> {
+    const role = account.role;
+    if (role !== 'CUSTOMER' && role !== 'SUPPLIER' && role !== 'EXECUTOR') {
+      return false;
+    }
+    return this.notifications.sendRegistrationConfirmation({
+      email: account.email,
+      name: account.name,
+      role,
+      status: account.status,
+    });
+  }
+
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
     const existing = await this.prisma.platformAccount.findUnique({ where: { email } });
@@ -57,11 +70,8 @@ export class AuthService {
           termsAcceptedVersion: TERMS_ACCEPTANCE_VERSION.CUSTOMER,
         },
       });
-      this.notifications.fireAndForgetCustomerWelcome({
-        email: account.email,
-        name: account.name,
-      });
-      return { user: this.serializePublic(account) };
+      const registrationEmailSent = await this.sendRegistrationConfirmationEmail(account);
+      return { user: this.serializePublic(account), registrationEmailSent };
     }
 
     if (dto.role === 'SUPPLIER') {
@@ -104,12 +114,8 @@ export class AuthService {
         name: account.name,
         role: 'SUPPLIER',
       });
-      this.notifications.fireAndForgetPendingPartnerAck({
-        email: account.email,
-        name: account.name,
-        role: 'SUPPLIER',
-      });
-      return { user: this.serializePublic(account) };
+      const registrationEmailSent = await this.sendRegistrationConfirmationEmail(account);
+      return { user: this.serializePublic(account), registrationEmailSent };
     }
 
     if (
@@ -151,12 +157,8 @@ export class AuthService {
       name: account.name,
       role: 'EXECUTOR',
     });
-    this.notifications.fireAndForgetPendingPartnerAck({
-      email: account.email,
-      name: account.name,
-      role: 'EXECUTOR',
-    });
-    return { user: this.serializePublic(account) };
+    const registrationEmailSent = await this.sendRegistrationConfirmationEmail(account);
+    return { user: this.serializePublic(account), registrationEmailSent };
   }
 
   async requestPasswordReset(email: string): Promise<{ ok: true }> {

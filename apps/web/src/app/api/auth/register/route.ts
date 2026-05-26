@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   });
 
   const text = await res.text();
-  let json: { message?: string | string[]; user?: unknown };
+  let json: { message?: string | string[]; user?: unknown; registrationEmailSent?: boolean };
   try {
     json = JSON.parse(text) as typeof json;
   } catch {
@@ -46,5 +46,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err }, { status: res.status });
   }
 
-  return NextResponse.json({ ok: true, user: json.user });
+  return NextResponse.json({ ok: true, user: json.user, registrationEmailSent: json.registrationEmailSent });
 }

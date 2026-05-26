@@ -21,6 +21,38 @@ export function dashboardPathForRole(role: Role): string {
   }
 }
 
+/** Rótulo amigável do papel (UI do painel e cadastro). */
+export function roleDisplayLabel(role: Role): string {
+  switch (role) {
+    case "ADMIN":
+      return "Administrador";
+    case "SUPPLIER":
+      return "Fornecedor";
+    case "EXECUTOR":
+      return "Costureira";
+    case "CUSTOMER":
+      return "Cliente";
+    default:
+      return role;
+  }
+}
+
+/** Uma linha sobre o que o perfil faz no sistema. */
+export function roleDisplayHint(role: Role): string {
+  switch (role) {
+    case "ADMIN":
+      return "Gestão da vitrine, preços e cadastros";
+    case "SUPPLIER":
+      return "Insumos e entregas às costureiras";
+    case "EXECUTOR":
+      return "Produção, vitrine e envios ao cliente";
+    case "CUSTOMER":
+      return "Compras na loja";
+    default:
+      return "";
+  }
+}
+
 export function roleForPainelSegment(segment: string): Role | null {
   switch (segment) {
     case "admin":

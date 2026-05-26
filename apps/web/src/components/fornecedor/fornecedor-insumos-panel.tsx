@@ -267,7 +267,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
             O <strong>custo do fornecedor</strong> (R$) é obrigatório por insumo. O frete até a costureira é
-            cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a peça a um executor. Informe
+            cotado pelo <strong>Melhor Envio</strong> quando o admin atribuir a peça a uma costureira. Informe
             o <strong>pacote</strong> típico deste insumo (para cotação); se vários insumos seus forem no
             mesmo envio, prevalece o de maior volume.
           </p>
@@ -505,7 +505,7 @@ export function FornecedorInsumosPanel({ initialItems, apiMode, supplierEmail }:
       </div>
       <p className="text-xs text-muted-foreground">
         * Frete na tabela é valor legado ou estimativa; o fluxo alvo usa <strong>Melhor Envio</strong> após
-        atribuição ao executor (aba Entregas).
+        atribuição à costureira (aba Entregas).
       </p>
     </div>
   );

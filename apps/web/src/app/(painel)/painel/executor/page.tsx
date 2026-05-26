@@ -15,11 +15,12 @@ import { getCompositeProductById } from "@/lib/demo-seed";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { fetchPlatformMe } from "@/lib/platform-account-server";
+import { roleDisplayLabel } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 import { formatBrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Executor",
+  title: "Costureira",
 };
 
 export default async function ExecutorPainelPage() {
@@ -54,7 +55,10 @@ export default async function ExecutorPainelPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Executor</h1>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {roleDisplayLabel("EXECUTOR")}
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Painel da costureira</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
           Atribuições de produção e seu cadastro para a loja. Conecte o Stripe para receber após
           vendas, quando a API estiver configurada.
@@ -86,7 +90,7 @@ export default async function ExecutorPainelPage() {
 
       <Card className="max-w-4xl border-border">
         <CardHeader>
-          <CardTitle className="font-serif text-xl">Pedir para executar uma peça</CardTitle>
+          <CardTitle className="font-serif text-xl">Solicitar produção de uma peça</CardTitle>
           <CardDescription>
             Envia um pedido ao administrador. Com a API e o envio de e-mail configurados no servidor,
             os admins são notificados automaticamente.

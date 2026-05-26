@@ -11,15 +11,17 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ next?: string; cadastro?: string; senha?: string }>;
+  searchParams: Promise<{ next?: string; cadastro?: string; senha?: string; email?: string }>;
 };
 
 export default async function EntrarPage({ searchParams }: PageProps) {
-  const { next, cadastro, senha } = await searchParams;
+  const { next, cadastro, senha, email } = await searchParams;
   const redirectTo = safeInternalPath(next, "/");
   const showPendingHint = cadastro === "pendente";
   const showClienteHint = cadastro === "cliente";
   const showSenhaRedefinida = senha === "redefinida";
+  const showEmailConfirmado = email === "confirmado";
+  const showEmailNaoEnviado = email === "pendente_envio";
 
   return (
     <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
@@ -51,6 +53,18 @@ export default async function EntrarPage({ searchParams }: PageProps) {
             <p className="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center text-sm text-muted-foreground">
               Cadastro recebido. Use o e-mail e a senha que você criou para entrar; o painel completo
               libera após aprovação do admin.
+            </p>
+          ) : null}
+          {showEmailConfirmado ? (
+            <p className="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center text-sm text-muted-foreground">
+              Enviamos um e-mail de confirmação do cadastro para sua caixa de entrada (verifique também
+              o spam).
+            </p>
+          ) : null}
+          {showEmailNaoEnviado ? (
+            <p className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-muted-foreground">
+              Sua conta foi criada, mas o e-mail de confirmação não pôde ser enviado agora. Você já pode
+              entrar com o e-mail e a senha que escolheu.
             </p>
           ) : null}
           {showSenhaRedefinida ? (

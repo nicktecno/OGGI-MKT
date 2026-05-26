@@ -292,26 +292,73 @@ export class NotificationsService {
     }
   }
 
-  /** Fornecedor/costureira: confirmação de que o cadastro foi recebido e está em análise. */
+  /** Confirmação de cadastro para qualquer perfil (cliente ou parceiro). */
+  async sendRegistrationConfirmation(input: {
+    email: string;
+    name: string;
+    role: 'CUSTOMER' | 'SUPPLIER' | 'EXECUTOR';
+    status: 'ACTIVE' | 'PENDING_ADMIN_REVIEW' | 'REJECTED';
+  }): Promise<boolean> {
+    if (!this.mail.isConfigured()) {
+      this.logger.warn(
+        `Cadastro ${input.email}: e-mail de confirmação não enviado (configure RESEND_API_KEY ou SMTP e MAIL_FROM na API).`,
+      );
+      return false;
+    }
+
+    const base = this.baseUrl();
+    const site = process.env.MAIL_SITE_NAME?.trim() || 'Moda Store';
+    const papel =
+      input.role === 'CUSTOMER'
+        ? 'cliente'
+        : input.role === 'SUPPLIER'
+          ? 'fornecedor'
+          : 'costureira';
+    const subject = `Cadastro confirmado — ${site}`;
+    const aprovacao =
+      input.status === 'PENDING_ADMIN_REVIEW'
+        ? 'Nossa equipe vai analisar seus dados. Quando o cadastro for aprovado, você receberá outro e-mail e poderá usar o painel completo.\n\nEnquanto isso, já pode entrar com o mesmo e-mail e senha; algumas áreas podem ficar limitadas até a aprovação.\n\n'
+        : '';
+    const text =
+      `Olá, ${input.name},\n\n` +
+      `Confirmamos que sua conta foi criada na ${site} como ${papel}.\n\n` +
+      aprovacao +
+      `E-mail da conta: ${input.email}\n\n` +
+      `Entrar: ${base}/entrar\n` +
+      (input.role === 'CUSTOMER' ? `Loja: ${base}/loja\n` : '') +
+      `\nSe você não fez este cadastro, ignore este e-mail ou contacte o suporte.\n`;
+
+    try {
+      await this.mail.send({ to: input.email, subject, text });
+      return true;
+    } catch (e) {
+      this.logger.error(`Falha ao e-mail confirmação de cadastro ${input.email}`, e);
+      return false;
+    }
+  }
+
+  /** @deprecated Use sendRegistrationConfirmation */
+  async onCustomerRegisteredWelcome(input: { email: string; name: string }): Promise<void> {
+    await this.sendRegistrationConfirmation({
+      email: input.email,
+      name: input.name,
+      role: 'CUSTOMER',
+      status: 'ACTIVE',
+    });
+  }
+
+  /** @deprecated Use sendRegistrationConfirmation */
   async onPendingPartnerRegistrationAck(input: {
     email: string;
     name: string;
     role: 'SUPPLIER' | 'EXECUTOR';
   }): Promise<void> {
-    const base = this.baseUrl();
-    const papel =
-      input.role === 'SUPPLIER' ? 'fornecedor' : input.role === 'EXECUTOR' ? 'costureira (executor)' : input.role;
-    const subject = 'Cadastro recebido — em análise';
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Recebemos seu cadastro como ${papel}. Nossa equipe vai analisar os dados; quando for aprovado, você receberá outro e-mail e já poderá usar o painel completo.\n\n` +
-      `Enquanto isso, pode entrar com o mesmo e-mail e senha; algumas áreas podem ficar limitadas até a aprovação.\n\n` +
-      `Entrar: ${base}/entrar\n`;
-    try {
-      await this.mail.send({ to: input.email, subject, text });
-    } catch (e) {
-      this.logger.error(`Falha ao e-mail cadastro pendente (parceiro) ${input.email}`, e);
-    }
+    await this.sendRegistrationConfirmation({
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      status: 'PENDING_ADMIN_REVIEW',
+    });
   }
 
   /** Link único para redefinir senha (expira em 1h). */
@@ -328,22 +375,6 @@ export class NotificationsService {
       await this.mail.send({ to: input.email, subject, text });
     } catch (e) {
       this.logger.error(`Falha ao e-mail reset senha ${input.email}`, e);
-    }
-  }
-
-  /** Cliente criou conta na loja (ativo imediato). */
-  async onCustomerRegisteredWelcome(input: { email: string; name: string }): Promise<void> {
-    const base = this.baseUrl();
-    const subject = 'Bem-vindo à loja';
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Sua conta de cliente foi criada com sucesso. Já pode entrar e comprar peças da vitrine.\n\n` +
-      `Entrar: ${base}/entrar\n` +
-      `Loja: ${base}/loja\n`;
-    try {
-      await this.mail.send({ to: input.email, subject, text });
-    } catch (e) {
-      this.logger.error(`Falha ao e-mail boas-vindas cliente ${input.email}`, e);
     }
   }
 

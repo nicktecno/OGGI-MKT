@@ -18,7 +18,7 @@ import {
   fetchSupplierFulfillmentForSession,
   fetchSupplyItemsForSession,
 } from "@/lib/platform-account-server";
-import { dashboardPathForRole } from "@/lib/auth-types";
+import { dashboardPathForRole, roleDisplayLabel } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -75,20 +75,23 @@ export default async function FornecedorPainelPage({ searchParams }: PageProps) 
       </>
     ) : section === "entregas" ? (
       <>
-        Quando uma combinação usar os seus insumos, veja o destino do envio ao executor; com o Melhor Envio
+        Quando uma combinação usar os seus insumos, veja o destino do envio à costureira; com o Melhor Envio
         ligado, a etiqueta fica disponível aqui.
       </>
     ) : (
       <>
-        Escolha no menu à esquerda: dados da empresa e Stripe, insumos para as peças, ou entregas aos
-        executores.
+        Escolha no menu à esquerda: dados da empresa e Stripe, insumos para as peças, ou entregas às
+        costureiras.
       </>
     );
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Fornecedor</h1>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {roleDisplayLabel("SUPPLIER")}
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Painel do fornecedor</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">{intro}</p>
       </div>
 

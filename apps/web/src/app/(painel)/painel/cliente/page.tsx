@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { roleDisplayLabel } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,9 @@ export default async function PainelClientePage() {
   return (
     <div className="space-y-8">
       <header className="space-y-2 border-b border-border/60 pb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comprador</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {roleDisplayLabel("CUSTOMER")}
+        </p>
         <h1 className="font-serif text-3xl font-medium tracking-tight">
           Olá, {session.name ?? session.email}
         </h1>

@@ -56,7 +56,7 @@ export function FornecedorEntregasPanel({ lines, demoMode, apiMode }: Props) {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
         Quando o mesmo pedido inclui <strong>vários insumos seus</strong>, o sistema usa o pacote de{" "}
-        <strong>maior volume</strong> (e o maior peso entre eles) para cotar um único envio ao executor. O frete
+        <strong>maior volume</strong> (e o maior peso entre eles) para cotar um único envio à costureira. O frete
         B2B é definido na <strong>atribuição</strong> e entra no preço final da peça; não pode ser alterado por
         aqui. A <strong>etiqueta Melhor Envio</strong> é criada na atribuição (se a API estiver pronta) ou ao
         clicar em <strong>Gerar etiqueta (Melhor Envio)</strong> no bloco do envio.
@@ -88,7 +88,7 @@ export function FornecedorEntregasPanel({ lines, demoMode, apiMode }: Props) {
                     </span>
                   </span>
                   <span className="text-muted-foreground">
-                    Frete ao executor:{" "}
+                    Frete à costureira:{" "}
                     <span className="font-medium text-foreground">
                       {head.frete_cotado_reais != null ? formatBrl(head.frete_cotado_reais) : "—"}
                     </span>
