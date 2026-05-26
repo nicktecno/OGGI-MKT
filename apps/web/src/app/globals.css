@@ -183,6 +183,26 @@
   h4 {
     @apply font-heading tracking-tight text-balance;
   }
+
+  /* Destaque de texto selecionado — accent/20 no body era quase invisível em inputs */
+  ::selection {
+    background-color: color-mix(in oklch, var(--ring) 48%, transparent);
+    color: var(--foreground);
+  }
+
+  input::selection,
+  textarea::selection,
+  select::selection {
+    background-color: color-mix(in oklch, var(--ring) 55%, var(--background));
+    color: var(--foreground);
+  }
+
+  .dark input::selection,
+  .dark textarea::selection,
+  .dark select::selection {
+    background-color: color-mix(in oklch, var(--ring) 62%, var(--background));
+    color: var(--foreground);
+  }
 }
 
 @layer utilities {
