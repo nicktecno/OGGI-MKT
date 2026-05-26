@@ -217,6 +217,40 @@ export class MelhorEnvioService {
     return row.accessToken;
   }
 
+  /** Extrai mensagem legível do corpo de erro da API Melhor Envio. */
+  private formatMeApiError(status: number, json: unknown | null, text: string): string {
+    if (status === 401) {
+      const base = this.getApiBase();
+      return `Melhor Envio recusou o token (401). Confira se o OAuth foi feito no mesmo ambiente que MELHOR_ENVIO_API_BASE (${base}) e renove em /integrations/melhor-envio/start.`;
+    }
+    if (json && typeof json === 'object') {
+      const o = json as Record<string, unknown>;
+      if (typeof o.message === 'string' && o.message.trim()) {
+        return o.message.trim();
+      }
+      const err = o.error;
+      if (typeof err === 'string' && err.trim()) return err.trim();
+    }
+    const trimmed = text.trim().slice(0, 280);
+    if (trimmed) return trimmed;
+    return `Melhor Envio respondeu HTTP ${status}. Verifique CEPs, dimensões do pacote e a conta (sandbox vs produção).`;
+  }
+
+  private collectMeQuoteErrors(quotes: unknown[]): string[] {
+    const out: string[] = [];
+    for (const row of quotes) {
+      if (!row || typeof row !== 'object') continue;
+      const o = row as Record<string, unknown>;
+      const err = o.error;
+      if (typeof err === 'string' && err.trim()) out.push(err.trim());
+      else if (err && typeof err === 'object') {
+        const m = (err as Record<string, unknown>).message;
+        if (typeof m === 'string' && m.trim()) out.push(m.trim());
+      }
+    }
+    return out;
+  }
+
   private pickCheapestQuoteOption(quotes: unknown[]): { serviceId: number; price: number } {
     let best: { serviceId: number; price: number } | null = null;
     for (const row of quotes) {
@@ -230,7 +264,14 @@ export class MelhorEnvioService {
       if (!best || p < best.price) best = { serviceId: sid, price: p };
     }
     if (!best) {
-      throw new BadRequestException('Melhor Envio não retornou preços de frete para esta rota.');
+      const hints = this.collectMeQuoteErrors(quotes);
+      const detail =
+        hints.length > 0
+          ? hints.slice(0, 2).join(' · ')
+          : 'nenhum transportador retornou preço para este CEP e pacote';
+      throw new BadRequestException(
+        `Melhor Envio não retornou preços de frete para esta rota (${detail}).`,
+      );
     }
     return { serviceId: best.serviceId, price: Math.round(best.price * 100) / 100 };
   }
@@ -281,9 +322,7 @@ export class MelhorEnvioService {
     const { ok, status, json, text } = await this.postMeJson('/api/v2/me/shipment/calculate', body);
     if (!ok) {
       this.log.warn(`ME shipment/calculate ${status}: ${text.slice(0, 400)}`);
-      throw new BadRequestException(
-        'Melhor Envio não cotou este envio. Verifique CEPs, dimensões e a conta na sandbox/produção.',
-      );
+      throw new BadRequestException(this.formatMeApiError(status, json, text));
     }
     if (!Array.isArray(json)) {
       throw new BadRequestException('Melhor Envio retornou formato inesperado na cotação.');
@@ -303,6 +342,7 @@ export class MelhorEnvioService {
     heightCm: number;
     lengthCm: number;
     weightKg: number;
+    /** Valor segurado por unidade (a API ME multiplica pela quantity). */
     insuranceValueBrl: number;
     quantity: number;
   }): Promise<{ price: number; serviceId: number }> {

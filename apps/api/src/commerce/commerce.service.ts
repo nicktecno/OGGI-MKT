@@ -778,7 +778,12 @@ export class CommerceService {
       if (!product || !product.ativo || product.adminPausado) {
         throw new NotFoundException('Produto não disponível para cotação.');
       }
-      const cepOrig = assignment.cepOrigem.replace(/\D/g, '').slice(0, 8) || '01001000';
+      const cepOrig = assignment.cepOrigem.replace(/\D/g, '').slice(0, 8);
+      if (cepOrig.length !== 8) {
+        throw new BadRequestException(
+          'CEP de origem da oferta inválido. A costureira deve publicar com CEP de postagem válido (8 dígitos).',
+        );
+      }
       const pack = {
         alturaCm: Math.max(0.1, product.pacoteAlturaCm),
         larguraCm: Math.max(0.1, product.pacoteLarguraCm),
@@ -795,7 +800,7 @@ export class CommerceService {
           heightCm: pack.alturaCm,
           lengthCm: pack.comprimentoCm,
           weightKg: Math.max(0.01, product.pacotePesoKg),
-          insuranceValueBrl: product.precoVendaPublico * q,
+          insuranceValueBrl: product.precoVendaPublico,
           quantity: q,
         });
       } catch (e) {
