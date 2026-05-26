@@ -81,6 +81,7 @@ export function CheckoutClient({
     subtotal: number;
     freight: number;
     total: number;
+    freightEstimated?: boolean;
   } | null>(null);
   const [payQuoteLoading, setPayQuoteLoading] = useState(false);
   const [payQuoteError, setPayQuoteError] = useState<string | null>(null);
@@ -165,6 +166,7 @@ export function CheckoutClient({
         });
         const data = (await res.json()) as {
           total_frete_brl?: number;
+          freight_estimated?: boolean;
           message?: string;
         };
         if (!res.ok) {
@@ -187,7 +189,12 @@ export function CheckoutClient({
         const freight = data.total_frete_brl;
         const total = Math.round((subtotal + freight) * 100) / 100;
         if (!cancelled) {
-          setPayTotals({ subtotal, freight, total });
+          setPayTotals({
+            subtotal,
+            freight,
+            total,
+            freightEstimated: data.freight_estimated === true,
+          });
           setPayQuoteError(null);
         }
       } catch {
@@ -557,6 +564,12 @@ export function CheckoutClient({
                     <span className="text-muted-foreground">Frete estimado</span>
                     <span className="font-mono">{formatBrl(payTotals.freight)}</span>
                   </div>
+                  {payTotals.freightEstimated ? (
+                    <p className="text-left text-xs leading-relaxed text-muted-foreground">
+                      Valor calculado por estimativa interna (Melhor Envio não respondeu nesta rota).
+                      O frete final pode ser ajustado após a confirmação do pedido.
+                    </p>
+                  ) : null}
                   <p className="border-t border-border pt-2 font-serif text-xl font-medium">
                     Total {formatBrl(payTotals.total)}
                   </p>
@@ -567,11 +580,11 @@ export function CheckoutClient({
 
               {stripeEnabled && session.role === "CUSTOMER" ? (
                 <div className="space-y-2 rounded-lg border border-border/80 bg-muted/15 p-4">
-                  <p className="text-sm font-medium text-foreground">Pagar com cartão (Stripe)</p>
+                  <p className="text-sm font-medium text-foreground">Pagamento (Stripe)</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {stripeLive
-                      ? "Você será redirecionado ao pagamento seguro. O valor cobrado é real; após a confirmação, o estoque da oferta é atualizado."
-                      : "Você será redirecionado ao pagamento seguro (modo teste Stripe). Use apenas cartões de exemplo (como 4242…). Após a confirmação, o estoque da oferta é atualizado."}
+                      ? "Você será redirecionado ao checkout seguro do Stripe. Lá você escolhe a forma de pagamento disponível na loja — em geral cartão de crédito ou débito e Pix. O valor cobrado é real; após a confirmação, o estoque é atualizado."
+                      : "Você será redirecionado ao checkout de teste do Stripe. Use cartão de exemplo (4242…) ou Pix de teste, conforme o que aparecer na tela. Após a confirmação, o estoque da oferta é atualizado."}
                   </p>
                   {stripeError ? (
                     <p className="text-sm text-destructive" role="alert">
@@ -621,7 +634,7 @@ export function CheckoutClient({
                       })();
                     }}
                   >
-                    {stripeLoading ? "Redirecionando…" : "Pagar com cartão"}
+                    {stripeLoading ? "Redirecionando…" : "Ir para pagamento"}
                   </Button>
                 </div>
               ) : null}
@@ -679,8 +692,8 @@ export function CheckoutClient({
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {hideDemoUi || stripeLive
-                  ? "O pagamento com cartão usa o Stripe; após a confirmação, a página de obrigado atualiza o estoque."
-                  : "“Confirmar sem cartão” grava o pedido e baixa o estoque como exercício, sem cobrança. “Pagar com cartão” usa o Stripe; após o pagamento, a página de obrigado confirma e aplica a mesma baixa de estoque."}
+                  ? "O pagamento é processado pelo Stripe (cartão, Pix ou outro método que aparecer no checkout). Após a confirmação, a página de obrigado atualiza o estoque."
+                  : "“Confirmar sem cartão” grava o pedido e baixa o estoque como exercício, sem cobrança. “Ir para pagamento” abre o checkout do Stripe; após o pagamento, a página de obrigado confirma e aplica a mesma baixa de estoque."}
               </p>
             </CardContent>
           </Card>

@@ -38,7 +38,9 @@ export default async function CheckoutPage() {
         <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Finalizar compra</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
           {session
-            ? `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, confira o frete e o total e escolha pagar com cartão (Stripe) ou confirmar sem cartão, conforme as opções exibidas abaixo.`
+            ? hideDemoUi
+              ? `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, confira o frete e o total e siga para o pagamento seguro do Stripe (cartão, Pix ou outras formas habilitadas na loja).`
+              : `Olá, ${session.name ?? session.email}. Informe o endereço de entrega, confira o frete e o total e escolha pagar pelo Stripe ou confirmar sem cartão (teste), conforme as opções abaixo.`
             : hideDemoUi
               ? "Faça login para vincular este carrinho à sua conta. Ainda não tem cadastro? Crie em “Registrar”."
               : "Faça login para vincular este carrinho à sua conta. Ainda não tem cadastro? Crie em “Registrar” ou, neste ambiente, use a conta de cliente de exemplo indicada ao lado do login."}

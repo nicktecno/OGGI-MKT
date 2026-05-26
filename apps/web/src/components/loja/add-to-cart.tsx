@@ -101,8 +101,8 @@ export function AddToCartActions({ item, className, selectedSize, requireSize }:
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Ao finalizar a compra você informa a entrega, vê o frete e conclui com cartão (quando disponível) ou
-          com a opção de confirmação sem pagamento para testes — sempre logado como cliente.
+          Ao finalizar a compra você informa a entrega, vê o frete e paga pelo checkout seguro do Stripe
+          (cartão, Pix ou outras formas habilitadas na loja) — com login de cliente.
         </p>
       )}
     </div>

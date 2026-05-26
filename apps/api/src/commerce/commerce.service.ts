@@ -745,6 +745,8 @@ export class CommerceService {
   ): Promise<{
     total_frete_brl: number;
     lines: { listing_id: string; frete_brl: number }[];
+    /** true quando usou estimativa interna (Melhor Envio indisponível ou falhou). */
+    freight_estimated?: boolean;
   }> {
     const cepDest = cepDestinoRaw.replace(/\D/g, '').slice(0, 8);
     if (cepDest.length !== 8) {
@@ -754,6 +756,8 @@ export class CommerceService {
       throw new BadRequestException('Lista de linhas inválida.');
     }
     const useMelhorEnvio = await this.melhorEnvio.hasShippingCredentials();
+    const strictMelhorEnvio = process.env.MELHOR_ENVIO_CHECKOUT_STRICT === 'true';
+    let freightEstimated = false;
     let total = 0;
     const out: { listing_id: string; frete_brl: number }[] = [];
     for (const row of lines) {
@@ -775,6 +779,12 @@ export class CommerceService {
         throw new NotFoundException('Produto não disponível para cotação.');
       }
       const cepOrig = assignment.cepOrigem.replace(/\D/g, '').slice(0, 8) || '01001000';
+      const pack = {
+        alturaCm: Math.max(0.1, product.pacoteAlturaCm),
+        larguraCm: Math.max(0.1, product.pacoteLarguraCm),
+        comprimentoCm: Math.max(0.1, product.pacoteComprimentoCm),
+        pesoKg: Math.max(0.01, product.pacotePesoKg) * q,
+      };
       let frete: number;
       if (useMelhorEnvio) {
         try {
@@ -782,33 +792,52 @@ export class CommerceService {
             fromPostalCode: cepOrig,
             toPostalCode: cepDest,
             productId: `${listingId}-${product.slug}`,
-            widthCm: product.pacoteLarguraCm,
-            heightCm: product.pacoteAlturaCm,
-            lengthCm: product.pacoteComprimentoCm,
-            weightKg: Math.max(0.01, product.pacotePesoKg) * q,
-            insuranceValueBrl: product.precoVendaPublico,
+            widthCm: pack.larguraCm,
+            heightCm: pack.alturaCm,
+            lengthCm: pack.comprimentoCm,
+            weightKg: Math.max(0.01, product.pacotePesoKg),
+            insuranceValueBrl: product.precoVendaPublico * q,
             quantity: q,
           });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          this.log.warn(`Melhor Envio falhou para linha ${listingId}: ${msg}`);
-          throw e;
+          if (strictMelhorEnvio) {
+            this.log.warn(`Melhor Envio falhou para linha ${listingId}: ${msg}`);
+            throw e;
+          }
+          this.log.warn(
+            `Melhor Envio falhou para linha ${listingId}, usando estimativa de frete: ${msg}`,
+          );
+          frete = stubFreteB2B({
+            cepOrigem: cepOrig,
+            cepDestino: cepDest,
+            alturaCm: pack.alturaCm,
+            larguraCm: pack.larguraCm,
+            comprimentoCm: pack.comprimentoCm,
+            pesoKg: pack.pesoKg,
+          });
+          freightEstimated = true;
         }
       } else {
         frete = stubFreteB2B({
           cepOrigem: cepOrig,
           cepDestino: cepDest,
-          alturaCm: product.pacoteAlturaCm,
-          larguraCm: product.pacoteLarguraCm,
-          comprimentoCm: product.pacoteComprimentoCm,
-          pesoKg: Math.max(0.01, product.pacotePesoKg) * q,
+          alturaCm: pack.alturaCm,
+          larguraCm: pack.larguraCm,
+          comprimentoCm: pack.comprimentoCm,
+          pesoKg: pack.pesoKg,
         });
+        freightEstimated = true;
       }
       total += frete;
       out.push({ listing_id: listingId, frete_brl: frete });
     }
     const rounded = Math.round(total * 100) / 100;
-    return { total_frete_brl: rounded, lines: out };
+    return {
+      total_frete_brl: rounded,
+      lines: out,
+      ...(freightEstimated ? { freight_estimated: true } : {}),
+    };
   }
 
   /**

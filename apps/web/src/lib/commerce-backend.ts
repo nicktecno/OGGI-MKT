@@ -59,7 +59,11 @@ export async function internalFetch(path: string, init?: RequestInit): Promise<R
 export async function fetchCheckoutShippingQuotePublic(
   cepDestino: string,
   lines: { listing_id: string; quantity: number }[],
-): Promise<{ total_frete_brl: number; lines: { listing_id: string; frete_brl: number }[] }> {
+): Promise<{
+  total_frete_brl: number;
+  lines: { listing_id: string; frete_brl: number }[];
+  freight_estimated?: boolean;
+}> {
   const base = serverApiUrl().trim().replace(/\/$/, "");
   if (!base) {
     throw new Error("Defina COMMERCE_API_URL para cotar o frete.");
@@ -72,7 +76,12 @@ export async function fetchCheckoutShippingQuotePublic(
     cache: "no-store",
   });
   const text = await res.text();
-  let json: { total_frete_brl?: number; lines?: { listing_id: string; frete_brl: number }[]; message?: string | string[] };
+  let json: {
+    total_frete_brl?: number;
+    lines?: { listing_id: string; frete_brl: number }[];
+    freight_estimated?: boolean;
+    message?: string | string[];
+  };
   try {
     json = JSON.parse(text) as typeof json;
   } catch {
@@ -87,7 +96,11 @@ export async function fetchCheckoutShippingQuotePublic(
   if (typeof json.total_frete_brl !== "number" || !Array.isArray(json.lines)) {
     throw new Error("Resposta de cotação inválida.");
   }
-  return { total_frete_brl: json.total_frete_brl, lines: json.lines };
+  return {
+    total_frete_brl: json.total_frete_brl,
+    lines: json.lines,
+    ...(json.freight_estimated === true ? { freight_estimated: true } : {}),
+  };
 }
 
 /** Frete B2B insumos embutido no preço (× quantidade), por linha — alinha repasse Connect à decisão de produto #12. */

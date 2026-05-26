@@ -25,7 +25,7 @@ export async function confirmCheckoutDemoAction(
   if (hideDemoCredentialsUi() || isStripeLiveMode()) {
     return {
       ok: false,
-      error: "Finalizar compra sem cartão não está disponível em produção. Use pagamento com cartão (Stripe).",
+      error: "Finalizar compra sem pagamento não está disponível em produção. Use o checkout do Stripe.",
     };
   }
   const session = await getSession();
