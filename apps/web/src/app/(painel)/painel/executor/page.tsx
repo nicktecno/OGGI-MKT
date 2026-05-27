@@ -11,7 +11,7 @@ import { executorAssignmentStatusLabel } from "@/lib/executor-assignment-labels"
 import { ExecutorProfileForm } from "@/components/executor/executor-profile-form";
 import { ExecutorSolicitarProducao } from "@/components/executor/executor-solicitar-producao";
 import { StripeConnectButton } from "@/components/platform/stripe-connect-button";
-import { getCompositeProductById } from "@/lib/demo-seed";
+import { compositeProductHasActiveAssignment, getCompositeProductById } from "@/lib/demo-seed";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
 import { getDemoCommerceState } from "@/lib/demo-runtime";
 import { fetchPlatformMe } from "@/lib/platform-account-server";
@@ -36,13 +36,9 @@ export default async function ExecutorPainelPage() {
 
   const em = email.toLowerCase();
   const pecasParaPedido = commerce.products.filter((p) => {
-    const temAtribuicao = commerce.productionAssignments.some(
-      (a) =>
-        a.compositeProductId === p.id &&
-        a.executorEmail.toLowerCase() === em &&
-        a.status !== "ARCHIVED",
-    );
-    if (temAtribuicao) return false;
+    if (compositeProductHasActiveAssignment(p.id, commerce.productionAssignments)) {
+      return false;
+    }
     const temPedidoPendente = commerce.executionRequests.some(
       (r) =>
         r.compositeProductId === p.id &&

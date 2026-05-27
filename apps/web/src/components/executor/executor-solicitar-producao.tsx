@@ -141,7 +141,8 @@ export function ExecutorSolicitarProducao({ products }: { products: DemoComposit
   if (products.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Não há peças disponíveis para novo pedido (todas já têm atribuição ativa ou pedido pendente).
+        Não há peças disponíveis para novo pedido (já atribuídas a uma costureira ou com seu pedido
+        pendente).
       </p>
     );
   }

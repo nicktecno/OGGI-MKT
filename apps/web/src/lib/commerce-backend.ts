@@ -11,6 +11,7 @@ import {
   DEMO_EXECUTION_REQUESTS_INITIAL,
   compositeInsumosTotal,
   compositePrecoFromLinhasAndFees,
+  compositeProductHasActiveAssignment,
   demoFreteB2BForCompositeProduct,
   getSupplyItemById,
   insumoCostTotal,
@@ -510,6 +511,19 @@ export async function persistCreateExecutionRequest(input: {
   const state = await getCommerceStateFromCookies();
   if (!state.products.some((p) => p.id === input.compositeProductId)) {
     throw new Error("Peça não encontrada.");
+  }
+  if (compositeProductHasActiveAssignment(input.compositeProductId, state.productionAssignments)) {
+    const mine = state.productionAssignments.some(
+      (a) =>
+        a.compositeProductId === input.compositeProductId &&
+        a.executorEmail.toLowerCase() === email &&
+        a.status !== "ARCHIVED",
+    );
+    throw new Error(
+      mine
+        ? "Você já tem uma atribuição ativa para esta peça."
+        : "Esta peça já está atribuída a outra costureira. Escolha outra peça.",
+    );
   }
   const pendingDup = state.executionRequests.some(
     (r) =>

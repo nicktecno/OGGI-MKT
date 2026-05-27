@@ -14,6 +14,7 @@ import {
   compositeInsumosTotal,
   compositePrecoFromLinhasAndFees,
   compositePrecoPreviaSemFreteB2B,
+  compositeProductHasActiveAssignment,
   demoFreteB2BBreakdownForCompositeProduct,
   insumoCostTotal,
   mergeSupplyCatalog,
@@ -2153,10 +2154,9 @@ function DirectAssignForm({
   const scope = "direct-assign";
   const saving = adminActionLoading(pending, pendingScope, scope);
   const assignableProducts = useMemo(() => {
-    const busy = new Set(
-      productionAssignments.filter((a) => a.status !== "ARCHIVED").map((a) => a.compositeProductId),
+    return products.filter(
+      (p) => !compositeProductHasActiveAssignment(p.id, productionAssignments),
     );
-    return products.filter((p) => !busy.has(p.id));
   }, [products, productionAssignments]);
   const [productId, setProductId] = useState("");
   const [executorEmail, setExecutorEmail] = useState(() => executorOptions[0]?.email ?? "");

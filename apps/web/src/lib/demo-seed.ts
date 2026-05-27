@@ -114,6 +114,16 @@ export type DemoProductionAssignment = {
   storefront_highlight_order?: number | null;
 };
 
+/** Peça já vinculada a alguma costureira (qualquer atribuição não arquivada). */
+export function compositeProductHasActiveAssignment(
+  productId: string,
+  assignments: DemoProductionAssignment[],
+): boolean {
+  return assignments.some(
+    (a) => a.compositeProductId === productId && a.status !== "ARCHIVED",
+  );
+}
+
 /** Opção no seletor admin “peça + costureira” (vínculo por conta cadastrada). */
 export type ExecutorPickerOption = {
   email: string;

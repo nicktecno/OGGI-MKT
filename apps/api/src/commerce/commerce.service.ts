@@ -527,6 +527,20 @@ export class CommerceService {
       where: { id: input.compositeProductId },
     });
     if (!product) throw new NotFoundException('Peça não encontrada.');
+    const activeAssignment = await this.prisma.productionAssignment.findFirst({
+      where: {
+        compositeProductId: input.compositeProductId,
+        status: { not: 'ARCHIVED' },
+      },
+    });
+    if (activeAssignment) {
+      if (activeAssignment.executorEmail.toLowerCase() === email) {
+        throw new ConflictException('Você já tem uma atribuição ativa para esta peça.');
+      }
+      throw new ConflictException(
+        'Esta peça já está atribuída a outra costureira. Escolha outra peça.',
+      );
+    }
     const pendingSame = await this.prisma.executionRequest.findFirst({
       where: {
         compositeProductId: input.compositeProductId,
@@ -570,11 +584,16 @@ export class CommerceService {
           status: { not: 'ARCHIVED' },
         },
       });
-      const dup = peers.some(
-        (a) => a.executorEmail.toLowerCase() === req.executorEmail.toLowerCase(),
-      );
-      if (dup) {
-        throw new ConflictException('Já existe uma combinação ativa entre esta peça e esta costureira.');
+      if (peers.length > 0) {
+        const dup = peers.some(
+          (a) => a.executorEmail.toLowerCase() === req.executorEmail.toLowerCase(),
+        );
+        if (dup) {
+          throw new ConflictException('Já existe uma combinação ativa entre esta peça e esta costureira.');
+        }
+        throw new ConflictException(
+          'Esta peça já está atribuída a outra costureira. Rejeite pedidos pendentes duplicados.',
+        );
       }
       const now = new Date();
       await tx.executionRequest.update({
