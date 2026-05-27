@@ -45,6 +45,8 @@ export async function fetchActiveExecutorPickerOptions(): Promise<ExecutorPicker
   return j.executors.map((e) => ({
     email: String(e.email).trim().toLowerCase(),
     displayName: String(e.displayName ?? "").trim(),
+    cidade_origem: String(e.cidade_origem ?? "").trim(),
+    cep_origem: String(e.cep_origem ?? "").trim(),
   }));
 }
 
