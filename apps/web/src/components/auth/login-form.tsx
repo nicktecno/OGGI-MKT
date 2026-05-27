@@ -23,6 +23,9 @@ type LoginFormProps = {
   redirectTo?: string;
 };
 
+const LOGIN_INPUT_PLACEHOLDER_CLASS =
+  "placeholder:text-muted-foreground/45 placeholder:font-normal";
+
 export function LoginForm({ redirectTo }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,9 +76,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@demo.local"
+              placeholder="seuemail@exemplo.com.br"
               required
-              className="bg-background"
+              className={`bg-background ${LOGIN_INPUT_PLACEHOLDER_CLASS}`}
             />
           </div>
           <div className="space-y-2">
@@ -96,6 +99,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              className={LOGIN_INPUT_PLACEHOLDER_CLASS}
             />
           </div>
           {error ? (
