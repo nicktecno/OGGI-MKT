@@ -31,7 +31,6 @@ import { toast } from "sonner";
 import { ADMIN_CARD, ADMIN_CARD_HEADER } from "@/components/admin/admin-panel-styles";
 import { SupplyItemDetailModal } from "@/components/admin/supply-item-detail-modal";
 import { cn, formatBrl } from "@/lib/utils";
-import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import {
   approveExecutionRequest,
   archiveProductionAssignment,
@@ -2160,8 +2159,6 @@ function DirectAssignForm({
   }, [products, productionAssignments]);
   const [productId, setProductId] = useState("");
   const [executorEmail, setExecutorEmail] = useState(() => executorOptions[0]?.email ?? "");
-  const [cidade, setCidade] = useState("São Paulo — SP");
-  const [cep, setCep] = useState("01310-100");
 
   useEffect(() => {
     if (assignableProducts.length === 0) {
@@ -2180,6 +2177,10 @@ function DirectAssignForm({
   }, [executorOptions, executorEmail]);
 
   const selectedExecutor = executorOptions.find((o) => o.email === executorEmail);
+  const postingFromProfile =
+    selectedExecutor &&
+    selectedExecutor.cidade_origem.trim() &&
+    selectedExecutor.cep_origem.trim();
 
   if (executorOptions.length === 0) {
     return (
@@ -2226,15 +2227,15 @@ function DirectAssignForm({
           className="grid gap-5 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!selectedExecutor || !productId) return;
+            if (!selectedExecutor || !productId || !postingFromProfile) return;
             run(
               () =>
                 createDirectAssignment({
                   compositeProductId: productId,
                   executorEmail: selectedExecutor.email,
                   executorNome: selectedExecutor.displayName,
-                  cidade_origem: cidade,
-                  cep_origem: cep,
+                  cidade_origem: selectedExecutor.cidade_origem.trim(),
+                  cep_origem: selectedExecutor.cep_origem.trim(),
                 }),
               scope,
             );
@@ -2272,29 +2273,26 @@ function DirectAssignForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="da-cidade">Cidade de onde posta</Label>
-            <Input id="da-cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={pending} />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="da-cep">CEP de postagem</Label>
-            <Input
-              id="da-cep"
-              className="max-w-[14rem]"
-              value={cep}
-              onChange={(e) => setCep(e.target.value)}
-              onBlur={(e) =>
-                void applyViaCepOnBlur(e.currentTarget.value, (v) => {
-                  setCep(onlyCepDigits(v.cep));
-                  setCidade(`${v.localidade} — ${v.uf}`);
-                })
-              }
-              disabled={pending}
-            />
-            <p className="text-xs text-muted-foreground">Com 8 dígitos, ViaCEP ao sair do campo.</p>
+          <div className="space-y-1.5 sm:col-span-2 rounded-xl border border-border/80 bg-muted/30 px-4 py-3">
+            <p className="text-sm font-medium text-foreground">Origem de postagem (cadastro da costureira)</p>
+            {postingFromProfile ? (
+              <p className="text-sm text-muted-foreground">
+                {selectedExecutor!.cidade_origem.trim()}
+                <span className="mx-1.5 text-border">·</span>
+                CEP {selectedExecutor!.cep_origem.trim()}
+              </p>
+            ) : (
+              <p className="text-sm text-destructive">
+                Esta costureira ainda não tem CEP e cidade no perfil. Peça que complete o cadastro no
+                painel da costureira antes de vincular a peça.
+              </p>
+            )}
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={pending || !selectedExecutor || !productId}>
+            <Button
+              type="submit"
+              disabled={pending || !selectedExecutor || !productId || !postingFromProfile}
+            >
               {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
               Salvar combinação
             </Button>

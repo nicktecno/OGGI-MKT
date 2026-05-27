@@ -13,6 +13,7 @@ import {
   compositePrecoFromLinhasAndFees,
   compositeProductHasActiveAssignment,
   demoFreteB2BForCompositeProduct,
+  executorPostingOriginFromDemoState,
   getSupplyItemById,
   insumoCostTotal,
 } from "./demo-seed";
@@ -444,6 +445,7 @@ export async function persistApproveExecutionRequest(requestId: string) {
   const nextRequests: DemoExecutionRequest[] = state.executionRequests.map((r) =>
     r.id === requestId ? { ...r, status: "APPROVED" as const, reviewed_at: now } : r,
   );
+  const posting = executorPostingOriginFromDemoState(state, req.executorEmail);
   const assignment: DemoProductionAssignment = {
     id: `asg-${crypto.randomUUID().slice(0, 8)}`,
     compositeProductId: req.compositeProductId,
@@ -451,8 +453,8 @@ export async function persistApproveExecutionRequest(requestId: string) {
     executorNome: req.executorNome.includes("Atelier")
       ? req.executorNome
       : `${req.executorNome} — Atelier`,
-    cidade_origem: "São Paulo — SP",
-    cep_origem: "01310-100",
+    cidade_origem: posting.cidade_origem,
+    cep_origem: posting.cep_origem,
     available_quantity: 0,
     units_produced: 0,
     status: "ASSIGNED",
@@ -598,8 +600,8 @@ export async function persistCreateDirectAssignment(input: {
   }
   const email = input.executorEmail.trim().toLowerCase();
   const nome = input.executorNome.trim();
-  if (!email || !nome || !input.cidade_origem.trim() || !input.cep_origem.trim()) {
-    throw new Error("Preencha e-mail, nome, cidade e CEP.");
+  if (!email || !nome) {
+    throw new Error("Preencha e-mail e nome da costureira.");
   }
   const state = await getCommerceStateFromCookies();
   if (!state.products.some((p) => p.id === input.compositeProductId)) {
@@ -615,13 +617,14 @@ export async function persistCreateDirectAssignment(input: {
   ) {
     throw new Error("Já existe uma combinação ativa entre esta peça e esta costureira.");
   }
+  const posting = executorPostingOriginFromDemoState(state, email);
   const assignment: DemoProductionAssignment = {
     id: `asg-${crypto.randomUUID().slice(0, 8)}`,
     compositeProductId: input.compositeProductId,
     executorEmail: email,
     executorNome: nome,
-    cidade_origem: input.cidade_origem.trim(),
-    cep_origem: input.cep_origem.trim(),
+    cidade_origem: posting.cidade_origem,
+    cep_origem: posting.cep_origem,
     available_quantity: 0,
     units_produced: 0,
     status: "ASSIGNED",
@@ -629,7 +632,7 @@ export async function persistCreateDirectAssignment(input: {
     execution_request_id: null,
   };
   const product = state.products.find((p) => p.id === input.compositeProductId);
-  const cep = input.cep_origem.trim();
+  const cep = posting.cep_origem;
   await updateCommerceDelta((d) => {
     const patch = d.productPatch ?? {};
     let nextPatch = patch;

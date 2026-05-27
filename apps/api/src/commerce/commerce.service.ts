@@ -572,6 +572,10 @@ export class CommerceService {
   }
 
   async approveExecutionRequest(requestId: string): Promise<void> {
+    const reqPreview = await this.prisma.executionRequest.findUnique({ where: { id: requestId } });
+    if (!reqPreview) throw new NotFoundException('Pedido não encontrado.');
+    const postingOrigin = await this.resolveExecutorPostingOrigin(reqPreview.executorEmail);
+
     const { assignmentId, compositeProductId } = await this.prisma.$transaction(async (tx) => {
       const req = await tx.executionRequest.findUnique({ where: { id: requestId } });
       if (!req) throw new NotFoundException('Pedido não encontrado.');
@@ -609,8 +613,8 @@ export class CommerceService {
           compositeProductId: req.compositeProductId,
           executorEmail: req.executorEmail.trim().toLowerCase(),
           executorNome: nome,
-          cidadeOrigem: 'São Paulo — SP',
-          cepOrigem: '01310-100',
+          cidadeOrigem: postingOrigin.cidadeOrigem,
+          cepOrigem: postingOrigin.cepOrigem,
           availableQuantity: 0,
           unitsProduced: 0,
           status: 'ASSIGNED',
@@ -658,14 +662,15 @@ export class CommerceService {
     compositeProductId: string;
     executorEmail: string;
     executorNome: string;
-    cidade_origem: string;
-    cep_origem: string;
+    cidade_origem?: string;
+    cep_origem?: string;
   }): Promise<void> {
     const email = input.executorEmail.trim().toLowerCase();
     const nome = input.executorNome.trim();
-    if (!email || !nome || !input.cidade_origem.trim() || !input.cep_origem.trim()) {
-      throw new BadRequestException('Preencha e-mail, nome, cidade e CEP.');
+    if (!email || !nome) {
+      throw new BadRequestException('Preencha e-mail e nome da costureira.');
     }
+    const postingOrigin = await this.resolveExecutorPostingOrigin(email);
     const product = await this.prisma.compositeProduct.findUnique({
       where: { id: input.compositeProductId },
     });
@@ -686,8 +691,8 @@ export class CommerceService {
         compositeProductId: input.compositeProductId,
         executorEmail: email,
         executorNome: nome,
-        cidadeOrigem: input.cidade_origem.trim(),
-        cepOrigem: input.cep_origem.trim(),
+        cidadeOrigem: postingOrigin.cidadeOrigem,
+        cepOrigem: postingOrigin.cepOrigem,
         availableQuantity: 0,
         unitsProduced: 0,
         status: 'ASSIGNED',
@@ -1202,6 +1207,31 @@ export class CommerceService {
       assignment_source: a.assignmentSource,
       execution_request_id: a.executionRequestId,
       storefront_highlight_order: a.storefrontHighlightOrder ?? null,
+    };
+  }
+
+  private async resolveExecutorPostingOrigin(
+    executorEmail: string,
+  ): Promise<{ cidadeOrigem: string; cepOrigem: string }> {
+    const acc = await this.prisma.platformAccount.findFirst({
+      where: {
+        email: executorEmail.trim().toLowerCase(),
+        role: 'EXECUTOR',
+      },
+      include: { executorProfile: true },
+    });
+    const p = acc?.executorProfile;
+    const cep = p?.cep?.trim();
+    const city = p?.city?.trim();
+    const uf = p?.stateUf?.trim().toUpperCase();
+    if (!cep || !city || !uf) {
+      throw new BadRequestException(
+        'A costureira precisa ter CEP, cidade e UF no cadastro antes de vincular peças.',
+      );
+    }
+    return {
+      cidadeOrigem: `${city} — ${uf}`,
+      cepOrigem: cep,
     };
   }
 }

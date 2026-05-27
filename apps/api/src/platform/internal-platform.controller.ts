@@ -269,10 +269,17 @@ export class InternalPlatformController {
       include: { executorProfile: true },
       orderBy: { email: 'asc' },
     });
-    const executors = rows.map((a) => ({
-      email: a.email,
-      displayName: (a.executorProfile?.displayName ?? a.name).trim(),
-    }));
+    const executors = rows.map((a) => {
+      const p = a.executorProfile;
+      const city = p?.city?.trim() ?? '';
+      const uf = p?.stateUf?.trim().toUpperCase() ?? '';
+      return {
+        email: a.email,
+        displayName: (p?.displayName ?? a.name).trim(),
+        cidade_origem: city && uf ? `${city} — ${uf}` : '',
+        cep_origem: p?.cep?.trim() ?? '',
+      };
+    });
     return { executors };
   }
 

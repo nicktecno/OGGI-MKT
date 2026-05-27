@@ -128,10 +128,18 @@ export function compositeProductHasActiveAssignment(
 export type ExecutorPickerOption = {
   email: string;
   displayName: string;
+  /** Cidade — UF de postagem (perfil da costureira). */
+  cidade_origem: string;
+  cep_origem: string;
 };
 
 export const DEMO_EXECUTOR_PICKER_FALLBACK: ExecutorPickerOption[] = [
-  { email: "executor@demo.local", displayName: "Carla Mendes — Atelier" },
+  {
+    email: "executor@demo.local",
+    displayName: "Carla Mendes — Atelier",
+    cidade_origem: "São Paulo — SP",
+    cep_origem: "01310-100",
+  },
 ];
 
 /** Costureiras já presentes no estado demo (atribuições e pedidos), ou fallback do seed. */
@@ -139,19 +147,58 @@ export function executorOptionsFromDemoCommerce(state: {
   productionAssignments: DemoProductionAssignment[];
   executionRequests: DemoExecutionRequest[];
 }): ExecutorPickerOption[] {
-  const byEmail = new Map<string, string>();
+  const byEmail = new Map<
+    string,
+    { displayName: string; cidade_origem: string; cep_origem: string }
+  >();
   for (const a of state.productionAssignments) {
     const k = a.executorEmail.trim().toLowerCase();
-    if (!byEmail.has(k)) byEmail.set(k, a.executorNome.trim());
+    byEmail.set(k, {
+      displayName: a.executorNome.trim(),
+      cidade_origem: a.cidade_origem.trim(),
+      cep_origem: a.cep_origem.trim(),
+    });
   }
   for (const r of state.executionRequests) {
     const k = r.executorEmail.trim().toLowerCase();
-    if (!byEmail.has(k)) byEmail.set(k, r.executorNome.trim());
+    if (!byEmail.has(k)) {
+      const fallback = DEMO_EXECUTOR_PICKER_FALLBACK.find((o) => o.email.toLowerCase() === k);
+      byEmail.set(k, {
+        displayName: r.executorNome.trim(),
+        cidade_origem: fallback?.cidade_origem ?? "",
+        cep_origem: fallback?.cep_origem ?? "",
+      });
+    }
   }
   const list = [...byEmail.entries()]
-    .map(([email, displayName]) => ({ email, displayName }))
+    .map(([email, v]) => ({
+      email,
+      displayName: v.displayName,
+      cidade_origem: v.cidade_origem,
+      cep_origem: v.cep_origem,
+    }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, "pt-BR"));
   return list.length > 0 ? list : DEMO_EXECUTOR_PICKER_FALLBACK;
+}
+
+/** CEP e cidade de postagem da costureira (demo / atribuições anteriores). */
+export function executorPostingOriginFromDemoState(
+  state: {
+    productionAssignments: DemoProductionAssignment[];
+    executionRequests: DemoExecutionRequest[];
+  },
+  executorEmail: string,
+): { cidade_origem: string; cep_origem: string } {
+  const opts = executorOptionsFromDemoCommerce(state);
+  const o = opts.find((x) => x.email.toLowerCase() === executorEmail.trim().toLowerCase());
+  const cidade_origem = o?.cidade_origem.trim() ?? "";
+  const cep_origem = o?.cep_origem.trim() ?? "";
+  if (!cidade_origem || !cep_origem) {
+    throw new Error(
+      "A costureira precisa ter CEP e cidade no cadastro antes de vincular peças.",
+    );
+  }
+  return { cidade_origem, cep_origem };
 }
 
 export type SupplierPickerOption = { email: string; label: string };
