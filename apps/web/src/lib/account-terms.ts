@@ -20,6 +20,11 @@ export type AccountTermsBlock = {
   sections: { heading: string; body: string }[];
 };
 
+/** Texto do checkbox de aceite no cadastro (a versão técnica fica no rodapé dos termos). */
+export function accountTermsAcceptanceLabel(block: Pick<AccountTermsBlock, "title">): string {
+  return `Li e aceito os ${block.title} exibidos acima e concordo que esta aceitação seja registrada no meu cadastro.`;
+}
+
 const customerTerms: AccountTermsBlock = {
   title: "Termos de uso — Cliente",
   version: ACCOUNT_TERMS_VERSION.CUSTOMER,

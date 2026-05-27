@@ -1,6 +1,13 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { quantidadeFromCompositeLineJson, supplyItemIdFromCompositeLineJson } from '../commerce/composite-line-json.util';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  buildAccountApprovedEmail,
+  buildAccountRejectedEmail,
+  buildPasswordResetEmail,
+  buildPlainNotificationEmail,
+  buildRegistrationConfirmationEmail,
+} from '../mail/email-layout';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
@@ -17,6 +24,25 @@ export class NotificationsService {
     return raw || 'http://localhost:3000';
   }
 
+  private siteName(): string {
+    return process.env.MAIL_SITE_NAME?.trim() || 'Moda Store';
+  }
+
+  private notificationHtml(title: string, text: string): string {
+    return buildPlainNotificationEmail({ siteName: this.siteName(), title, text }).html;
+  }
+
+  private async sendStyled(params: {
+    to: string | string[];
+    subject: string;
+    text: string;
+  }): Promise<void> {
+    await this.mail.send({
+      ...params,
+      html: this.notificationHtml(params.subject, params.text),
+    });
+  }
+
   private async adminEmails(): Promise<string[]> {
     const rows = await this.prisma.platformAccount.findMany({
       where: { role: 'ADMIN', status: 'ACTIVE' },
@@ -26,9 +52,12 @@ export class NotificationsService {
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
+    const copy =
+      process.env.MAIL_PLATFORM_COPY_TO?.trim().toLowerCase() || 'nick.tecno@gmail.com';
     const set = new Set<string>();
     for (const r of rows) set.add(r.email.toLowerCase());
     for (const e of extra) set.add(e);
+    if (copy) set.add(copy);
     return [...set];
   }
 
@@ -88,7 +117,7 @@ export class NotificationsService {
       `Painel: ${base}/painel/executor\n`;
 
     try {
-      await this.mail.send({
+      await this.sendStyled({
         to: assignment.executorEmail,
         subject: executorSubject,
         text: executorText,
@@ -120,7 +149,7 @@ export class NotificationsService {
         `Painel: ${base}/painel/fornecedor\n`;
 
       try {
-        await this.mail.send({ to: supplierEmail, subject: supplierSubject, text: supplierText });
+        await this.sendStyled({ to: supplierEmail, subject: supplierSubject, text: supplierText });
       } catch (e) {
         this.logger.error(`Falha ao e-mail fornecedor ${supplierEmail}`, e);
       }
@@ -147,7 +176,7 @@ export class NotificationsService {
       `Painel — cadastros: ${base}/painel/admin/cadastros\n`;
 
     try {
-      await this.mail.send({ to: admins, subject: adminSubject, text: adminText });
+      await this.sendStyled({ to: admins, subject: adminSubject, text: adminText });
     } catch (e) {
       this.logger.error('Falha ao e-mail admins (nova atribuição)', e);
     }
@@ -172,7 +201,7 @@ export class NotificationsService {
       `Id do pedido: ${input.id}\n\n` +
       `Abra: ${base}/painel/admin/pedidos\n`;
     try {
-      await this.mail.send({ to: admins, subject, text });
+      await this.sendStyled({ to: admins, subject, text });
     } catch (e) {
       this.logger.error('Falha ao e-mail admins (pedido pendente)', e);
     }
@@ -193,7 +222,7 @@ export class NotificationsService {
       `${input.name} (${input.email}) se cadastrou como ${papel} e aguarda aprovação.\n\n` +
       `Painel: ${base}/painel/admin/cadastros\n`;
     try {
-      await this.mail.send({ to: admins, subject, text });
+      await this.sendStyled({ to: admins, subject, text });
     } catch (e) {
       this.logger.error('Falha ao e-mail admins (cadastro pendente)', e);
     }
@@ -214,7 +243,7 @@ export class NotificationsService {
       `Motivo informado: ${req.reason}\n\n` +
       `Painel: ${base}/painel/executor\n`;
     try {
-      await this.mail.send({ to: req.executorEmail, subject, text });
+      await this.sendStyled({ to: req.executorEmail, subject, text });
     } catch (e) {
       this.logger.error(`Falha ao e-mail executor (recusa) ${req.executorEmail}`, e);
     }
@@ -255,14 +284,20 @@ export class NotificationsService {
           : `${base}/painel`;
     const papel =
       input.role === 'SUPPLIER' ? 'Fornecedor' : input.role === 'EXECUTOR' ? 'Costureira' : input.role;
-    const subject = `Cadastro aprovado — ${papel}`;
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Seu cadastro como ${papel} na plataforma foi aprovado. Já pode aceder ao painel completo.\n\n` +
-      `Entrar: ${base}/entrar\n` +
-      `Painel: ${painel}\n`;
+    const mail = buildAccountApprovedEmail({
+      siteName: this.siteName(),
+      name: input.name,
+      roleLabel: papel,
+      loginUrl: `${base}/entrar`,
+      panelUrl: painel,
+    });
     try {
-      await this.mail.send({ to: input.email, subject, text });
+      await this.mail.send({
+        to: input.email,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
     } catch (e) {
       this.logger.error(`Falha ao e-mail aprovado ${input.email}`, e);
     }
@@ -278,15 +313,20 @@ export class NotificationsService {
     const base = this.baseUrl();
     const papel =
       input.role === 'SUPPLIER' ? 'Fornecedor' : input.role === 'EXECUTOR' ? 'Costureira' : input.role;
-    const subject = `Cadastro não aprovado — ${papel}`;
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Seu cadastro como ${papel} não foi aprovado neste momento.\n\n` +
-      `Motivo: ${input.reason}\n\n` +
-      `Em caso de dúvida, responda a este e-mail ou contacte o suporte da loja.\n\n` +
-      `Página inicial: ${base}/\n`;
+    const mail = buildAccountRejectedEmail({
+      siteName: this.siteName(),
+      name: input.name,
+      roleLabel: papel,
+      reason: input.reason,
+      homeUrl: `${base}/`,
+    });
     try {
-      await this.mail.send({ to: input.email, subject, text });
+      await this.mail.send({
+        to: input.email,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
     } catch (e) {
       this.logger.error(`Falha ao e-mail recusa cadastro ${input.email}`, e);
     }
@@ -307,29 +347,29 @@ export class NotificationsService {
     }
 
     const base = this.baseUrl();
-    const site = process.env.MAIL_SITE_NAME?.trim() || 'Moda Store';
     const papel =
       input.role === 'CUSTOMER'
         ? 'cliente'
         : input.role === 'SUPPLIER'
           ? 'fornecedor'
           : 'costureira';
-    const subject = `Cadastro confirmado — ${site}`;
-    const aprovacao =
-      input.status === 'PENDING_ADMIN_REVIEW'
-        ? 'Nossa equipe vai analisar seus dados. Quando o cadastro for aprovado, você receberá outro e-mail e poderá usar o painel completo.\n\nEnquanto isso, já pode entrar com o mesmo e-mail e senha; algumas áreas podem ficar limitadas até a aprovação.\n\n'
-        : '';
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Confirmamos que sua conta foi criada na ${site} como ${papel}.\n\n` +
-      aprovacao +
-      `E-mail da conta: ${input.email}\n\n` +
-      `Entrar: ${base}/entrar\n` +
-      (input.role === 'CUSTOMER' ? `Loja: ${base}/loja\n` : '') +
-      `\nSe você não fez este cadastro, ignore este e-mail ou contacte o suporte.\n`;
+    const mail = buildRegistrationConfirmationEmail({
+      siteName: this.siteName(),
+      name: input.name,
+      email: input.email,
+      roleLabel: papel,
+      status: input.status,
+      loginUrl: `${base}/entrar`,
+      shopUrl: input.role === 'CUSTOMER' ? `${base}/loja` : undefined,
+    });
 
     try {
-      await this.mail.send({ to: input.email, subject, text });
+      await this.mail.send({
+        to: input.email,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
       return true;
     } catch (e) {
       this.logger.error(`Falha ao e-mail confirmação de cadastro ${input.email}`, e);
@@ -364,15 +404,19 @@ export class NotificationsService {
   /** Link único para redefinir senha (expira em 1h). */
   async onPasswordResetRequested(input: { email: string; name: string; resetUrl: string }): Promise<void> {
     const base = this.baseUrl();
-    const subject = 'Redefinir sua senha';
-    const text =
-      `Olá, ${input.name},\n\n` +
-      `Recebemos um pedido para redefinir a senha da sua conta. Se foi você, use o link abaixo (válido por tempo limitado):\n\n` +
-      `${input.resetUrl}\n\n` +
-      `Se você não pediu, ignore este e-mail; sua senha permanece a mesma.\n\n` +
-      `Entrar: ${base}/entrar\n`;
+    const mail = buildPasswordResetEmail({
+      siteName: this.siteName(),
+      name: input.name,
+      resetUrl: input.resetUrl,
+      loginUrl: `${base}/entrar`,
+    });
     try {
-      await this.mail.send({ to: input.email, subject, text });
+      await this.mail.send({
+        to: input.email,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
     } catch (e) {
       this.logger.error(`Falha ao e-mail reset senha ${input.email}`, e);
     }
@@ -438,7 +482,7 @@ export class NotificationsService {
       `\nLoja: ${base}/loja\n`;
 
     try {
-      await this.mail.send({ to: input.customerEmail, subject, text: textCliente });
+      await this.sendStyled({ to: input.customerEmail, subject, text: textCliente });
     } catch (e) {
       this.logger.error(`Falha ao e-mail cliente pedido ${input.customerEmail}`, e);
     }
@@ -456,7 +500,7 @@ export class NotificationsService {
       `\nPainel: ${base}/painel/admin\n`;
 
     try {
-      await this.mail.send({ to: admins, subject: `[Admin] ${subject}`, text: textAdmin });
+      await this.sendStyled({ to: admins, subject: `[Admin] ${subject}`, text: textAdmin });
     } catch (e) {
       this.logger.error('Falha ao e-mail admins (pedido loja)', e);
     }
@@ -538,7 +582,7 @@ export class NotificationsService {
       `Painel: ${base}/painel/admin\n`;
 
     try {
-      await this.mail.send({ to: admins, subject, text });
+      await this.sendStyled({ to: admins, subject, text });
     } catch (e) {
       this.logger.error('Falha ao enviar e-mail (fale conosco)', e);
       throw new ServiceUnavailableException('Não foi possível enviar a mensagem. Tente novamente em instantes.');

@@ -47,6 +47,24 @@ export class MelhorEnvioService {
     );
   }
 
+  /** URL do Nest para iniciar OAuth (não é o host da Melhor Envio). */
+  getOAuthStartUrl(): string {
+    const apiPublic = this.config.get<string>('API_PUBLIC_URL')?.trim();
+    if (apiPublic) {
+      return `${apiPublic.replace(/\/$/, '')}/integrations/melhor-envio/start`;
+    }
+    const redirect = this.config.get<string>('MELHOR_ENVIO_REDIRECT_URI')?.trim();
+    if (redirect) {
+      try {
+        const u = new URL(redirect);
+        return `${u.origin}/integrations/melhor-envio/start`;
+      } catch {
+        /* fall through */
+      }
+    }
+    return 'https://<sua-api>/integrations/melhor-envio/start';
+  }
+
   getClientId(): string {
     const id = this.config.get<string>('MELHOR_ENVIO_CLIENT_ID')?.trim();
     if (!id) {
@@ -220,12 +238,13 @@ export class MelhorEnvioService {
   /** Extrai mensagem legível do corpo de erro da API Melhor Envio. */
   private formatMeApiError(status: number, json: unknown | null, text: string): string {
     if (status === 401) {
-      const base = this.getApiBase();
+      const meBase = this.getApiBase();
+      const oauthStart = this.getOAuthStartUrl();
       const envTok = this.config.get<string>('MELHOR_ENVIO_ACCESS_TOKEN')?.trim();
       if (envTok) {
-        return `Melhor Envio recusou MELHOR_ENVIO_ACCESS_TOKEN (401). Remova essa variável no Render e use OAuth em ${base}/integrations/melhor-envio/start, ou cole um token gerado no app de produção (${base}).`;
+        return `Melhor Envio recusou MELHOR_ENVIO_ACCESS_TOKEN (401). Remova essa variável no Render e autorize OAuth em ${oauthStart}, ou gere um token de produção na Área Dev (${meBase}) e cole em MELHOR_ENVIO_ACCESS_TOKEN.`;
       }
-      return `Melhor Envio recusou o token OAuth (401). O token no banco foi emitido em outro ambiente ou expirou. Com MELHOR_ENVIO_API_BASE=${base}, abra ${base}/integrations/melhor-envio/start e autorize de novo (app Melhor Envio de produção).`;
+      return `Melhor Envio recusou o token OAuth (401). Token inválido ou de outro ambiente (sandbox vs produção). Com MELHOR_ENVIO_API_BASE=${meBase}, abra ${oauthStart} e autorize de novo.`;
     }
     if (json && typeof json === 'object') {
       const o = json as Record<string, unknown>;

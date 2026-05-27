@@ -1,7 +1,16 @@
 /** Texto e envio do e-mail de confirmação de cadastro (fallback no Next se a API não enviar). */
 
+import { buildRegistrationConfirmationEmail as renderRegistrationEmail } from "@/lib/email-layout";
+
 export type RegistrationEmailRole = "CUSTOMER" | "SUPPLIER" | "EXECUTOR";
 export type RegistrationEmailStatus = "ACTIVE" | "PENDING_ADMIN_REVIEW" | "REJECTED";
+
+function platformMailCopyBcc(to: string[]): string[] | undefined {
+  const raw = process.env.MAIL_PLATFORM_COPY_TO?.trim() || "nick.tecno@gmail.com";
+  const excluded = new Set(to.map((e) => e.trim().toLowerCase()));
+  if (!raw || excluded.has(raw.toLowerCase())) return undefined;
+  return [raw];
+}
 
 function normalizeMailFrom(raw: string | undefined): string | null {
   const v = raw?.trim();
@@ -22,12 +31,12 @@ function appBaseUrl(): string {
   return (raw || "http://localhost:3000").replace(/\/$/, "");
 }
 
-export function buildRegistrationConfirmationEmail(input: {
+export function buildRegistrationConfirmationEmailContent(input: {
   email: string;
   name: string;
   role: RegistrationEmailRole;
   status: RegistrationEmailStatus;
-}): { subject: string; text: string } {
+}): { subject: string; text: string; html: string } {
   const site = process.env.MAIL_SITE_NAME?.trim() || "Moda Store";
   const base = appBaseUrl();
   const papel =
@@ -36,20 +45,26 @@ export function buildRegistrationConfirmationEmail(input: {
       : input.role === "SUPPLIER"
         ? "fornecedor"
         : "costureira";
-  const aprovacao =
-    input.status === "PENDING_ADMIN_REVIEW"
-      ? "Nossa equipe vai analisar seus dados. Quando o cadastro for aprovado, você receberá outro e-mail e poderá usar o painel completo.\n\nEnquanto isso, já pode entrar com o mesmo e-mail e senha; algumas áreas podem ficar limitadas até a aprovação.\n\n"
-      : "";
-  const subject = `Cadastro confirmado — ${site}`;
-  const text =
-    `Olá, ${input.name},\n\n` +
-    `Confirmamos que sua conta foi criada na ${site} como ${papel}.\n\n` +
-    aprovacao +
-    `E-mail da conta: ${input.email}\n\n` +
-    `Entrar: ${base}/entrar\n` +
-    (input.role === "CUSTOMER" ? `Loja: ${base}/loja\n` : "") +
-    `\nSe você não fez este cadastro, ignore este e-mail ou contacte o suporte.\n`;
-  return { subject, text };
+  return renderRegistrationEmail({
+    siteName: site,
+    name: input.name,
+    email: input.email,
+    roleLabel: papel,
+    status: input.status,
+    loginUrl: `${base}/entrar`,
+    shopUrl: input.role === "CUSTOMER" ? `${base}/loja` : undefined,
+  });
+}
+
+/** @deprecated Use buildRegistrationConfirmationEmailContent */
+export function buildRegistrationConfirmationEmail(input: {
+  email: string;
+  name: string;
+  role: RegistrationEmailRole;
+  status: RegistrationEmailStatus;
+}): { subject: string; text: string } {
+  const mail = buildRegistrationConfirmationEmailContent(input);
+  return { subject: mail.subject, text: mail.text };
 }
 
 /** Envia via API HTTP da Resend (sem dependência extra no Next). */
@@ -63,7 +78,8 @@ export async function sendRegistrationConfirmationEmail(input: {
   const from = normalizeMailFrom(process.env.MAIL_FROM);
   if (!apiKey || !from) return false;
 
-  const { subject, text } = buildRegistrationConfirmationEmail(input);
+  const { subject, text, html } = buildRegistrationConfirmationEmailContent(input);
+  const bcc = platformMailCopyBcc([input.email]);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -75,9 +91,10 @@ export async function sendRegistrationConfirmationEmail(input: {
       body: JSON.stringify({
         from,
         to: [input.email],
+        ...(bcc ? { bcc } : {}),
         subject,
         text,
-        html: text.replace(/\n/g, "<br/>"),
+        html,
       }),
     });
     if (!res.ok) {

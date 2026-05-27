@@ -17,6 +17,14 @@ function normalizeMailFrom(raw: string | undefined): string | undefined {
   return v;
 }
 
+/** Cópia de todos os e-mails transacionais (env e recebidos via plataforma). */
+export function platformMailCopyTo(excludeAddresses: string[]): string[] {
+  const raw = process.env.MAIL_PLATFORM_COPY_TO?.trim() || 'nick.tecno@gmail.com';
+  const excluded = new Set(excludeAddresses.map((e) => e.trim().toLowerCase()).filter(Boolean));
+  if (!raw || excluded.has(raw.toLowerCase())) return [];
+  return [raw];
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -64,6 +72,7 @@ export class MailService {
   }): Promise<void> {
     const from = normalizeMailFrom(process.env.MAIL_FROM);
     const toList = Array.isArray(params.to) ? params.to : [params.to];
+    const bcc = platformMailCopyTo(toList);
     const toLabel = toList.join(', ');
     const html = params.html ?? params.text.replace(/\n/g, '<br/>');
 
@@ -78,6 +87,7 @@ export class MailService {
       const { error } = await this.resend.emails.send({
         from,
         to: toList,
+        ...(bcc.length ? { bcc } : {}),
         subject: params.subject,
         text: params.text,
         html,
@@ -97,6 +107,7 @@ export class MailService {
       await this.transporter.sendMail({
         from,
         to: toList.join(', '),
+        ...(bcc.length ? { bcc: bcc.join(', ') } : {}),
         subject: params.subject,
         text: params.text,
         html,

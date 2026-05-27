@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
+  accountTermsAcceptanceLabel,
   getAccountTerms,
   resolveRegisterTermsRole,
   type AccountTermsRole,
@@ -535,7 +536,9 @@ export function RegisterForm({
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-muted-foreground">Versão registrada: {termsBlock.version}</p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Versão dos termos (registro interno): {termsBlock.version}
+              </p>
             </details>
 
             <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug">
@@ -545,10 +548,7 @@ export function RegisterForm({
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 className="mt-1 size-4 shrink-0 rounded border-border accent-primary"
               />
-              <span>
-                Li e aceito os termos acima ({termsRole === "CUSTOMER" ? "cliente" : termsRole === "SUPPLIER" ? "fornecedor" : "costureira"}). Entendo que a versão{" "}
-                <span className="font-mono text-xs">{termsBlock.version}</span> será associada ao meu cadastro.
-              </span>
+              <span>{accountTermsAcceptanceLabel(termsBlock)}</span>
             </label>
           </div>
 
