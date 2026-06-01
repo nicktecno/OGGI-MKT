@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
-import { DEMO_COMPOSITE_PRODUCTS } from "@/lib/demo-seed";
+import { revalidateStorefrontCache } from "@/lib/storefront-cache";
 import {
   persistApproveExecutionRequest,
   persistArchiveAssignment,
@@ -37,18 +37,10 @@ function safeRevalidatePath(path: string, type?: "layout" | "page") {
   }
 }
 
-function revalidateStorefront() {
-  safeRevalidatePath("/");
-  safeRevalidatePath("/loja");
+function revalidateStorefront(productSlug?: string | null) {
+  revalidateStorefrontCache(productSlug);
   safeRevalidatePath("/painel/admin", "layout");
   safeRevalidatePath("/painel/executor");
-  for (const p of DEMO_COMPOSITE_PRODUCTS) {
-    safeRevalidatePath(`/loja/produto/${p.slug}`);
-  }
-}
-
-function revalidateProductPage(slug: string) {
-  safeRevalidatePath(`/loja/produto/${slug}`);
 }
 
 export async function createCompositeProductAction(
@@ -69,12 +61,9 @@ export async function createCompositeProductAction(
     input,
     coverFile && coverFile.size > 0 ? coverFile : undefined,
   );
-  safeRevalidatePath(`/loja/produto/${result.slug}`);
-  safeRevalidatePath("/loja");
-  safeRevalidatePath("/painel/admin", "layout");
+  revalidateStorefront(result.slug);
   safeRevalidatePath("/painel/admin/cadastro-peca");
   safeRevalidatePath("/painel/admin/pecas");
-  safeRevalidatePath("/painel/executor");
   return result;
 }
 
@@ -210,8 +199,7 @@ export async function uploadMarketplaceProductImage(
     throw new Error("Nenhum arquivo recebido.");
   }
   await persistProductMarketplaceImage(productId, formData);
-  revalidateStorefront();
-  if (productSlug) revalidateProductPage(productSlug);
+  revalidateStorefront(productSlug);
 }
 
 export async function uploadMarketplaceProductGalleryImage(
@@ -225,8 +213,7 @@ export async function uploadMarketplaceProductGalleryImage(
     throw new Error("Nenhum arquivo recebido.");
   }
   await persistProductGalleryImage(productId, formData);
-  revalidateStorefront();
-  revalidateProductPage(productSlug);
+  revalidateStorefront(productSlug);
 }
 
 export async function removeMarketplaceProductGalleryImageAction(
@@ -236,15 +223,13 @@ export async function removeMarketplaceProductGalleryImageAction(
 ) {
   await requireAdmin();
   await persistRemoveProductGalleryImage(productId, imageUrl);
-  revalidateStorefront();
-  revalidateProductPage(productSlug);
+  revalidateStorefront(productSlug);
 }
 
 export async function deleteCompositeProductAction(productId: string, productSlug: string) {
   await requireAdmin();
   await persistDeleteCompositeProduct(productId);
-  revalidateStorefront();
-  revalidateProductPage(productSlug);
+  revalidateStorefront(productSlug);
   safeRevalidatePath("/painel/admin/pecas");
   safeRevalidatePath("/painel/admin/cadastro-peca");
 }

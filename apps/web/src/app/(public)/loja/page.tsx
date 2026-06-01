@@ -5,12 +5,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { CatalogProductGrid } from "@/components/loja/catalog-product-grid";
 import { LojaHeroSpotlight } from "@/components/loja/loja-hero-spotlight";
 import { getStorefrontHeroRows, searchCatalogRowsFromData } from "@/lib/demo-seed";
-import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { getStorefrontCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+/** Fallback ISR (24h) — alinhado a STOREFRONT_REVALIDATE_SECONDS no fetch. */
+export const revalidate = 86_400;
 
 const LOJA_META_DESC =
   "Explore a loja Moda Store: vestuário e acessórios artesanais com curadoria, preços transparentes e envio pelas costureiras. Encontre a sua peça.";
@@ -47,7 +48,7 @@ type LojaPageProps = {
 export default async function LojaPage({ searchParams }: LojaPageProps) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const commerce = await getDemoCommerceState();
+  const commerce = await getStorefrontCommerceState();
   const rows = searchCatalogRowsFromData(
     commerce.products,
     commerce.productionAssignments,

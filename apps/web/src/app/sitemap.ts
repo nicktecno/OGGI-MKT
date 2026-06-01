@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getCatalogRowsFromData, DEMO_COMPOSITE_PRODUCTS } from "@/lib/demo-seed";
-import { getCommerceState } from "@/lib/demo-runtime";
+import { getStorefrontCommerceState } from "@/lib/demo-runtime";
 import { getSiteUrl } from "@/lib/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let slugs = DEMO_COMPOSITE_PRODUCTS.filter((p) => p.ativo && !p.admin_pausado).map((p) => p.slug);
   try {
-    const state = await getCommerceState();
+    const state = await getStorefrontCommerceState();
     const rows = getCatalogRowsFromData(state.products, state.productionAssignments);
     slugs = [...new Set(rows.map((r) => r.product.slug))];
   } catch {

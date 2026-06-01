@@ -5,6 +5,7 @@ import { CheckoutPurchaseAnalytics } from "@/components/analytics/checkout-purch
 import { CheckoutClearAfterPayment } from "@/components/loja/checkout-clear-after-payment";
 import { buttonVariants } from "@/components/ui/button";
 import { finalizeStripePaidCheckoutInventory } from "@/lib/stripe-checkout-finalize";
+import { revalidateStorefrontCache } from "@/lib/storefront-cache";
 import { getStripeServer } from "@/lib/stripe-server";
 import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/site";
@@ -64,6 +65,7 @@ export default async function CheckoutObrigadoPage({ searchParams }: Props) {
     if (!inv.ok) {
       inventoryMessage = inv.message;
     } else {
+      revalidateStorefrontCache();
       revalidatePath("/painel/cliente");
       revalidatePath("/painel/cliente/pedidos");
     }

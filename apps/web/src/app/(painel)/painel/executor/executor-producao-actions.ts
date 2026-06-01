@@ -6,6 +6,7 @@ import {
   persistCreateExecutionRequest,
   persistExecutorPublishAssignment,
 } from "@/lib/commerce-backend";
+import { revalidateStorefrontCache } from "@/lib/storefront-cache";
 import { getSession } from "@/lib/session";
 
 export async function solicitarProducaoAction(compositeProductId: string) {
@@ -41,10 +42,7 @@ export async function liberarOfertaVitrineAction(assignmentId: string, available
   }
   await persistExecutorPublishAssignment(assignmentId, qty);
   const product = state.products.find((p) => p.id === a.compositeProductId);
-  revalidatePath("/loja");
+  revalidateStorefrontCache(product?.slug);
   revalidatePath("/painel/executor");
   revalidatePath("/painel/admin/combinacoes");
-  if (product?.slug) {
-    revalidatePath(`/loja/produto/${product.slug}`);
-  }
 }

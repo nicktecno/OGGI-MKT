@@ -8,6 +8,7 @@ import {
   notifyStoreOrderCompleted,
   persistCheckoutReserve,
 } from "@/lib/commerce-backend";
+import { revalidateStorefrontCache } from "@/lib/storefront-cache";
 import { cartLineLabel } from "@/lib/cart-line-label";
 import { isCheckoutDeliveryComplete, normalizeCheckoutDelivery, type CheckoutDelivery } from "@/lib/checkout-delivery-types";
 import { validateCartForCheckout } from "@/lib/checkout-validate";
@@ -130,7 +131,7 @@ export async function confirmCheckoutDemoAction(
     shippingBrl: freightBrl,
   });
 
-  revalidatePath("/loja");
+  revalidateStorefrontCache();
   revalidatePath("/carrinho");
   revalidatePath("/checkout");
   revalidatePath("/painel/cliente");

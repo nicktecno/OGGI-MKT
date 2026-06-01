@@ -4,14 +4,15 @@ import Link from "next/link";
 import { FeaturedProductsSection } from "@/components/loja/featured-products-section";
 import { buttonVariants } from "@/components/ui/button";
 import { searchCatalogRowsFromData } from "@/lib/demo-seed";
-import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { getStorefrontCommerceState } from "@/lib/demo-runtime";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
 import { Scissors, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+/** Fallback ISR (24h) — alinhado a STOREFRONT_REVALIDATE_SECONDS no fetch. */
+export const revalidate = 86_400;
 
 export const metadata: Metadata = {
   title: SEO_HOME_TITLE_SEGMENT,
@@ -59,7 +60,7 @@ const editorial = [
 ];
 
 export default async function HomePage() {
-  const commerce = await getDemoCommerceState();
+  const commerce = await getStorefrontCommerceState();
   const featuredRows = searchCatalogRowsFromData(
     commerce.products,
     commerce.productionAssignments,

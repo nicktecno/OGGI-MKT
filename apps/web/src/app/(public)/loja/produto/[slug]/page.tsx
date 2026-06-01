@@ -19,7 +19,7 @@ import {
   getProductBySlug,
   productImageSlides,
 } from "@/lib/demo-seed";
-import { getDemoCommerceState } from "@/lib/demo-runtime";
+import { getStorefrontCommerceState } from "@/lib/demo-runtime";
 import { normalizeVariacoesTamanho } from "@/lib/product-sizes";
 import { clipForSerp, toAbsoluteUrl } from "@/lib/seo";
 import { SITE_NAME } from "@/lib/site";
@@ -27,7 +27,8 @@ import { formatBrl } from "@/lib/utils";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const dynamic = "force-dynamic";
+/** Fallback ISR (24h) — alinhado a STOREFRONT_REVALIDATE_SECONDS no fetch. */
+export const revalidate = 86_400;
 
 export function generateStaticParams() {
   return DEMO_COMPOSITE_PRODUCTS.map((p) => ({ slug: p.slug }));
@@ -35,7 +36,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const commerce = await getDemoCommerceState();
+  const commerce = await getStorefrontCommerceState();
   const product = getProductBySlug(slug, commerce.products);
   if (!product) return { title: "Produto", robots: { index: false, follow: false } };
   const listing = getListingForProduct(product.id, commerce.productionAssignments);
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProdutoLojaPage({ params }: Props) {
   const { slug } = await params;
-  const commerce = await getDemoCommerceState();
+  const commerce = await getStorefrontCommerceState();
   const product = getProductBySlug(slug, commerce.products);
   if (!product) notFound();
 

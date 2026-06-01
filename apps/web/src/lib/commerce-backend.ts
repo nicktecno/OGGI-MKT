@@ -29,6 +29,12 @@ export function commerceUsesDatabase(): boolean {
   return serverApiConfigured();
 }
 
+/** Tag Next.js para cache do estado da vitrine (invalidar ao mudar catálogo/estoque). */
+export const STOREFRONT_CACHE_TAG = "storefront";
+
+/** Fallback ISR: revalida no máximo a cada 24h se ninguém invalidar antes. */
+export const STOREFRONT_REVALIDATE_SECONDS = 86_400;
+
 export async function internalFetch(path: string, init?: RequestInit): Promise<Response> {
   const base = serverApiUrl();
   if (!base.trim()) {
@@ -267,6 +273,65 @@ export async function fetchSupplierAccountsFromApi(): Promise<SupplierAccountOpt
   return (await res.json()) as SupplierAccountOption[];
 }
 
+async function normalizeCommerceStateFromApiResponse(raw: DemoCommerceState): Promise<DemoCommerceState> {
+  try {
+    return normalizeCommerceStateFromApi(raw);
+  } catch (e) {
+    console.error("[getCommerceState] falha ao normalizar estado:", e);
+    return {
+      products: [],
+      executionRequests: [],
+      productionAssignments: [],
+    };
+  }
+}
+
+async function fetchCommerceStateFromApi(
+  init: Omit<RequestInit, "headers"> & {
+    headers?: Record<string, string>;
+    next?: { tags?: string[]; revalidate?: number };
+    cache?: RequestCache;
+  },
+): Promise<DemoCommerceState> {
+  const base = serverApiUrl();
+  if (!base.trim()) {
+    throw new Error(
+      "Defina COMMERCE_API_URL ou SERVER_API_URL no ambiente do Next (ex.: http://localhost:4000).",
+    );
+  }
+  const url = `${base}/internal/commerce/state`;
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      "x-internal-secret": internalSecret(),
+      ...init.headers,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res));
+  }
+  let raw: DemoCommerceState;
+  try {
+    raw = (await res.json()) as DemoCommerceState;
+  } catch (e) {
+    console.error("[getCommerceState] JSON inválido da API:", e);
+    throw new Error("Resposta inválida da API ao carregar o estado da loja.");
+  }
+  return normalizeCommerceStateFromApiResponse(raw);
+}
+
+/** Estado da vitrine com cache (páginas públicas / sitemap). */
+export async function getStorefrontCommerceState(): Promise<DemoCommerceState> {
+  if (commerceUsesDatabase()) {
+    return fetchCommerceStateFromApi({
+      next: { tags: [STOREFRONT_CACHE_TAG], revalidate: STOREFRONT_REVALIDATE_SECONDS },
+    });
+  }
+  return getCommerceStateFromCookies();
+}
+
+/** Estado atualizado (painel, checkout, validações de estoque). */
 export async function getCommerceState(): Promise<DemoCommerceState> {
   if (commerceUsesDatabase()) {
     const res = await internalFetch("/internal/commerce/state");
@@ -280,16 +345,7 @@ export async function getCommerceState(): Promise<DemoCommerceState> {
       console.error("[getCommerceState] JSON inválido da API:", e);
       throw new Error("Resposta inválida da API ao carregar o estado da loja.");
     }
-    try {
-      return normalizeCommerceStateFromApi(raw);
-    } catch (e) {
-      console.error("[getCommerceState] falha ao normalizar estado:", e);
-      return {
-        products: [],
-        executionRequests: [],
-        productionAssignments: [],
-      };
-    }
+    return normalizeCommerceStateFromApiResponse(raw);
   }
   return getCommerceStateFromCookies();
 }
