@@ -27,7 +27,7 @@ export const OGGI_LINE_IMAGE = {
 } as const;
 
 export const OGGI_CART_IMAGE = {
-  cart200: "/oggi/carts/carrinho-200.png",
+  cart200: "/oggi/carts/carrinho-200.webp",
   cart300: "/oggi/carts/carrinho-300.png",
 } as const;
 
