@@ -31,7 +31,7 @@ export default function FestPage() {
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[min(48%,520px)] md:block">
             <Image
               src={MARKETING_IMAGES.festBanner}
-              alt=""
+              alt="Produtos Oggi Sorvetes para festas"
               fill
               className="object-contain object-right p-4 md:p-6"
               sizes="(max-width: 768px) 0vw, 48vw"

@@ -33,10 +33,9 @@ export const OGGI_CART_IMAGE = {
 
 export const OGGI_MARKETING = {
   hero: "/oggi/marketing/hero-fest.svg",
-  /** Arte do hero /fest (produtos Oggi — visível sobre fundo rosa) */
-  festBanner: "/oggi/marketing/login-hero.png",
-  /** Composição de produtos Oggi (tela de login). */
-  loginHero: "/oggi/marketing/login-hero.png",
+  /** Arte do hero /fest e home (produtos Oggi sobre fundo preto). */
+  festBanner: "/sorvetes-65b41d5ad00cb.webp",
+  loginHero: "/sorvetes-65b41d5ad00cb.webp",
 } as const;
 
 /** Logo SVG oficial e favicon local (derivado do logo). */

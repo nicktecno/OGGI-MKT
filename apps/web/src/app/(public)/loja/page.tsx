@@ -110,16 +110,15 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
                 <LojaHeroSpotlight key={heroRows.map((r) => r.listing.id).join("-")} rows={heroRows} />
               </div>
             ) : (
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border/50 shadow-luxury-sm lg:aspect-[16/10]">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border/50 bg-black shadow-luxury-sm lg:aspect-[16/10]">
                 <Image
                   src={MARKETING_IMAGES.lojaBanner}
-                  alt="Vitrine com roupas clássicas em cabides"
+                  alt="Produtos Oggi Sorvetes para festas"
                   fill
-                  className="object-cover object-[center_30%]"
+                  className="object-contain object-center p-4 sm:p-6"
                   sizes="(max-width: 1200px) 100vw, 60vw"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
               </div>
             )}
           </div>

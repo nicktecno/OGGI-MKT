@@ -89,7 +89,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-lg md:max-w-none">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-[#0a0a0a] shadow-xl ring-2 ring-primary/15 sm:aspect-square md:aspect-[4/3]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-black shadow-xl ring-2 ring-primary/15 sm:aspect-square md:aspect-[4/3]">
               <Image
                 src={MARKETING_IMAGES.loginHero}
                 alt="Produtos Oggi Sorvetes para festas"
