@@ -2,6 +2,7 @@ import { IceCream, LayoutDashboard, LogIn, Mail } from "lucide-react";
 import Link from "next/link";
 import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { FestAssistantChat } from "@/components/oggi-fest/fest-assistant-chat";
 import { HeaderFestCartLink } from "@/components/oggi-fest/header-fest-cart-link";
 import { OggiLogo } from "@/components/oggi-fest/oggi-logo";
 import { dashboardPathForRole } from "@/lib/auth-types";
@@ -92,6 +93,7 @@ export default async function PublicLayout({ children }: { children: React.React
           </p>
         </div>
       </footer>
+      <FestAssistantChat />
     </div>
   );
 }

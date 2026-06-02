@@ -12,12 +12,13 @@ import {
   OGGI_FEST_RENTAL_HOURS,
   OGGI_SITE_URL,
 } from "@/lib/oggi-fest/constants";
+import { OGGI_CART_IMAGE } from "@/lib/oggi-fest/brand";
 import { FEST_CART_MODELS } from "@/lib/oggi-fest/mock-data";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_BRAND, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { cn, formatBrl } from "@/lib/utils";
-import { Calendar, IceCream, Truck } from "lucide-react";
+import { Calendar, Truck } from "lucide-react";
 
 export const revalidate = 86_400;
 
@@ -108,8 +109,37 @@ export default function HomePage() {
 
       <section className="border-b-4 border-primary bg-oggi-pink-light py-12">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-3">
+          <div className="flex gap-4 rounded-2xl bg-white p-5 shadow-sm ring-2 ring-primary/10">
+            <span className="relative flex h-14 w-[7.25rem] shrink-0 items-center rounded-xl bg-oggi-pink-light/80 p-1.5">
+              <span className="relative h-full w-1/2">
+                <Image
+                  src={OGGI_CART_IMAGE.cart200}
+                  alt="Carrinho Fest 200"
+                  fill
+                  className="object-contain"
+                  sizes="56px"
+                />
+              </span>
+              <span className="relative h-full w-1/2">
+                <Image
+                  src={OGGI_CART_IMAGE.cart300}
+                  alt="Carrinho Fest 300"
+                  fill
+                  className="object-contain"
+                  sizes="56px"
+                />
+              </span>
+            </span>
+            <div>
+              <h2 className="font-heading text-base font-extrabold uppercase tracking-wide text-[#1a1a1a]">
+                200 ou 300 picolés
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#3d3d3d]">
+                Dois carrinhos com placas de gel (~4h de conservação).
+              </p>
+            </div>
+          </div>
           {[
-            { icon: IceCream, title: "200 ou 300 picolés", text: "Dois carrinhos com placas de gel (~4h de conservação)." },
             { icon: Calendar, title: "Modelos prontos", text: "Aniversário, casamento, corporativo e mais." },
             { icon: Truck, title: "Retirada ou entrega", text: "Na loja Oggi ou no local do seu evento." },
           ].map(({ icon: Icon, title, text }) => (
@@ -132,7 +162,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <OggiHeading eyebrow="Opções de carrinhos" title="Escolha o tamanho" />
           <div className="mt-10 grid gap-8 md:grid-cols-2">
-            {FEST_CART_MODELS.map((cart) => (
+            {FEST_CART_MODELS.map((cart) => {
+              const imageUrl =
+                cart.id === "cart-200" ? OGGI_CART_IMAGE.cart200 : OGGI_CART_IMAGE.cart300;
+              return (
               <Link
                 key={cart.id}
                 href={`/fest/${cart.slug}`}
@@ -140,11 +173,11 @@ export default function HomePage() {
               >
                 <div className="relative aspect-[16/10] bg-oggi-pink-light">
                   <Image
-                    src={cart.imageUrl}
+                    src={imageUrl}
                     alt={cart.name}
                     fill
-                    className="object-contain p-4 transition group-hover:scale-[1.02]"
-                    sizes="50vw"
+                    className="object-contain p-6 transition group-hover:scale-[1.02]"
+                    sizes="(max-width: 768px) 100vw, 600px"
                   />
                 </div>
                 <div className="border-t-2 border-primary/10 p-6">
@@ -153,7 +186,8 @@ export default function HomePage() {
                   <span className="oggi-pill mt-4 inline-flex">{cart.capacity} unidades</span>
                 </div>
               </Link>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>
