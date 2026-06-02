@@ -72,7 +72,10 @@ export default function HomePage() {
               oficiais Oggi ou use um modelo pronto para sua festa.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/fest" className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem]")}>
+              <Link
+                href="/fest"
+                className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem] rounded-full")}
+              >
                 Montar meu pedido
               </Link>
               <a
@@ -81,7 +84,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "xl" }),
-                  "rounded-full border-2 border-primary text-primary hover:bg-primary/5",
+                  "min-w-[11rem] rounded-full border-2 border-primary text-primary hover:bg-primary/5",
                 )}
               >
                 Site {SITE_BRAND}
