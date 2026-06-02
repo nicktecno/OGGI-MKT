@@ -1,60 +1,26 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { commerceUsesDatabase } from "@/lib/demo-runtime";
-import { serverApiUrl } from "@/lib/server-api-url";
-import { cn } from "@/lib/utils";
-import { AdminMelhorEnvioOAuthBanner } from "./admin-melhor-envio-oauth-banner";
 import { AdminSectionFallback } from "./admin-section-fallback";
 
 export const metadata: Metadata = {
-  title: "Administração",
+  title: "Administração Oggi Fest",
 };
 
-/** Catálogo e estado vêm da API com `no-store`; evita erro de “Dynamic server usage” no build. */
 export const dynamic = "force-dynamic";
 
 export default function AdminPainelLayout({ children }: { children: React.ReactNode }) {
-  const apiOn = commerceUsesDatabase();
-  const apiBase = serverApiUrl();
-  const melhorEnvioOAuthStartUrl = apiBase
-    ? `${apiBase.replace(/\/$/, "")}/integrations/melhor-envio/start`
-    : null;
-  const persistenceCopy = apiOn
-    ? "As alterações são salvas no banco de dados pela API do servidor — o mesmo fluxo de produção."
-    : "No modo demonstração sem API, as alterações ficam só neste navegador até você limpar os dados do site. Com a API e o banco ligados no deploy, tudo passa a ser persistido no servidor.";
-
   return (
-    <div className="space-y-10">
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card/90 via-card/50 to-muted/25 p-6 shadow-luxury-sm ring-1 ring-foreground/[0.04] sm:p-8">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-accent/[0.12] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-1/4 h-32 w-64 rounded-full bg-primary/[0.04] blur-3xl" />
-        <div className="relative">
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em]",
-              apiOn
-                ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
-                : "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100",
-            )}
-          >
-            {apiOn ? "API + banco ativos" : "Modo demonstração"}
-          </span>
-          <h1 className="mt-4 font-serif text-3xl font-medium tracking-tight text-foreground md:text-4xl">
-            Administração
-          </h1>
-          <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
-            Pelo menu: em <strong className="text-foreground">Cadastro de peça</strong> monte o modelo (insumos e
-            vitrine, sem preços); em <strong className="text-foreground">Peças e preços</strong> defina custos e
-            taxas; depois responda pedidos e acompanhe combinações.{" "}
-            {persistenceCopy}
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-primary/15 bg-gradient-to-br from-primary/5 via-white to-oggi-pink-light/40 p-6 shadow-sm sm:p-8">
+        <p className="text-xs font-extrabold uppercase tracking-[0.35em] text-primary">Painel administrador</p>
+        <h1 className="mt-3 font-heading text-2xl font-black uppercase tracking-wide text-foreground md:text-3xl">
+          Oggi Fest
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Use o menu à esquerda para cadastrar linhas, modelos e filiais. As alterações ficam neste
+          navegador (mock) e refletem na vitrine ao salvar.
+        </p>
       </div>
-      {apiOn && melhorEnvioOAuthStartUrl ? (
-        <Suspense fallback={null}>
-          <AdminMelhorEnvioOAuthBanner oauthStartUrl={melhorEnvioOAuthStartUrl} />
-        </Suspense>
-      ) : null}
       <Suspense fallback={<AdminSectionFallback />}>{children}</Suspense>
     </div>
   );

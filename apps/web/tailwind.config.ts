@@ -23,10 +23,11 @@ export default {
           "serif",
         ],
         heading: [
-          "var(--font-serif)",
-          "ui-serif",
-          "Georgia",
-          "serif",
+          "var(--font-heading)",
+          "var(--font-geist-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
         ],
       },
       colors: {

@@ -23,7 +23,7 @@ export function LoginPageToasts() {
     if (cadastro === "cliente") {
       toast.success("Conta de cliente criada", {
         description:
-          "Entre com o e-mail e a senha que você escolheu para comprar na loja.",
+          "Entre com o e-mail e a senha que você escolheu para pedir seu Oggi Fest.",
       });
     } else if (cadastro === "pendente") {
       toast.success("Cadastro recebido", {

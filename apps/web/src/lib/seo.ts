@@ -3,7 +3,6 @@ import { SITE_NAME } from "@/lib/site";
 
 /**
  * Origem canónica (OG, sitemap, `metadataBase`).
- * Em Vercel, se `NEXT_PUBLIC_APP_URL` não estiver definido, usa `VERCEL_URL` para não gerar links para localhost.
  */
 export function getSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -26,35 +25,28 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
-/** Imagem padrão para OG/Twitter (absoluta). */
 export const SEO_DEFAULT_OG_IMAGE = MARKETING_IMAGES.homeHero;
 
-/** Meta description global (~155 caracteres) — benefício + diferencial + marca. */
 export const SEO_DEFAULT_DESCRIPTION =
-  "Compre moda artesanal com curadoria: peças únicas de ateliês independentes, entrega segura e atendimento humano. Descubra a Moda Store.";
+  "Alugue o carrinho Oggi Fest para sua festa: escolha 200 ou 300 picolés, monte por linha de sorvete ou use modelos. Retire na loja ou receba no evento.";
 
-/** Título da home (segmento antes de ` | ${SITE_NAME}`). */
-export const SEO_HOME_TITLE_SEGMENT =
-  "Moda artesanal de ateliês — peças únicas com curadoria";
+export const SEO_HOME_TITLE_SEGMENT = "Oggi Fest — carrinho de sorvete para sua festa";
 
-/** Description específica da home (variação para não duplicar snippet com outras páginas). */
 export const SEO_HOME_DESCRIPTION =
-  "Vitrine de roupas e acessórios feitos à mão: conheça costureiras independentes, escolha com calma e receba com segurança. Moda Store — moda com história.";
+  "A comemoração é sua e o sorvete é nosso. Monte seu pedido com modelos para aniversário, casamento e mais. Pedido mínimo R$ 300 — locação do carrinho grátis.";
 
 export const SEO_KEYWORDS = [
   SITE_NAME,
-  "moda artesanal",
-  "moda independente",
-  "ateliê de costura",
-  "roupas artesanais",
-  "e-commerce moda Brasil",
-  "peças exclusivas",
-  "curadoria moda",
+  "Oggi Sorvetes",
+  "carrinho de sorvete festa",
+  "picolé festa infantil",
+  "Oggi Fest",
+  "sorvete evento",
+  "aluguel carrinho sorvete",
 ] as const;
 
 const SERP_DESCRIPTION_MAX = 158;
 
-/** Recorta texto para snippet de busca sem cortar no meio de palavra quando possível. */
 export function clipForSerp(text: string, max = SERP_DESCRIPTION_MAX): string {
   const t = text.trim().replace(/\s+/g, " ");
   if (t.length <= max) return t;
@@ -64,7 +56,6 @@ export function clipForSerp(text: string, max = SERP_DESCRIPTION_MAX): string {
   return `${slice}…`;
 }
 
-/** Garante URL absoluta para JSON-LD e OG (já absolutas passam direto). */
 export function toAbsoluteUrl(href: string, origin = getSiteUrl()): string {
   const h = href.trim();
   if (!h) return origin;

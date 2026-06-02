@@ -32,7 +32,12 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   /** Muitos browsers pedem `/favicon.ico` por padrão; servimos o mesmo ícone PNG. */
   async redirects() {
-    return [{ source: "/favicon.ico", destination: "/icon.png", permanent: false }];
+    return [
+      { source: "/favicon.ico", destination: "/oggi-favicon.svg", permanent: false },
+      { source: "/loja", destination: "/fest", permanent: false },
+      { source: "/loja/:path*", destination: "/fest", permanent: false },
+      { source: "/painel/admin/oggi-fest/templates", destination: "/painel/admin/oggi-fest/modelos", permanent: true },
+    ];
   },
   images: {
     remotePatterns: [

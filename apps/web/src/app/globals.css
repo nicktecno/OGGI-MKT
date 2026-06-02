@@ -6,43 +6,47 @@
 @tailwind utilities;
 
 @layer base {
-  /* Editorial luxo: papel quente, tinta profunda, bronze sofisticado */
+  /* Oggi Sorvetes — rosa #E2007A, fundo branco/rosa claro, títulos em caixa alta */
   :root {
+    --oggi-pink: #e2007a;
+    --oggi-pink-dark: #b80062;
+    --oggi-pink-light: #fff0f7;
+    --oggi-yellow: #ffc72c;
+
     --ambient-gradient: radial-gradient(
-        ellipse 120% 80% at 50% -30%,
-        oklch(0.97 0.035 75 / 0.45),
-        transparent 55%
+        ellipse 100% 70% at 50% -20%,
+        color-mix(in srgb, var(--oggi-pink) 8%, white),
+        transparent 60%
       ),
-      radial-gradient(ellipse 90% 60% at 100% 0%, oklch(0.94 0.04 285 / 0.14), transparent 50%),
-      radial-gradient(ellipse 70% 50% at 0% 80%, oklch(0.97 0.02 95 / 0.35), transparent 55%);
+      linear-gradient(180deg, var(--oggi-pink-light) 0%, #ffffff 45%);
 
-    --background: oklch(0.988 0.009 88);
+    --background: #ffffff;
 
-    --foreground: oklch(0.175 0.028 285);
+    --foreground: #2d2d2d;
 
-    --card: oklch(0.997 0.006 92);
+    --card: #ffffff;
 
-    --card-foreground: oklch(0.175 0.028 285);
+    --card-foreground: #2d2d2d;
 
-    --popover: oklch(0.997 0.006 92);
+    --popover: #ffffff;
 
-    --popover-foreground: oklch(0.175 0.028 285);
+    --popover-foreground: #2d2d2d;
 
-    --primary: oklch(0.152 0.026 285);
+    --primary: #e2007a;
 
-    --primary-foreground: oklch(0.992 0.006 95);
+    --primary-foreground: #ffffff;
 
-    --secondary: oklch(0.945 0.022 275);
+    --secondary: #fff0f7;
 
-    --secondary-foreground: oklch(0.2 0.028 285);
+    --secondary-foreground: #b80062;
 
-    --muted: oklch(0.94 0.018 275);
+    --muted: #f7f7f7;
 
-    --muted-foreground: oklch(0.46 0.032 275);
+    --muted-foreground: #5c5c5c;
 
-    --accent: oklch(0.5 0.1 48);
+    --accent: #e2007a;
 
-    --accent-foreground: oklch(0.992 0.006 95);
+    --accent-foreground: #ffffff;
 
     --destructive: oklch(0.5 0.2 18);
 
@@ -52,9 +56,9 @@
 
     --input: oklch(0.89 0.022 275);
 
-    --ring: oklch(0.52 0.08 275);
+    --ring: #e2007a;
 
-    --chart-1: oklch(0.5 0.1 48);
+    --chart-1: #e2007a;
 
     --chart-2: oklch(0.42 0.028 285);
 
@@ -64,7 +68,7 @@
 
     --chart-5: oklch(0.4 0.12 48);
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --radius-sm: calc(var(--radius) - 4px);
 
@@ -181,7 +185,7 @@
   h2,
   h3,
   h4 {
-    @apply font-heading tracking-tight text-balance;
+    @apply font-heading font-extrabold uppercase tracking-wide text-balance;
   }
 
   /* Destaque de texto selecionado — accent/20 no body era quase invisível em inputs */
@@ -208,6 +212,30 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-oggi-pink-light {
+    background-color: var(--oggi-pink-light);
+  }
+
+  .oggi-card {
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 2px solid color-mix(in srgb, var(--primary) 15%, transparent);
+    background-color: var(--card);
+    box-shadow: 0 1px 3px rgb(45 45 45 / 0.08);
+  }
+
+  .oggi-pill {
+    display: inline-flex;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary-foreground);
   }
 
   .shadow-luxury {

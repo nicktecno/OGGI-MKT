@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono, Nunito } from "next/font/google";
 import {
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_OG_IMAGE,
@@ -21,10 +21,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-serif",
+const nunito = Nunito({
+  variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
         url: SEO_DEFAULT_OG_IMAGE,
         width: 2400,
         height: 1600,
-        alt: `${SITE_NAME} — moda artesanal com curadoria`,
+        alt: `${SITE_NAME} — carrinho de sorvete para festas`,
       },
     ],
   },
@@ -76,9 +76,15 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  /** Caminhos relativos ao domínio atual — evitam conflito com `favicon.ico` antigo e hosts errados em `metadataBase`. */
+  /**
+   * Favicon Oggi Sorvetes — `app/icon.svg` + assets em `public/`.
+   * Não usar `app/icon.png` (conflita com `public/icon.png` e quebra `/_next/image`).
+   */
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png", sizes: "any" }],
+    icon: [
+      { url: "/oggi-favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+    ],
     apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
   },
 };
@@ -90,12 +96,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <head>
-        <link rel="icon" href="/icon.png" type="image/png" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
-      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} min-h-screen font-sans text-base text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable} min-h-screen font-sans text-base text-foreground antialiased`}
       >
         <SonnerToaster />
         <Analytics />

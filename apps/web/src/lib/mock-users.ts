@@ -1,5 +1,9 @@
 import type { Role } from "./auth-types";
 
+/** Login padrão na tela /entrar (mock). */
+export const MOCK_ADMIN_EMAIL = "admin@demo.local";
+export const MOCK_ADMIN_PASSWORD = "Demo#2026";
+
 /** Credenciais de exemplo para desenvolvimento e demonstração — trocar por auth real em produção. */
 export const MOCK_USERS: Record<
   string,

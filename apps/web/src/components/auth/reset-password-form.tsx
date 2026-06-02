@@ -3,19 +3,16 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LottieLoading } from "@/components/ui/lottie-loading";
 import { SITE_NAME } from "@/lib/site";
+
+const INPUT_CLASS =
+  "border-2 border-primary/15 bg-white focus-visible:border-primary focus-visible:ring-primary/25";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -63,83 +60,76 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card className="border-border/80 bg-card/95 shadow-xl backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="font-serif text-2xl tracking-tight">Link inválido</CardTitle>
-          <CardDescription>
-            Abra o link enviado por e-mail ou solicite um novo em {SITE_NAME}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link
-            href="/esqueci-senha"
-            className={cn(buttonVariants({ variant: "default", size: "lg" }), "inline-flex w-full justify-center")}
-          >
-            Esqueci a senha
-          </Link>
-        </CardContent>
-      </Card>
+      <AuthFormShell
+        title="Link inválido"
+        description={`Abra o link enviado por e-mail ou solicite um novo em ${SITE_NAME}.`}
+      >
+        <Link
+          href="/esqueci-senha"
+          className={cn(buttonVariants({ size: "lg" }), "inline-flex w-full justify-center")}
+        >
+          Esqueci a senha
+        </Link>
+      </AuthFormShell>
     );
   }
 
   return (
-    <Card className="border-border/80 bg-card/95 shadow-xl backdrop-blur-sm">
-      <CardHeader className="space-y-1">
-        <CardTitle className="font-serif text-2xl tracking-tight">Nova senha</CardTitle>
-        <CardDescription>Escolha uma senha forte para a sua conta.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">Nova senha</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-              className="bg-background"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm">Confirmar senha</Label>
-            <Input
-              id="confirm"
-              name="confirm"
-              type="password"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              minLength={8}
-              required
-              className="bg-background"
-            />
-          </div>
-          {error ? (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
-            {loading ? (
-              <>
-                <LottieLoading height={28} />
-                <span>Salvando…</span>
-              </>
-            ) : (
-              "Redefinir senha"
-            )}
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          <Link href="/entrar" className="font-medium text-foreground underline-offset-4 hover:underline">
-            Voltar ao login
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+    <AuthFormShell title="Nova senha" description="Escolha uma senha forte para a sua conta.">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="font-semibold text-foreground">
+            Nova senha
+          </Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            required
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirm" className="font-semibold text-foreground">
+            Confirmar senha
+          </Label>
+          <Input
+            id="confirm"
+            name="confirm"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            minLength={8}
+            required
+            className={INPUT_CLASS}
+          />
+        </div>
+        {error ? (
+          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
+          {loading ? (
+            <>
+              <LottieLoading height={28} />
+              <span>Salvando…</span>
+            </>
+          ) : (
+            "Redefinir senha"
+          )}
+        </Button>
+      </form>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        <Link href="/entrar" className="font-bold text-primary underline-offset-4 hover:underline">
+          Voltar ao login
+        </Link>
+      </p>
+    </AuthFormShell>
   );
 }

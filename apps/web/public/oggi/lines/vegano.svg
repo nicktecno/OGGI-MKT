@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" role="img" aria-label="Vegano Oggi">
+  <rect width="400" height="480" fill="#ECFDF5"/>
+  <rect width="400" height="64" fill="#E2007A"/>
+  <text x="200" y="42" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700">OGGI</text>
+  <rect x="178" y="135" width="44" height="185" rx="12" fill="#10B981"/>
+  <rect x="186" y="143" width="28" height="155" rx="8" fill="#6EE7B7"/>
+  <rect x="192" y="112" width="16" height="32" rx="4" fill="#059669"/>
+  <path d="M200 280 L185 310 L215 310 Z" fill="#22C55E"/>
+  <text x="200" y="305" text-anchor="middle" fill="#fff" font-size="20"><1</text>
+  <text x="200" y="400" text-anchor="middle" fill="#E2007A" font-family="Arial,Helvetica,sans-serif" font-size="26" font-weight="800">VEGANO</text>
+  <text x="200" y="432" text-anchor="middle" fill="#5C5C5C" font-family="Arial,Helvetica,sans-serif" font-size="16">Base vegetal</text>
+</svg>

@@ -24,6 +24,8 @@ SMTP_PASS=
 ADMIN_NOTIFY_EMAILS=
 
 COMMERCE_API_URL=http://localhost:4000
+# Login mock (admin@demo.local) sem subir a API — padrão em dev. Use MOCK_AUTH=false para testar Nest.
+MOCK_AUTH=true
 INTERNAL_API_SECRET=local-dev-internal-secret-min-32-chars-long!!
 AUTH_SECRET=dev-only-agregador-auth-secret-32chars!
 STRIPE_SECRET_KEY=

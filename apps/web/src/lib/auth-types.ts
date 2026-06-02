@@ -9,7 +9,7 @@ export function isRole(value: unknown): value is Role {
 export function dashboardPathForRole(role: Role): string {
   switch (role) {
     case "ADMIN":
-      return "/painel/admin/pecas";
+      return "/painel/admin/oggi-fest";
     case "SUPPLIER":
       return "/painel/fornecedor";
     case "EXECUTOR":
@@ -41,7 +41,7 @@ export function roleDisplayLabel(role: Role): string {
 export function roleDisplayHint(role: Role): string {
   switch (role) {
     case "ADMIN":
-      return "Gestão da vitrine, preços e cadastros";
+      return "Oggi Fest — linhas, modelos e filiais";
     case "SUPPLIER":
       return "Insumos e entregas às costureiras";
     case "EXECUTOR":

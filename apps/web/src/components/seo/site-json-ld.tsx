@@ -1,5 +1,5 @@
-import { getSiteUrl } from "@/lib/seo";
-import { SITE_NAME } from "@/lib/site";
+import { SEO_DEFAULT_DESCRIPTION, getSiteUrl } from "@/lib/seo";
+import { SITE_BRAND, SITE_NAME } from "@/lib/site";
 
 /** Organization + WebSite (SearchAction) para rich results e contexto da marca. */
 export function SiteJsonLd() {
@@ -9,10 +9,9 @@ export function SiteJsonLd() {
     "@graph": [
       {
         "@type": "Organization",
-        name: SITE_NAME,
+        name: SITE_BRAND,
         url: base,
-        description:
-          "Marketplace de moda artesanal com curadoria, ligando clientes a ateliês e costureiras independentes.",
+        description: SEO_DEFAULT_DESCRIPTION,
       },
       {
         "@type": "WebSite",
@@ -23,7 +22,7 @@ export function SiteJsonLd() {
           "@type": "SearchAction",
           target: {
             "@type": "EntryPoint",
-            urlTemplate: `${base}/loja?q={search_term_string}`,
+            urlTemplate: `${base}/fest?q={search_term_string}`,
           },
           "query-input": "required name=search_term_string",
         },

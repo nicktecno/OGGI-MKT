@@ -3,8 +3,8 @@ import { authenticateMockUser } from "@/lib/mock-users";
 import { dashboardPathForRole, isRole, type Role } from "@/lib/auth-types";
 import { SESSION_COOKIE, createSessionToken, type AccountStatus } from "@/lib/auth-token";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { authUsesMockCredentials } from "@/lib/auth-mode";
 import { commerceUsesDatabase } from "@/lib/commerce-backend";
-import { hideDemoCredentialsUi } from "@/lib/deployment-env";
 import { serverApiUrl } from "@/lib/server-api-url";
 
 type ApiLoginUser = {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     accountStatus?: AccountStatus;
   } | null = null;
 
-  if (commerceUsesDatabase()) {
+  if (!authUsesMockCredentials() && commerceUsesDatabase()) {
     const base = serverApiUrl();
     let apiRes: Response;
     try {
@@ -113,14 +113,6 @@ export async function POST(req: Request) {
       sub: u.id,
       accountStatus,
     };
-  } else if (hideDemoCredentialsUi()) {
-    return NextResponse.json(
-      {
-        error:
-          "Login indisponível: configure COMMERCE_API_URL e INTERNAL_API_SECRET no servidor (modo produção).",
-      },
-      { status: 503 },
-    );
   } else {
     const user = authenticateMockUser(email, password);
     if (!user) {

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Suspense } from "react";
+import { AuthPageLayout } from "@/components/auth/auth-page-layout";
+import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
-import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -12,33 +12,18 @@ export const metadata: Metadata = {
 
 function ResetFallback() {
   return (
-    <div className="rounded-lg border border-border/80 bg-card/95 p-8 text-center text-sm text-muted-foreground shadow-xl backdrop-blur-sm">
-      Carregando…
-    </div>
+    <AuthFormShell title="Carregando…" description="Aguarde um instante.">
+      <p className="text-center text-sm text-muted-foreground">Preparando formulário…</p>
+    </AuthFormShell>
   );
 }
 
 export default function RecuperarSenhaPage() {
   return (
-    <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
-      <div className="relative hidden min-h-[420px] lg:block">
-        <Image
-          src={MARKETING_IMAGES.entrarSide}
-          alt="Moda editorial"
-          fill
-          className="object-cover"
-          sizes="50vw"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-      </div>
-      <div className="flex items-center justify-center px-4 py-12 lg:px-12">
-        <div className="w-full max-w-md">
-          <Suspense fallback={<ResetFallback />}>
-            <ResetPasswordForm />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    <AuthPageLayout quote="Escolha uma nova senha forte para proteger sua conta Oggi Fest.">
+      <Suspense fallback={<ResetFallback />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthPageLayout>
   );
 }

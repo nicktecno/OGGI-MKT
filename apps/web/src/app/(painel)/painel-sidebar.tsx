@@ -5,16 +5,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { Role } from "@/lib/auth-types";
 import { cn } from "@/lib/utils";
 
-export type AdminNavCounts = {
-  pendingRegistrationsCount: number;
-  pendingRequestsCount: number;
-  activeCombinationsCount: number;
-};
-
 type Props = {
   role: Role;
   painelHome: string;
-  adminNavCounts?: AdminNavCounts;
 };
 
 /** Painel lateral tipo “tab rail”: faixa escura com itens em destaque. */
@@ -42,66 +35,39 @@ function sidebarTabClass(active: boolean) {
   );
 }
 
-export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
+function adminNavActive(pathname: string, href: string, exact?: boolean): boolean {
+  if (exact) return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+const ADMIN_OGGI_FEST_ITEMS = [
+  { href: "/painel/admin/oggi-fest", label: "Visão geral", exact: true as const },
+  { href: "/painel/admin/oggi-fest/linhas", label: "Linhas de sorvete" },
+  { href: "/painel/admin/oggi-fest/modelos", label: "Modelos" },
+  { href: "/painel/admin/oggi-fest/filiais", label: "Filiais (retirada)" },
+] as const;
+
+export function PainelSidebar({ role, painelHome }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  if (role === "ADMIN" && adminNavCounts) {
-    type AdminNavItem =
-      | { href: "/painel/admin/cadastro-peca"; label: "Cadastro de peça" }
-      | { href: "/painel/admin/pecas"; label: "Peças e preços" }
-      | { href: "/painel/admin/financeiro"; label: "Financeiro (Stripe)" }
-      | { href: "/painel/admin/cadastros"; label: "Cadastros"; badge: number }
-      | { href: "/painel/admin/pedidos"; label: "Pedidos das costureiras"; badge: number }
-      | { href: "/painel/admin/combinacoes"; label: "Quem faz o quê"; badge: number };
+  const vitrineActive =
+    pathname === "/fest" || pathname.startsWith("/fest/");
 
-    const items: AdminNavItem[] = [
-      { href: "/painel/admin/cadastro-peca", label: "Cadastro de peça" },
-      { href: "/painel/admin/pecas", label: "Peças e preços" },
-      { href: "/painel/admin/financeiro", label: "Financeiro (Stripe)" },
-      {
-        href: "/painel/admin/cadastros",
-        label: "Cadastros",
-        badge: adminNavCounts.pendingRegistrationsCount,
-      },
-      {
-        href: "/painel/admin/pedidos",
-        label: "Pedidos das costureiras",
-        badge: adminNavCounts.pendingRequestsCount,
-      },
-      {
-        href: "/painel/admin/combinacoes",
-        label: "Quem faz o quê",
-        badge: adminNavCounts.activeCombinationsCount,
-      },
-    ];
-
-    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
-
+  if (role === "ADMIN") {
     return (
       <div className="flex w-full flex-col gap-3">
-        <SidebarTabRail aria-label="Menu da administração">
-          {items.map((item) => {
-            const active = pathname === item.href;
-            const badge = "badge" in item ? item.badge : 0;
-            return (
-              <Link key={item.href} href={item.href} prefetch className={sidebarTabClass(active)}>
-                <span className="min-w-0 flex-1">{item.label}</span>
-                {badge > 0 ? (
-                  <span
-                    className={cn(
-                      "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1 text-[0.65rem] font-semibold tabular-nums",
-                      active
-                        ? "bg-primary/12 text-primary"
-                        : "bg-muted-foreground/10 text-muted-foreground group-hover:bg-muted-foreground/15 group-hover:text-foreground",
-                    )}
-                  >
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
+        <SidebarTabRail aria-label="Menu Oggi Fest">
+          {ADMIN_OGGI_FEST_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch
+              className={sidebarTabClass(adminNavActive(pathname, item.href, "exact" in item && item.exact))}
+            >
+              <span className="min-w-0 flex-1">{item.label}</span>
+            </Link>
+          ))}
           <Link
             href="/painel/admin/conta"
             prefetch
@@ -110,8 +76,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
             <span className="min-w-0 flex-1">Minha conta</span>
           </Link>
           <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-          <Link href="/loja" className={sidebarTabClass(lojaActive)}>
-            <span className="min-w-0 flex-1">Loja pública</span>
+          <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
+            <span className="min-w-0 flex-1">Ver vitrine</span>
           </Link>
         </SidebarTabRail>
       </div>
@@ -122,12 +88,10 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
     const aba = searchParams.get("aba");
     const onFornecedor =
       pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
-    const overviewActive =
-      onFornecedor && aba !== "insumos" && aba !== "entregas" && aba !== "dados";
+    const overviewActive = onFornecedor && aba !== "insumos" && aba !== "entregas" && aba !== "dados";
     const dadosActive = aba === "dados";
     const insumosActive = aba === "insumos";
     const entregasActive = aba === "entregas";
-    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
     return (
       <SidebarTabRail aria-label="Menu do fornecedor">
@@ -141,11 +105,11 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
           <span className="min-w-0 flex-1">Meus insumos</span>
         </Link>
         <Link href={`${painelHome}?aba=entregas`} prefetch className={sidebarTabClass(entregasActive)}>
-          <span className="min-w-0 flex-1">Entregas às costureiras</span>
+          <span className="min-w-0 flex-1">Entregas</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
-          <span className="min-w-0 flex-1">Loja pública</span>
+        <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
+          <span className="min-w-0 flex-1">Ver vitrine</span>
         </Link>
       </SidebarTabRail>
     );
@@ -154,9 +118,7 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
   if (role === "CUSTOMER") {
     const pedidosActive = pathname === "/painel/cliente/pedidos";
     const perfilActive = pathname === "/painel/cliente/perfil";
-    const inicioActive =
-      pathname === "/painel/cliente" || pathname === "/painel/cliente/";
-    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
+    const inicioActive = pathname === "/painel/cliente" || pathname === "/painel/cliente/";
 
     return (
       <SidebarTabRail aria-label="Menu da conta">
@@ -170,8 +132,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
           <span className="min-w-0 flex-1">Perfil</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
-          <span className="min-w-0 flex-1">Loja</span>
+        <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
+          <span className="min-w-0 flex-1">Oggi Fest</span>
         </Link>
       </SidebarTabRail>
     );
@@ -180,7 +142,6 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
   if (role === "EXECUTOR") {
     const overviewActive =
       pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
-    const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
     return (
       <SidebarTabRail aria-label="Menu da costureira">
@@ -188,8 +149,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
           <span className="min-w-0 flex-1">Visão geral</span>
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-        <Link href="/loja" className={sidebarTabClass(lojaActive)}>
-          <span className="min-w-0 flex-1">Loja pública</span>
+        <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
+          <span className="min-w-0 flex-1">Ver vitrine</span>
         </Link>
       </SidebarTabRail>
     );
@@ -197,7 +158,6 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
 
   const overviewActive =
     pathname === painelHome || (painelHome !== "/" && pathname.startsWith(`${painelHome}/`));
-  const lojaActive = pathname === "/loja" || pathname.startsWith("/loja/");
 
   return (
     <SidebarTabRail aria-label="Menu do painel">
@@ -205,8 +165,8 @@ export function PainelSidebar({ role, painelHome, adminNavCounts }: Props) {
         <span className="min-w-0 flex-1">Visão geral</span>
       </Link>
       <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
-      <Link href="/loja" className={sidebarTabClass(lojaActive)}>
-        <span className="min-w-0 flex-1">Loja pública</span>
+      <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
+        <span className="min-w-0 flex-1">Ver vitrine</span>
       </Link>
     </SidebarTabRail>
   );

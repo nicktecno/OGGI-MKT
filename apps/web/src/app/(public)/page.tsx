@@ -1,17 +1,24 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FeaturedProductsSection } from "@/components/loja/featured-products-section";
+import { FestCatalogLinesGrid } from "@/components/oggi-fest/fest-catalog-lines-grid";
+import { FestCatalogTemplatePills } from "@/components/oggi-fest/fest-catalog-template-pills";
+import { OggiHeading } from "@/components/oggi-fest/oggi-heading";
+import { OggiLogo } from "@/components/oggi-fest/oggi-logo";
 import { buttonVariants } from "@/components/ui/button";
-import { searchCatalogRowsFromData } from "@/lib/demo-seed";
-import { getStorefrontCommerceState } from "@/lib/demo-runtime";
+import {
+  OGGI_FEST_LEAD_DAYS_RECOMMENDED,
+  OGGI_FEST_MIN_ORDER_BRL,
+  OGGI_FEST_RENTAL_HOURS,
+  OGGI_SITE_URL,
+} from "@/lib/oggi-fest/constants";
+import { FEST_CART_MODELS } from "@/lib/oggi-fest/mock-data";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
-import { SITE_NAME } from "@/lib/site";
-import { Scissors, Truck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { SITE_BRAND, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
+import { cn, formatBrl } from "@/lib/utils";
+import { Calendar, IceCream, Truck } from "lucide-react";
 
-/** Fallback ISR (24h) — alinhado a STOREFRONT_REVALIDATE_SECONDS no fetch. */
 export const revalidate = 86_400;
 
 export const metadata: Metadata = {
@@ -22,250 +29,161 @@ export const metadata: Metadata = {
     title: `${SEO_HOME_TITLE_SEGMENT} | ${SITE_NAME}`,
     description: SEO_HOME_DESCRIPTION,
     url: "/",
-    images: [
-      {
-        url: MARKETING_IMAGES.homeHero,
-        width: 2400,
-        height: 1600,
-        alt: `${SITE_NAME} — hero moda artesanal`,
-      },
-    ],
-  },
-  twitter: {
-    title: `${SEO_HOME_TITLE_SEGMENT} | ${SITE_NAME}`,
-    description: SEO_HOME_DESCRIPTION,
-    images: [MARKETING_IMAGES.homeHero],
+    images: [{ url: MARKETING_IMAGES.homeHero, width: 1600, height: 900, alt: SITE_NAME }],
   },
 };
 
-const editorial = [
+const faq = [
   {
-    src: MARKETING_IMAGES.homeEditorial1,
-    alt: "Mulher costurando à máquina em ateliê",
-    title: "Feito com calma",
-    text: "Cada peça nasce no ritmo de quem costura todos os dias — com atenção aos detalhes que só o trabalho manual guarda.",
+    q: "Com quanto tempo de antecedência solicitar?",
+    a: `De ${OGGI_FEST_LEAD_DAYS_RECOMMENDED} a 10 dias no mínimo. Quanto antes reservar, melhor.`,
   },
   {
-    src: MARKETING_IMAGES.homeEditorial2,
-    alt: "Mulher em ateliê ao lado de manequim de costura",
-    title: "Pequenos negócios, grande carinho",
-    text: "Por trás da Moda Store estão costureiras e pequenos ateliês que transformam tecido em roupa com orgulho e cuidado.",
+    q: "Qual o valor mínimo?",
+    a: `${formatBrl(OGGI_FEST_MIN_ORDER_BRL)} em produtos Oggi. Locação do carrinho sem custo acima desse valor.`,
   },
   {
-    src: MARKETING_IMAGES.homeEditorial3,
-    alt: "Editorial de moda em tons claros",
-    title: "Roupa que conta uma história",
-    text: "Aqui você encontra peças pensadas para durar no guarda-roupa — menos pressa, mais afeto no que você veste.",
+    q: "Entregam o carrinho?",
+    a: "A retirada é feita por você na loja. Entrega no local do evento pode ser orçada à parte conforme distância.",
+  },
+  {
+    q: "Quanto tempo dura a locação?",
+    a: `Em média ${OGGI_FEST_RENTAL_HOURS} no horário de funcionamento da loja.`,
   },
 ];
 
-export default async function HomePage() {
-  const commerce = await getStorefrontCommerceState();
-  const featuredRows = searchCatalogRowsFromData(
-    commerce.products,
-    commerce.productionAssignments,
-    undefined,
-  );
-
+export default function HomePage() {
   return (
     <>
-      <section className="relative min-h-[85vh] overflow-hidden">
-        <Image
-          src={MARKETING_IMAGES.homeHero}
-          alt="Editorial de moda em estúdio, silhueta elegante"
-          fill
-          priority
-          className="object-cover object-[center_25%] md:object-center"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/18 md:from-background/95 md:via-background/65 md:to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent md:from-background/40 md:via-transparent md:to-background/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_0%_50%,oklch(0.99_0.02_95_/_0.5),transparent_65%)]" />
-        <div className="relative z-10 mx-auto flex min-h-[85vh] max-w-6xl flex-col justify-end px-6 pb-20 pt-32 md:justify-center md:pb-0 md:pt-0">
-          <div className="max-w-xl md:max-w-xl">
-            <p className="mb-4 text-[0.7rem] font-semibold uppercase tracking-[0.42em] text-accent">
-              {SITE_NAME}
-            </p>
-            <h1 className="font-serif text-4xl font-medium leading-[1.1] tracking-[-0.02em] text-foreground md:text-5xl md:leading-[1.06] lg:text-[3.35rem] lg:leading-[1.05]">
-              Roupas costuradas com carinho, por quem vive do próprio talento.
+      <section className="relative overflow-hidden border-b-4 border-primary bg-gradient-to-b from-white via-white to-oggi-pink-light/70">
+        <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-primary/5 blur-3xl" aria-hidden />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-center md:gap-12 md:py-20 lg:py-24">
+          <div className="max-w-2xl">
+            <OggiLogo variant="brand" href={undefined} className="mb-8 h-11 sm:h-12 md:h-14" priority />
+            <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-primary">{SITE_NAME}</p>
+            <h1 className="mt-4 font-heading text-[2.125rem] font-black uppercase leading-[1.08] tracking-tight text-[#1a1a1a] sm:text-5xl md:text-[3.25rem] lg:text-6xl">
+              {SITE_TAGLINE}
             </h1>
-            <p className="mt-7 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg md:leading-relaxed">
-              A {SITE_NAME} existe para aproximar você de costureiras e pequenos negócios que fazem moda de forma artesanal —
-              com tempo, mão na agulha e respeito por cada detalhe.
+            <p className="mt-5 text-xl font-bold leading-snug text-[#1a1a1a] sm:text-2xl md:text-[1.75rem]">
+              A comemoração é sua e o sorvete é nosso.
             </p>
-            <div className="mt-11 flex flex-wrap gap-4">
-              <Link
-                href="/#em-destaque"
-                className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem] justify-center")}
-              >
-                Ver ofertas em destaque
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-[#3d3d3d] sm:text-lg md:leading-8">
+              Bem-vindos ao {SITE_NAME}. Escolha o carrinho de 200 ou 300 picolés, monte pelas linhas
+              oficiais Oggi ou use um modelo pronto para sua festa.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link href="/fest" className={cn(buttonVariants({ size: "xl" }), "min-w-[11rem]")}>
+                Montar meu pedido
               </Link>
+              <a
+                href={OGGI_SITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "xl" }),
+                  "rounded-full border-2 border-primary text-primary hover:bg-primary/5",
+                )}
+              >
+                Site {SITE_BRAND}
+              </a>
+            </div>
+          </div>
+          <div className="relative mx-auto w-full max-w-lg md:max-w-none">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-[#0a0a0a] shadow-xl ring-2 ring-primary/15 sm:aspect-square md:aspect-[4/3]">
+              <Image
+                src={MARKETING_IMAGES.loginHero}
+                alt="Produtos Oggi Sorvetes para festas"
+                fill
+                priority
+                className="object-contain object-center p-4 sm:p-6"
+                sizes="(max-width: 768px) 100vw, 45vw"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      <section
-        className="border-b border-border/70 bg-gradient-to-b from-muted/30 via-card/40 to-background py-16 md:py-20"
-        aria-labelledby="home-parceiros-heading"
-      >
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.38em] text-accent">
-              Parceiros
-            </p>
-            <h2
-              id="home-parceiros-heading"
-              className="mt-3 font-serif text-2xl font-medium tracking-tight md:text-3xl"
-            >
-              Você costura ou fornece insumos?
-            </h2>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
-              Cadastre-se na {SITE_NAME}, passe pela aprovação da equipe e integre a vitrine — costureiras
-              publicam ofertas; fornecedores cadastram tecidos e materiais.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            <Link
-              href="/registrar?parceiro=costureira"
-              className="group flex flex-col rounded-2xl border border-border/70 bg-card/90 p-6 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-luxury focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Scissors className="h-5 w-5" aria-hidden />
+      <section className="border-b-4 border-primary bg-oggi-pink-light py-12">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-3">
+          {[
+            { icon: IceCream, title: "200 ou 300 picolés", text: "Dois carrinhos com placas de gel (~4h de conservação)." },
+            { icon: Calendar, title: "Modelos prontos", text: "Aniversário, casamento, corporativo e mais." },
+            { icon: Truck, title: "Retirada ou entrega", text: "Na loja Oggi ou no local do seu evento." },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex gap-4 rounded-2xl bg-white p-5 shadow-sm ring-2 ring-primary/10">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Icon className="h-6 w-6" aria-hidden />
               </span>
-              <span className="mt-5 font-serif text-xl font-medium tracking-tight text-foreground">
-                Sou costureira
-              </span>
-              <span className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                Ateliê ou produção sob medida: cadastre seu perfil, endereço de postagem e participe das
-                peças aprovadas na loja.
-              </span>
-              <span
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "mt-6 w-full justify-center sm:w-auto sm:self-start",
-                )}
-              >
-                Cadastrar como costureira
-              </span>
-            </Link>
-            <Link
-              href="/registrar?parceiro=fornecedor"
-              className="group flex flex-col rounded-2xl border border-border/70 bg-card/90 p-6 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-luxury focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Truck className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="mt-5 font-serif text-xl font-medium tracking-tight text-foreground">
-                Sou fornecedor de insumos
-              </span>
-              <span className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                Tecidos, aviamentos e materiais: cadastre seus produtos para a equipe montar as peças da
-                vitrine.
-              </span>
-              <span
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "mt-6 w-full justify-center sm:w-auto sm:self-start",
-                )}
-              >
-                Cadastrar como fornecedor
-              </span>
-            </Link>
-          </div>
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Já tem conta?{" "}
-            <Link href="/entrar" className="font-medium text-foreground underline-offset-4 hover:underline">
-              Entrar
-            </Link>
-          </p>
+              <div>
+                <h2 className="font-heading text-base font-extrabold uppercase tracking-wide text-[#1a1a1a]">
+                  {title}
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#3d3d3d]">{text}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <FeaturedProductsSection
-        rows={featuredRows}
-        sectionId="em-destaque"
-        eyebrow="Compre agora"
-        gridColumns={featuredRows.length >= 4 ? "2-4" : "2-3"}
-      />
-
-      <section className="relative border-b border-border/70 bg-gradient-to-b from-card via-card to-background py-24">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,oklch(0.5_0.08_48_/_0.06),transparent_70%)]" />
-        <div className="relative mx-auto max-w-6xl px-6">
-          <div className="mb-16 max-w-2xl">
-            <h2 className="font-serif text-3xl font-medium tracking-tight md:text-[2.35rem] md:leading-snug">
-              Moda que sente o humano por trás
-            </h2>
-            <p className="mt-4 text-muted-foreground md:text-lg md:leading-relaxed">
-              Sem barulho de fábrica gigante — só gente que ama o que faz e quer que sua roupa te acompanhe com elegância no dia a dia.
-            </p>
-          </div>
-          <div className="grid gap-10 md:grid-cols-3">
-            {editorial.map((item) => (
-              <article
-                key={item.title}
-                className="group overflow-hidden rounded-2xl border border-border/60 bg-card/90 shadow-luxury-sm ring-1 ring-foreground/[0.04] transition-[box-shadow,transform] duration-500 hover:-translate-y-1 hover:shadow-luxury"
+      <section className="py-16" aria-labelledby="carrinhos-heading">
+        <div className="mx-auto max-w-6xl px-6">
+          <OggiHeading eyebrow="Opções de carrinhos" title="Escolha o tamanho" />
+          <div className="mt-10 grid gap-8 md:grid-cols-2">
+            {FEST_CART_MODELS.map((cart) => (
+              <Link
+                key={cart.id}
+                href={`/fest/${cart.slug}`}
+                className="oggi-card group transition hover:-translate-y-1 hover:shadow-lg"
               >
-                <div className="relative aspect-[4/5] overflow-hidden">
+                <div className="relative aspect-[16/10] bg-oggi-pink-light">
                   <Image
-                    src={item.src}
-                    alt={item.alt}
+                    src={cart.imageUrl}
+                    alt={cart.name}
                     fill
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-contain p-4 transition group-hover:scale-[1.02]"
+                    sizes="50vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-90" />
                 </div>
-                <div className="p-7">
-                  <h3 className="font-serif text-xl font-medium tracking-tight md:text-[1.35rem]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-[0.9375rem] md:leading-relaxed">
-                    {item.text}
-                  </p>
+                <div className="border-t-2 border-primary/10 p-6">
+                  <h3 className="font-heading text-xl font-extrabold uppercase text-primary">{cart.name}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{cart.description}</p>
+                  <span className="oggi-pill mt-4 inline-flex">{cart.capacity} unidades</span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-border/50 py-24">
-        <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 md:grid-cols-2">
-          <div className="relative aspect-[4/5] max-h-[520px] overflow-hidden rounded-2xl border border-border/60 shadow-luxury-sm ring-1 ring-foreground/[0.04]">
-            <Image
-              src={MARKETING_IMAGES.homePurpose}
-              alt="Mulher com blazer e look clássico elegante"
-              fill
-              className="object-cover object-[center_20%]"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-          </div>
-          <div>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.38em] text-accent">
-              Nosso propósito
-            </p>
-            <h2 className="mt-4 font-serif text-3xl font-medium tracking-tight md:text-[2.35rem] md:leading-snug">
-              Valorizar quem costura no próprio ritmo
-            </h2>
-            <p className="mt-6 text-muted-foreground md:text-lg md:leading-relaxed">
-              Acreditamos em moda feita com calma: peças artesanais, costureiras com seus pequenos negócios e uma experiência de compra simples para você levar esse cuidado para casa.
-            </p>
-            <ul className="mt-10 space-y-5 text-sm leading-relaxed text-muted-foreground md:text-base md:leading-relaxed">
-              <li className="border-l-[3px] border-accent pl-5">
-                Peças pensadas para durar — menos descarte, mais afeto no que você veste.
-              </li>
-              <li className="border-l-[3px] border-border/80 pl-5">
-                Apoio a quem empreende com agulha e linha, mantendo o ofício vivo.
-              </li>
-              <li className="border-l-[3px] border-border/80 pl-5">
-                Uma vitrine onde a beleza da roupa conversa com a história de quem a fez.
-              </li>
-            </ul>
-            <Link href="/loja" className={cn(buttonVariants({ size: "xl" }), "mt-10 inline-flex")}>
-              Explorar peças
-            </Link>
-          </div>
+      <section className="bg-oggi-pink-light py-16" aria-labelledby="linhas-home-heading">
+        <div className="mx-auto max-w-6xl px-6">
+          <OggiHeading
+            eyebrow="Catálogo"
+            title="Linhas de sorvete"
+            subtitle="Distribua as unidades entre as linhas no passo de montagem."
+          />
+          <FestCatalogLinesGrid />
+        </div>
+      </section>
+
+      <section className="py-16" aria-labelledby="modelos-heading">
+        <div className="mx-auto max-w-6xl px-6">
+          <OggiHeading title="Modelos para cada ocasião" />
+          <FestCatalogTemplatePills />
+        </div>
+      </section>
+
+      <section className="border-t-4 border-primary bg-white py-16" aria-labelledby="faq-heading">
+        <div className="mx-auto max-w-3xl px-6">
+          <OggiHeading title="Perguntas frequentes" className="text-center [&_h1]:text-center" />
+          <dl className="mt-10 space-y-4">
+            {faq.map((item) => (
+              <div key={item.q} className="rounded-2xl border-2 border-primary/15 bg-oggi-pink-light/50 p-5">
+                <dt className="font-heading text-sm font-extrabold uppercase tracking-wide text-primary">{item.q}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
     </>

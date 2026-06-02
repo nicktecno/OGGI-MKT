@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AuthFormShell } from "@/components/auth/auth-form-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LottieLoading } from "@/components/ui/lottie-loading";
 import { SITE_NAME } from "@/lib/site";
+
+const INPUT_CLASS =
+  "border-2 border-primary/15 bg-white focus-visible:border-primary focus-visible:ring-primary/25";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -46,32 +43,31 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="border-border/80 bg-card/95 shadow-xl backdrop-blur-sm">
-      <CardHeader className="space-y-1">
-        <CardTitle className="font-serif text-2xl tracking-tight">Esqueci a senha</CardTitle>
-        <CardDescription>
-          {SITE_NAME} — enviaremos um link seguro se o e-mail estiver cadastrado.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {sent ? (
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              Se existir uma conta para <span className="font-medium text-foreground">{email}</span>,
-              você receberá um e-mail com instruções para redefinir a senha.
-            </p>
-            <p>Confira também a pasta de spam.</p>
-            <Link
-              href="/entrar"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "inline-flex w-full justify-center")}
-            >
-              Voltar ao login
-            </Link>
-          </div>
-        ) : (
+    <AuthFormShell
+      title="Esqueci a senha"
+      description={`${SITE_NAME} — enviaremos um link seguro se o e-mail estiver cadastrado.`}
+    >
+      {sent ? (
+        <div className="space-y-4 text-sm text-muted-foreground">
+          <p>
+            Se existir uma conta para <span className="font-semibold text-primary">{email}</span>,
+            você receberá um e-mail com instruções para redefinir a senha.
+          </p>
+          <p>Confira também a pasta de spam.</p>
+          <Link
+            href="/entrar"
+            className={cn(buttonVariants({ size: "lg" }), "inline-flex w-full justify-center")}
+          >
+            Voltar ao login
+          </Link>
+        </div>
+      ) : (
+        <>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email" className="font-semibold text-foreground">
+                E-mail
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -80,11 +76,11 @@ export function ForgotPasswordForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-background"
+                className={INPUT_CLASS}
               />
             </div>
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
                 {error}
               </p>
             ) : null}
@@ -99,15 +95,16 @@ export function ForgotPasswordForm() {
               )}
             </Button>
           </form>
-        )}
-        {!sent ? (
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/entrar" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href="/entrar"
+              className="font-bold text-primary underline-offset-4 hover:underline"
+            >
               Voltar ao login
             </Link>
           </p>
-        ) : null}
-      </CardContent>
-    </Card>
+        </>
+      )}
+    </AuthFormShell>
   );
 }

@@ -1,23 +1,19 @@
-import { LayoutDashboard, LogIn, Mail, Store } from "lucide-react";
+import { IceCream, LayoutDashboard, LogIn, Mail } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { HeaderCartLink } from "@/components/loja/header-cart-link";
-import { HeaderStoreSearchFallback } from "@/components/loja/header-store-search-fallback";
-import { HeaderStoreSearch } from "@/components/loja/header-store-search";
+import { HeaderFestCartLink } from "@/components/oggi-fest/header-fest-cart-link";
+import { OggiLogo } from "@/components/oggi-fest/oggi-logo";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_BRAND, SITE_NAME } from "@/lib/site";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function sessionHeaderLabel(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
   const name = session.name?.trim();
   return {
-    /** Texto visível no header */
     display: name || session.email,
-    /** Tooltip: nome + e-mail quando houver nome */
     title: name ? `${name} · ${session.email}` : session.email,
   };
 }
@@ -27,121 +23,72 @@ export default async function PublicLayout({ children }: { children: React.React
   const userInHeader = session ? sessionHeaderLabel(session) : null;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <SiteJsonLd />
-      <header className="sticky top-0 z-40 border-b border-foreground/[0.07] bg-background/65 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/50">
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" />
-        <div className="relative mx-auto flex min-h-[4rem] max-w-7xl flex-col gap-3 px-5 py-3 sm:min-h-[4.25rem] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:px-8 lg:px-12">
-          <Link href="/" className="group flex shrink-0 flex-col justify-center gap-0.5 sm:py-1">
-            <span className="font-serif text-xl font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-foreground/80 sm:text-2xl">
-              {SITE_NAME}
-            </span>
-            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.34em] text-muted-foreground">
-              Moda artesanal
-            </span>
-          </Link>
-          <div className="order-last min-w-0 w-full sm:order-none sm:max-w-md sm:flex-1 lg:max-w-xl">
-            <Suspense fallback={<HeaderStoreSearchFallback />}>
-              <HeaderStoreSearch />
-            </Suspense>
-          </div>
-          <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-3 min-[1000px]:gap-x-10">
+      <header className="sticky top-0 z-40 border-b-4 border-primary bg-white shadow-sm">
+        <div className="relative mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:min-h-[5rem] sm:px-8 lg:px-12">
+          <OggiLogo variant="brand" priority className="h-10 sm:h-11 md:h-12" />
+          <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-5">
             <Link
-              href="/loja"
-              title="Loja"
-              aria-label="Loja"
-              className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-accent sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
+              href="/fest"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-primary transition hover:bg-primary hover:text-primary-foreground"
             >
-              <Store
-                className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
-                aria-hidden
-              />
-              <span className="inline text-[0.8125rem] font-semibold uppercase tracking-[0.18em] sm:hidden min-[1000px]:inline">
-                Loja
-              </span>
+              <IceCream className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Montar pedido</span>
+              <span className="sm:hidden">Pedido</span>
             </Link>
             <Link
               href="/contato"
               title="Contato"
               aria-label="Contato"
-              className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-accent sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-primary"
             >
-              <Mail
-                className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
-                aria-hidden
-              />
-              <span className="inline text-[0.8125rem] font-semibold uppercase tracking-[0.18em] sm:hidden min-[1000px]:inline">
-                Contato
-              </span>
+              <Mail className="h-5 w-5" aria-hidden />
             </Link>
-            <HeaderCartLink />
+            <HeaderFestCartLink />
             {session && userInHeader ? (
               <>
                 <Link
                   href={dashboardPathForRole(session.role)}
                   title="Painel"
                   aria-label="Painel"
-                  className="inline-flex h-auto w-auto shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground sm:h-9 sm:w-9 min-[1000px]:h-auto min-[1000px]:w-auto"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-primary"
                 >
-                  <LayoutDashboard
-                    className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
-                    aria-hidden
-                  />
-                  <span className="inline text-[0.8125rem] font-medium uppercase tracking-[0.16em] sm:hidden min-[1000px]:inline">
-                    Painel
-                  </span>
+                  <LayoutDashboard className="h-5 w-5" aria-hidden />
                 </Link>
-                <span
-                  className="hidden max-w-[10rem] shrink-0 truncate text-xs text-muted-foreground/90 lg:inline"
-                  title={userInHeader.title}
-                >
-                  {userInHeader.display}
-                </span>
-                <LogoutButton className="shrink-0 rounded-full px-5 text-xs uppercase tracking-[0.12em]" />
+                <LogoutButton className="shrink-0 rounded-full px-5 text-xs font-bold uppercase" />
               </>
             ) : (
               <Link
                 href="/entrar"
-                title="Entrar"
-                aria-label="Entrar"
                 className={cn(
-                  buttonVariants({ variant: "outline", size: "default" }),
-                  "inline-flex h-auto w-auto shrink-0 items-center justify-center rounded-full px-6 sm:h-9 sm:w-9 sm:px-0 min-[1000px]:h-auto min-[1000px]:w-auto min-[1000px]:px-6",
-                  "text-xs font-medium uppercase tracking-[0.14em]",
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "rounded-full border-2 border-primary font-bold uppercase tracking-wide text-primary hover:bg-primary hover:text-primary-foreground",
                 )}
               >
-                <LogIn
-                  className="hidden h-[1.125rem] w-[1.125rem] sm:inline min-[1000px]:hidden"
-                  aria-hidden
-                />
-                <span className="inline sm:hidden min-[1000px]:inline">Entrar</span>
+                <LogIn className="mr-1.5 h-4 w-4" aria-hidden />
+                Entrar
               </Link>
             )}
           </nav>
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-foreground/[0.06] bg-gradient-to-b from-muted/30 via-muted/20 to-background">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12">
-          <div className="flex flex-col items-center gap-8 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+      <footer className="border-t-4 border-primary bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-12">
+          <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
             <div>
-              <p className="font-serif text-2xl font-medium tracking-tight text-foreground">{SITE_NAME}</p>
-              <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
-                Curadoria &amp; ofício
+              <p className="font-heading text-2xl font-black uppercase tracking-wide">{SITE_NAME}</p>
+              <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-primary-foreground/85">
+                {SITE_BRAND}
               </p>
             </div>
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              Peças selecionadas de artesãos independentes. Compra segura e suporte humano.
+            <p className="max-w-md text-sm leading-relaxed text-primary-foreground/90">
+              Leve o carrinho de sorvete para sua festa. Pedido mínimo R$ 300 — locação grátis do equipamento.
             </p>
           </div>
-          <p className="mt-6 text-center sm:mt-4 sm:text-left">
-            <Link href="/contato" className="text-sm font-medium text-foreground underline-offset-4 hover:underline">
-              Fale conosco
-            </Link>
-          </p>
-          <div className="mx-auto mt-10 h-px max-w-xs bg-gradient-to-r from-transparent via-border to-transparent" />
-          <p className="mt-8 text-center text-[0.625rem] uppercase tracking-[0.26em] text-muted-foreground">
-            © {new Date().getFullYear()} {SITE_NAME}
+          <p className="mt-8 text-center text-xs uppercase tracking-widest text-primary-foreground/75 sm:text-left">
+            © {new Date().getFullYear()} {SITE_BRAND}
           </p>
         </div>
       </footer>
