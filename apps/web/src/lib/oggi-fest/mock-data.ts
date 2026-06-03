@@ -1,5 +1,11 @@
 import { festModelImageUrl, OGGI_CART_IMAGE, OGGI_LINE_IMAGE } from "./brand";
-import type { FestCartModel, FestTemplate, IceCreamLine, OggiStore } from "./types";
+import type {
+  FestAddOnProduct,
+  FestCartModel,
+  FestTemplate,
+  IceCreamLine,
+  OggiStore,
+} from "./types";
 
 /** Linhas oficiais Oggi Sorvetes (catálogo de picolés). */
 export const ICE_CREAM_LINES: IceCreamLine[] = [
@@ -274,4 +280,27 @@ export function festLinesTotal(lines: { unitPrice: number; quantity: number }[])
 
 export function festLinesUnitCount(lines: { quantity: number }[]): number {
   return lines.reduce((n, l) => n + l.quantity, 0);
+}
+
+/** Produtos complementares (ex.: Porta Picolé). */
+export const FEST_ADD_ONS: FestAddOnProduct[] = [
+  {
+    id: "add-porta-picole",
+    slug: "porta-picole",
+    name: "Porta Picolé",
+    description:
+      "Suporte prático para servir picolés no evento — mantém tudo organizado e à mão dos convidados.",
+    unitPrice: 24.9,
+    imageUrl: "/porta-picole.jpeg",
+    upsellAtCheckout: true,
+  },
+];
+
+export function getFestAddOnById(id: string): FestAddOnProduct | undefined {
+  return FEST_ADD_ONS.find((p) => p.id === id);
+}
+
+export function getCheckoutUpsellProducts(order: { addOns: { productId: string }[] }): FestAddOnProduct[] {
+  const inCart = new Set(order.addOns.map((a) => a.productId));
+  return FEST_ADD_ONS.filter((p) => p.upsellAtCheckout && !inCart.has(p.id));
 }

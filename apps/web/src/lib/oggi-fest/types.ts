@@ -59,6 +59,26 @@ export type FestCartLine = {
   imageUrl?: string;
 };
 
+/** Produto complementar (não conta na capacidade do carrinho de picolés). */
+export type FestAddOnProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  unitPrice: number;
+  imageUrl: string;
+  /** Oferecido no modal ao finalizar se ainda não estiver no pedido. */
+  upsellAtCheckout: boolean;
+};
+
+export type FestAddOnLine = {
+  productId: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  imageUrl?: string;
+};
+
 export type FestOrderDraft = {
   version: 1;
   cartModelId: string;
@@ -66,10 +86,13 @@ export type FestOrderDraft = {
   cartModelName: string;
   capacity: number;
   lines: FestCartLine[];
+  addOns: FestAddOnLine[];
   templateId?: string;
   templateName?: string;
   eventDate?: string;
   notes?: string;
+  /** CEP do cliente para indicar loja mais próxima (chat ou checkout). */
+  customerCep?: string;
 };
 
 export type FestDeliveryMode = "retirada" | "entrega";

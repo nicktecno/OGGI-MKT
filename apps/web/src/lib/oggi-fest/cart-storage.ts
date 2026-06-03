@@ -1,4 +1,4 @@
-import type { FestCartLine, FestOrderDraft } from "./types";
+import type { FestAddOnLine, FestAddOnProduct, FestCartLine, FestOrderDraft } from "./types";
 import { festLinesTotal, festLinesUnitCount } from "./mock-data";
 import { OGGI_FEST_MIN_ORDER_BRL } from "./constants";
 
@@ -18,6 +18,7 @@ function parse(raw: string | null): FestOrderDraft | null {
   try {
     const v = JSON.parse(raw) as FestOrderDraft;
     if (v?.version !== 1 || !v.cartModelId || !Array.isArray(v.lines)) return null;
+    if (!Array.isArray(v.addOns)) v.addOns = [];
     return v;
   } catch {
     return null;
@@ -45,6 +46,14 @@ export function clearFestOrder(): void {
 
 export function festOrderSubtotal(order: FestOrderDraft): number {
   return festLinesTotal(order.lines);
+}
+
+export function festOrderAddOnsSubtotal(order: FestOrderDraft): number {
+  return festLinesTotal(order.addOns);
+}
+
+export function festOrderGrandTotal(order: FestOrderDraft): number {
+  return festOrderSubtotal(order) + festOrderAddOnsSubtotal(order);
 }
 
 export function festOrderUnitCount(order: FestOrderDraft): number {
@@ -123,4 +132,31 @@ export function applyFestTemplate(
   lines: FestCartLine[],
 ): FestOrderDraft {
   return { ...order, templateId, templateName, lines };
+}
+
+export function setFestCustomerCep(order: FestOrderDraft, customerCep: string): FestOrderDraft {
+  const digits = customerCep.replace(/\D/g, "").slice(0, 8);
+  return { ...order, customerCep: digits.length === 8 ? digits : undefined };
+}
+
+export function setFestAddOn(
+  order: FestOrderDraft,
+  product: FestAddOnProduct | Pick<FestAddOnLine, "productId" | "productName" | "unitPrice" | "imageUrl">,
+  quantity: number,
+): FestOrderDraft {
+  const productId = "productId" in product ? product.productId : product.id;
+  const productName = "productName" in product ? product.productName : product.name;
+  const { unitPrice, imageUrl } = product;
+  const q = Math.max(0, Math.floor(quantity));
+  const addOns = order.addOns.filter((a) => a.productId !== productId);
+  if (q > 0) {
+    addOns.push({
+      productId,
+      productName,
+      unitPrice,
+      quantity: q,
+      imageUrl,
+    });
+  }
+  return { ...order, addOns };
 }

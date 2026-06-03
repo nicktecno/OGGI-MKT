@@ -15,6 +15,7 @@ export function createAssistantOrder(
     cartModelName: cart.name,
     capacity: cart.capacity,
     lines: [],
+    addOns: [],
   };
   const lines = buildLinesFromTemplate(catalog, template, cart.capacity);
   return applyFestTemplate(draft, template.id, template.name, lines);

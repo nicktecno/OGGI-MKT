@@ -57,6 +57,7 @@ export function FestConfigurator({ cartModel }: Props) {
         cartModelName: cartModel.name,
         capacity: cartModel.capacity,
         lines: [],
+        addOns: [],
       };
       setOrder(draft);
       writeFestOrder(draft);

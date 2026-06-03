@@ -4,9 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CapacityBar } from "@/components/oggi-fest/capacity-bar";
+import { FestAddOnsSection } from "@/components/oggi-fest/fest-add-ons-section";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   clearFestOrder,
+  festOrderAddOnsSubtotal,
+  festOrderGrandTotal,
   festOrderMeetsMinimum,
   festOrderSubtotal,
   festOrderUnitCount,
@@ -46,8 +49,10 @@ export function FestCartView() {
 
   const filled = festOrderUnitCount(order);
   const subtotal = festOrderSubtotal(order);
+  const addOnsSubtotal = festOrderAddOnsSubtotal(order);
+  const grandTotal = festOrderGrandTotal(order);
   const meetsMin = festOrderMeetsMinimum(order);
-  const deposit = (subtotal * OGGI_FEST_DEPOSIT_PERCENT) / 100;
+  const deposit = (grandTotal * OGGI_FEST_DEPOSIT_PERCENT) / 100;
   const isFull = filled === order.capacity;
 
   return (
@@ -105,10 +110,45 @@ export function FestCartView() {
           ))}
       </ul>
 
+      {order.addOns.length > 0 ? (
+        <ul className="divide-y divide-border/60 rounded-xl border border-border/60 bg-card/80">
+          {order.addOns.map((addOn) => (
+            <li key={addOn.productId} className="flex items-center gap-4 p-4">
+              {addOn.imageUrl ? (
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">
+                  <Image src={addOn.imageUrl} alt="" fill className="object-cover" sizes="56px" />
+                </div>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{addOn.productName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {addOn.quantity} un. × {formatBrl(addOn.unitPrice)} · complementar
+                </p>
+              </div>
+              <p className="shrink-0 font-semibold tabular-nums">
+                {formatBrl(addOn.unitPrice * addOn.quantity)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <FestAddOnsSection order={order} onOrderChange={setOrder} />
+
       <div className="rounded-xl border border-border/60 bg-muted/25 p-6 space-y-3 text-sm">
         <div className="flex justify-between">
-          <span>Subtotal em produtos</span>
+          <span>Subtotal em picolés</span>
           <span className="font-semibold">{formatBrl(subtotal)}</span>
+        </div>
+        {addOnsSubtotal > 0 ? (
+          <div className="flex justify-between">
+            <span>Itens complementares</span>
+            <span className="font-semibold">{formatBrl(addOnsSubtotal)}</span>
+          </div>
+        ) : null}
+        <div className="flex justify-between font-medium border-t border-border/60 pt-3">
+          <span>Total em produtos</span>
+          <span>{formatBrl(grandTotal)}</span>
         </div>
         <div className="flex justify-between text-muted-foreground">
           <span>Locação do carrinho (acima de {formatBrl(OGGI_FEST_MIN_ORDER_BRL)})</span>

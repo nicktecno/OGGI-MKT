@@ -19,9 +19,13 @@ import {
 import {
   festOrderMeetsMinimum,
   festOrderSubtotal,
+  readFestOrder,
+  setFestCustomerCep,
   writeFestOrder,
 } from "@/lib/oggi-fest/cart-storage";
 import { OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
+import { fetchCepFromGeolocation } from "@/lib/oggi-fest/location-cep";
+import { findNearestStore, formatCepDisplay } from "@/lib/oggi-fest/nearest-store";
 import type { FestCartModel, FestTemplate } from "@/lib/oggi-fest/types";
 import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
 import { cn, formatBrl } from "@/lib/utils";
@@ -59,7 +63,7 @@ function RudigoAvatar({
 function RudigoMascotPeek({ className }: { className?: string }) {
   return (
     <div
-      className={cn("pointer-events-none relative h-[8.75rem] w-[7.25rem] drop-shadow-[0_8px_24px_rgba(226,0,122,0.35)]", className)}
+      className={cn("pointer-events-none relative h-[10.75rem] w-[9rem] drop-shadow-[0_4px_20px_rgba(255,255,255,0.95)_drop-shadow(0_0_28px_rgba(255,255,255,0.85))", className)}
       aria-hidden
     >
       <Image
@@ -68,7 +72,7 @@ function RudigoMascotPeek({ className }: { className?: string }) {
         fill
         priority
         className="object-contain object-bottom"
-        sizes="116px"
+        sizes="144px"
       />
     </div>
   );
@@ -80,7 +84,7 @@ type ChatMessage = {
   text: string;
 };
 
-type Step = "welcome" | "guests" | "occasion" | "cart" | "model" | "done";
+type Step = "welcome" | "guests" | "occasion" | "cart" | "model" | "location" | "done";
 
 type Chip = { id: string; label: string };
 
@@ -100,6 +104,7 @@ export function FestAssistantChat() {
   const [cart, setCart] = useState<FestCartModel | null>(null);
   const [template, setTemplate] = useState<FestTemplate | null>(null);
   const [summaryHref, setSummaryHref] = useState("/fest");
+  const [locating, setLocating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pushBot = useCallback((text: string) => {
@@ -117,6 +122,7 @@ export function FestAssistantChat() {
     setCart(null);
     setTemplate(null);
     setSummaryHref("/fest");
+    setLocating(false);
     setMessages([]);
     pushBot(
       "Olá! Sou o Rudigo, assistente do Oggi Fest. Em poucos passos monto seu carrinho com um modelo pronto. Quantos convidados você espera?",
@@ -215,6 +221,42 @@ export function FestAssistantChat() {
       }. Modelo: ${tpl.name}.`,
     );
     setSummaryHref(`/fest/${activeCart.slug}`);
+    pushBot(
+      "Para indicar a loja Oggi mais próxima na finalização, posso usar sua localização e descobrir seu CEP?",
+    );
+    setStep("location");
+  }
+
+  async function handleUseLocation() {
+    if (locating) return;
+    pushUser("Usar minha localização");
+    pushBot("Aguarde, estou buscando sua localização…");
+    setLocating(true);
+    try {
+      const cep = await fetchCepFromGeolocation();
+      const current = readFestOrder();
+      if (current) {
+        writeFestOrder(setFestCustomerCep(current, cep));
+      }
+      const store = findNearestStore(catalog.stores, cep);
+      pushBot(
+        store
+          ? `CEP ${formatCepDisplay(cep)} identificado. A loja mais próxima é ${store.name} (~${store.distanceKm} km).`
+          : `CEP ${formatCepDisplay(cep)} salvo. Você verá a loja indicada ao finalizar o pedido.`,
+      );
+    } catch {
+      pushBot(
+        "Não consegui usar sua localização. Sem problemas — informe seu CEP na hora de finalizar o pedido.",
+      );
+    } finally {
+      setLocating(false);
+      setStep("done");
+    }
+  }
+
+  function handleSkipLocation() {
+    pushUser("Informar CEP depois");
+    pushBot("Combinado! Na finalização do pedido pediremos seu CEP para indicar a loja mais próxima.");
     setStep("done");
   }
 
@@ -256,6 +298,11 @@ export function FestAssistantChat() {
           { id: "model-other", label: "Outro modelo" },
           { id: "model-manual", label: "Montar manualmente" },
         ];
+      case "location":
+        return [
+          { id: "location-yes", label: "Usar localização" },
+          { id: "location-skip", label: "Informar CEP depois" },
+        ];
       default:
         return [];
     }
@@ -269,6 +316,9 @@ export function FestAssistantChat() {
       if (id === "model-yes") handleModelConfirm(true);
       else if (id === "model-other") handlePickOtherModel();
       else handleModelConfirm(false);
+    } else if (step === "location") {
+      if (id === "location-yes") void handleUseLocation();
+      else handleSkipLocation();
     }
   }
 
@@ -285,7 +335,7 @@ export function FestAssistantChat() {
       >
         <div
           className={cn(
-            "absolute -left-1 -top-[5.25rem] z-30 transition-all duration-300 ease-out",
+            "absolute -left-1 -top-[6.75rem] z-30 transition-all duration-300 ease-out",
             open ? "scale-100 opacity-100" : "scale-90 opacity-0",
           )}
         >
@@ -302,7 +352,7 @@ export function FestAssistantChat() {
             !open && "hidden",
           )}
         >
-          <header className="flex shrink-0 items-start justify-between border-b-2 border-primary/15 bg-oggi-pink-light/60 pb-3 pl-[6.75rem] pr-4 pt-4">
+          <header className="flex shrink-0 items-start justify-between border-b-2 border-primary/15 bg-oggi-pink-light/60 pb-3 pl-[8.5rem] pr-4 pt-4">
             <div className="min-w-0 pt-1">
               <p id="fest-assistant-title" className="font-heading text-base font-extrabold uppercase text-primary">
                 Rudigo
@@ -370,8 +420,9 @@ export function FestAssistantChat() {
                   <button
                     key={chip.id}
                     type="button"
+                    disabled={locating && step === "location"}
                     onClick={() => onChip(chip.id)}
-                    className="rounded-full border-2 border-primary/25 bg-white px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-primary transition hover:border-primary hover:bg-oggi-pink-light/50"
+                    className="rounded-full border-2 border-primary/25 bg-white px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-primary transition hover:border-primary hover:bg-oggi-pink-light/50 disabled:pointer-events-none disabled:opacity-50"
                   >
                     {chip.label}
                   </button>
