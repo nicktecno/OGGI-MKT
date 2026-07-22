@@ -146,7 +146,7 @@ export default function HomePage() {
                 href={`/fest/${cart.slug}`}
                 className="oggi-card group transition hover:-translate-y-1 hover:shadow-lg hover:ring-primary/40"
               >
-                <div className="relative aspect-[16/10] bg-[#0f1a1b]">
+                <div className="relative aspect-[16/10] bg-white">
                   <Image
                     src={imageUrl}
                     alt={cart.name}

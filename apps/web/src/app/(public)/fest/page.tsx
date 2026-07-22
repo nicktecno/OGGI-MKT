@@ -69,7 +69,7 @@ export default function FestPage() {
           ))}
         </div>
 
-        <section className="mt-20 rounded-2xl bg-white border border-primary/20 p-8 md:p-10" aria-labelledby="linhas-heading">
+        <section className="mt-20 rounded-2xl bg-card border border-primary/20 p-8 md:p-10" aria-labelledby="linhas-heading">
           <OggiHeading
             eyebrow="Sabores Los Los"
             title="Catálogo de sorvetes"

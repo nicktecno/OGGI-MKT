@@ -28,7 +28,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <SiteJsonLd />
       <header className="sticky top-0 z-40 border-b border-border bg-card shadow-md">
         <div className="relative mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:min-h-[5rem] sm:px-8 lg:px-12">
-          <OggiLogo variant="white" priority className="h-10 sm:h-11 md:h-12" />
+          <OggiLogo variant="white" priority className="h-14 sm:h-16 md:h-18" />
           <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-5">
             <Link
               href="/fest"
