@@ -114,6 +114,7 @@ function LinesTab({
       unitPrice: Number(form.unitPrice) || 0,
       imageUrl: form.imageUrl.trim() || OGGI_LINE_IMAGE.classicos,
       tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
+      type: editing?.type ?? "palitos",
     };
     const lines = editing
       ? catalog.lines.map((l) => (l.id === editing.id ? line : l))

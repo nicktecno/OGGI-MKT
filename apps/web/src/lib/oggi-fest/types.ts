@@ -9,6 +9,8 @@ export type IceCreamLine = {
   unitPrice: number;
   imageUrl: string;
   tags: string[];
+  /** Tipo/categoria de sorvete: palitos (90g), minicups (pequenos) ou cups (grandes) */
+  type: "palitos" | "minicups" | "cups";
 };
 
 export type FestCartModel = {

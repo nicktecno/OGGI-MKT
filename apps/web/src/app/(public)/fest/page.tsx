@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FestCatalogLinesGrid } from "@/components/oggi-fest/fest-catalog-lines-grid";
+import { FestCatalogByType } from "@/components/oggi-fest/fest-catalog-by-type";
 import { OggiHeading } from "@/components/oggi-fest/oggi-heading";
 import { buttonVariants } from "@/components/ui/button";
 import { OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
@@ -75,7 +75,7 @@ export default function FestPage() {
             title="Catálogo de sorvetes"
             subtitle="No próximo passo você distribui as unidades por sabor ou aplica um modelo pronto."
           />
-          <FestCatalogLinesGrid className="mt-10 grid gap-5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" />
+          <FestCatalogByType className="mt-10" />
         </section>
       </div>
     </main>
