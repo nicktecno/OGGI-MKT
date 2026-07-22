@@ -45,7 +45,7 @@ export default function FestPage() {
         <div className="grid gap-8 md:grid-cols-2">
           {FEST_CART_MODELS.map((cart) => (
             <article key={cart.id} className="oggi-card flex flex-col">
-              <div className="relative aspect-[16/10] bg-[#0f1a1b]">
+              <div className="relative aspect-[16/10] bg-white">
                 <Image
                   src={cart.imageUrl}
                   alt={cart.name}
@@ -69,7 +69,7 @@ export default function FestPage() {
           ))}
         </div>
 
-        <section className="mt-20 rounded-2xl bg-card border border-primary/20 p-8 md:p-10" aria-labelledby="linhas-heading">
+        <section className="mt-20 rounded-2xl bg-white border border-primary/20 p-8 md:p-10" aria-labelledby="linhas-heading">
           <OggiHeading
             eyebrow="Sabores Los Los"
             title="Catálogo de sorvetes"
