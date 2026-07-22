@@ -18,7 +18,7 @@ export function IceCreamLineCard({ line, className, compact }: Props) {
         className,
       )}
     >
-      <div className={cn("relative bg-oggi-pink-light", compact ? "aspect-square" : "aspect-[4/5]")}>
+      <div className={cn("relative bg-[#0f1a1b]", compact ? "aspect-square" : "aspect-[4/5]")}>
         <Image
           src={line.imageUrl}
           alt={line.name}
@@ -27,7 +27,7 @@ export function IceCreamLineCard({ line, className, compact }: Props) {
           sizes={compact ? "80px" : "(max-width:768px) 50vw, 25vw"}
         />
       </div>
-      <div className={cn("border-t-2 border-primary/10 bg-white", compact ? "p-3" : "p-4")}>
+      <div className={cn("border-t border-primary/15 bg-card", compact ? "p-3" : "p-4")}>
         <h3
           className={cn(
             "font-heading font-extrabold uppercase tracking-wide text-primary",

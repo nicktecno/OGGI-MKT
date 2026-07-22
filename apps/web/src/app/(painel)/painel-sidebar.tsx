@@ -57,7 +57,7 @@ export function PainelSidebar({ role, painelHome }: Props) {
   if (role === "ADMIN") {
     return (
       <div className="flex w-full flex-col gap-3">
-        <SidebarTabRail aria-label="Menu Oggi Fest">
+        <SidebarTabRail aria-label="Menu Los Los Fest">
           {ADMIN_OGGI_FEST_ITEMS.map((item) => (
             <Link
               key={item.href}
@@ -133,7 +133,7 @@ export function PainelSidebar({ role, painelHome }: Props) {
         </Link>
         <div className="my-1 mx-2 h-px bg-border/60" role="separator" />
         <Link href="/fest" prefetch className={sidebarTabClass(vitrineActive)}>
-          <span className="min-w-0 flex-1">Oggi Fest</span>
+          <span className="min-w-0 flex-1">Los Los Fest</span>
         </Link>
       </SidebarTabRail>
     );

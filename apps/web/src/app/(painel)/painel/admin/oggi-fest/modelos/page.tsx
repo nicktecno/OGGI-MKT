@@ -3,7 +3,7 @@ import { OggiFestModelosAdminPage } from "@/components/oggi-fest/oggi-fest-admin
 
 export const metadata: Metadata = {
   title: "Modelos",
-  description: "Modelos de festa Oggi Fest.",
+  description: "Modelos de festa Los Los Fest.",
 };
 
 export default function OggiFestModelosPage() {

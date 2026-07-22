@@ -20,7 +20,7 @@ function ResetFallback() {
 
 export default function RecuperarSenhaPage() {
   return (
-    <AuthPageLayout quote="Escolha uma nova senha forte para proteger sua conta Oggi Fest.">
+    <AuthPageLayout quote="Escolha uma nova senha forte para proteger sua conta Los Los Fest.">
       <Suspense fallback={<ResetFallback />}>
         <ResetPasswordForm />
       </Suspense>

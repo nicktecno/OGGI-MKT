@@ -74,7 +74,7 @@ export function FestAddOnUpsellModal({ open, product, onAdd, onDecline }: Props)
 
         <div className="overflow-y-auto px-5 py-5">
           <div className="flex gap-4">
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border-2 border-primary/15 bg-white">
+            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border-2 border-primary/15 bg-card">
               <Image
                 src={product.imageUrl}
                 alt=""

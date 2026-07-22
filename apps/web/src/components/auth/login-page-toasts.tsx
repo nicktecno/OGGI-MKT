@@ -23,7 +23,7 @@ export function LoginPageToasts() {
     if (cadastro === "cliente") {
       toast.success("Conta de cliente criada", {
         description:
-          "Entre com o e-mail e a senha que você escolheu para pedir seu Oggi Fest.",
+          "Entre com o e-mail e a senha que você escolheu para pedir seu Los Los Fest.",
       });
     } else if (cadastro === "pendente") {
       toast.success("Cadastro recebido", {

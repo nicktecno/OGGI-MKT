@@ -20,7 +20,7 @@ type LoginFormProps = {
 };
 
 const INPUT_CLASS =
-  "border-2 border-primary/15 bg-white focus-visible:border-primary focus-visible:ring-primary/25";
+  "border-2 border-primary/15 bg-card focus-visible:border-primary focus-visible:ring-primary/25";
 
 export function LoginForm({
   redirectTo,
@@ -129,7 +129,7 @@ export function LoginForm({
       </p>
       <p className="mt-3 text-center text-sm">
         <Link href="/fest" className="font-medium text-muted-foreground underline-offset-4 hover:text-primary">
-          Voltar para montar pedido Oggi Fest
+          Voltar para montar pedido Los Los Fest
         </Link>
       </p>
     </AuthFormShell>

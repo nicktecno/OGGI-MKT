@@ -1,7 +1,7 @@
 import { OGGI_CART_IMAGE, OGGI_LINE_IMAGE, OGGI_MARKETING } from "@/lib/oggi-fest/brand";
 
 /**
- * Imagens de marketing Oggi Fest (assets locais em /public/oggi).
+ * Imagens de marketing Los Los Fest (assets locais em /public/oggi).
  */
 export const MARKETING_IMAGES = {
   homeHero: OGGI_MARKETING.hero,

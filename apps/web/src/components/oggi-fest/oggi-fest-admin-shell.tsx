@@ -35,7 +35,7 @@ export function OggiFestAdminToolbar({
   saved: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-primary/15 bg-oggi-pink-light/50 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-primary/15 bg-muted/50 px-4 py-3">
       <p className="text-sm text-muted-foreground">
         <span className="font-semibold text-primary">{catalog.lines.length}</span> linhas ·{" "}
         <span className="font-semibold text-primary">{catalog.templates.length}</span> modelos ·{" "}
@@ -100,7 +100,7 @@ export function OggiFestAdminOverview() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-2xl border-2 border-primary/15 bg-white p-5 transition hover:border-primary/40 hover:shadow-md"
+            className="rounded-2xl border-2 border-primary/15 bg-card p-5 transition hover:border-primary/40 hover:shadow-md"
           >
             <p className="font-heading text-xs font-extrabold uppercase tracking-wide text-primary">
               {item.label}

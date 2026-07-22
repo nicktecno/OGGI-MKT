@@ -31,9 +31,9 @@ import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
 import { cn, formatBrl } from "@/lib/utils";
 import { RotateCcw, X } from "lucide-react";
 
-const RUDIGO_MASCOT = "/rudigo.png";
+const LOLITO_MASCOT = "/loslos/lolito.png";
 
-function RudigoAvatar({
+function LolitoAvatar({
   size = 40,
   className,
 }: {
@@ -43,13 +43,13 @@ function RudigoAvatar({
   return (
     <span
       className={cn(
-        "relative shrink-0 overflow-hidden rounded-full bg-white ring-2 ring-primary/25",
+        "relative shrink-0 overflow-hidden rounded-full bg-card ring-2 ring-primary/25",
         className,
       )}
       style={{ width: size, height: size }}
     >
       <Image
-        src={RUDIGO_MASCOT}
+        src={LOLITO_MASCOT}
         alt=""
         fill
         className="object-cover object-top"
@@ -60,14 +60,14 @@ function RudigoAvatar({
 }
 
 /** Mascote “saindo” do modal — corpo para fora, pés na borda superior. */
-function RudigoMascotPeek({ className }: { className?: string }) {
+function LolitoMascotPeek({ className }: { className?: string }) {
   return (
     <div
       className={cn("pointer-events-none relative h-[10.75rem] w-[9rem] drop-shadow-[0_4px_20px_rgba(255,255,255,0.95)_drop-shadow(0_0_28px_rgba(255,255,255,0.85))", className)}
       aria-hidden
     >
       <Image
-        src={RUDIGO_MASCOT}
+        src={LOLITO_MASCOT}
         alt=""
         fill
         priority
@@ -125,7 +125,7 @@ export function FestAssistantChat() {
     setLocating(false);
     setMessages([]);
     pushBot(
-      "Olá! Sou o Rudigo, assistente do Oggi Fest. Em poucos passos monto seu carrinho com um modelo pronto. Quantos convidados você espera?",
+      "Olá! Sou o Lolito, assistente do Los Los Fest. Em poucos passos monto seu carrinho com um modelo pronto. Quantos convidados você espera?",
     );
     setStep("guests");
   }, [pushBot]);
@@ -339,7 +339,7 @@ export function FestAssistantChat() {
             open ? "scale-100 opacity-100" : "scale-90 opacity-0",
           )}
         >
-          <RudigoMascotPeek />
+          <LolitoMascotPeek />
         </div>
 
         <div
@@ -348,17 +348,17 @@ export function FestAssistantChat() {
           aria-labelledby="fest-assistant-title"
           aria-hidden={!open}
           className={cn(
-            "relative z-20 flex max-h-[min(82dvh,680px)] flex-col overflow-hidden rounded-3xl border-2 border-primary/20 bg-white shadow-2xl",
+            "relative z-20 flex max-h-[min(82dvh,680px)] flex-col overflow-hidden rounded-3xl border-2 border-primary/20 bg-card shadow-2xl",
             !open && "hidden",
           )}
         >
-          <header className="flex shrink-0 items-start justify-between border-b-2 border-primary/15 bg-oggi-pink-light/60 pb-3 pl-[8.5rem] pr-4 pt-4">
+          <header className="flex shrink-0 items-start justify-between border-b-2 border-primary/15 bg-muted/60 pb-3 pl-[8.5rem] pr-4 pt-4">
             <div className="min-w-0 pt-1">
               <p id="fest-assistant-title" className="font-heading text-base font-extrabold uppercase text-primary">
-                Rudigo
+                Lolito
               </p>
               <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                Assistente Oggi Fest
+                Los Los Fest
               </p>
             </div>
             <Button
@@ -377,8 +377,8 @@ export function FestAssistantChat() {
             {messages.map((msg) =>
               msg.role === "bot" ? (
                 <div key={msg.id} className="flex items-end gap-2">
-                  <RudigoAvatar size={32} className="mb-0.5" />
-                  <div className="max-w-[calc(88%-2.5rem)] rounded-2xl rounded-bl-md bg-oggi-pink-light/80 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+                  <LolitoAvatar size={32} className="mb-0.5" />
+                  <div className="max-w-[calc(88%-2.5rem)] rounded-2xl rounded-bl-md bg-muted/80 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
                     {msg.text}
                   </div>
                 </div>
@@ -393,7 +393,7 @@ export function FestAssistantChat() {
             )}
           </div>
 
-          <footer className="shrink-0 border-t border-primary/10 bg-white p-3">
+          <footer className="shrink-0 border-t border-primary/10 bg-card p-3">
             {step === "done" ? (
               <div className="flex flex-col gap-2">
                 <Link
@@ -422,7 +422,7 @@ export function FestAssistantChat() {
                     type="button"
                     disabled={locating && step === "location"}
                     onClick={() => onChip(chip.id)}
-                    className="rounded-full border-2 border-primary/25 bg-white px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-primary transition hover:border-primary hover:bg-oggi-pink-light/50 disabled:pointer-events-none disabled:opacity-50"
+                    className="rounded-full border-2 border-primary/25 bg-card px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-primary transition hover:border-primary hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50"
                   >
                     {chip.label}
                   </button>
@@ -446,11 +446,11 @@ export function FestAssistantChat() {
             ? "h-[4.25rem] w-[4.25rem] bg-gradient-to-br from-primary to-[#b80062] text-primary-foreground shadow-[0_10px_28px_rgba(226,0,122,0.45)] ring-[3px] ring-[#ffc72c]/75 hover:shadow-[0_12px_32px_rgba(226,0,122,0.55)] hover:ring-[#ffc72c] sm:h-auto sm:w-auto sm:px-6 sm:py-3.5"
             : "h-[5.75rem] w-[5.75rem] bg-gradient-to-br from-primary via-primary to-[#b80062] p-[3px] shadow-[0_12px_36px_rgba(226,0,122,0.42)] ring-[3px] ring-[#ffc72c]/80 hover:scale-[1.04] hover:shadow-[0_16px_40px_rgba(226,0,122,0.5)] hover:ring-[#ffc72c] sm:h-auto sm:w-auto sm:rounded-full sm:p-[3px] sm:pr-5",
         )}
-        aria-label={open ? "Fechar chat do Rudigo" : "Abrir chat do Rudigo"}
+        aria-label={open ? "Fechar chat do Lolito" : "Abrir chat do Lolito"}
       >
         {!open ? (
           <span
-            className="absolute -right-0.5 -top-0.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffc72c] px-1.5 text-[0.6rem] font-extrabold uppercase tracking-wide text-[#2d2d2d] shadow-sm ring-2 ring-white"
+            className="absolute -right-0.5 -top-0.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffc72c] px-1.5 text-[0.6rem] font-extrabold uppercase tracking-wide text-[#2d2d2d] shadow-sm ring-2 ring-card"
             aria-hidden
           >
             Ajuda
@@ -461,10 +461,10 @@ export function FestAssistantChat() {
           <X className="h-7 w-7 sm:h-6 sm:w-6" aria-hidden />
         ) : (
           <>
-            <span className="flex h-full w-full items-end justify-center overflow-hidden rounded-full bg-oggi-pink-light ring-2 ring-white/90 sm:hidden">
+            <span className="flex h-full w-full items-end justify-center overflow-hidden rounded-full bg-muted ring-2 ring-card/90 sm:hidden">
               <span className="relative h-[4.85rem] w-[4.35rem]">
                 <Image
-                  src={RUDIGO_MASCOT}
+                  src={LOLITO_MASCOT}
                   alt=""
                   fill
                   className="object-contain object-bottom drop-shadow-[0_4px_8px_rgba(226,0,122,0.25)]"
@@ -473,10 +473,10 @@ export function FestAssistantChat() {
               </span>
             </span>
             <span className="hidden items-center gap-2.5 sm:flex">
-              <span className="flex h-[4.5rem] w-[4rem] items-end justify-center overflow-hidden rounded-full bg-oggi-pink-light ring-2 ring-white/90">
+              <span className="flex h-[4.5rem] w-[4rem] items-end justify-center overflow-hidden rounded-full bg-muted ring-2 ring-card/90">
                 <span className="relative h-[4.1rem] w-[3.6rem]">
                   <Image
-                    src={RUDIGO_MASCOT}
+                    src={LOLITO_MASCOT}
                     alt=""
                     fill
                     className="object-contain object-bottom drop-shadow-[0_4px_8px_rgba(226,0,122,0.25)]"
@@ -486,7 +486,7 @@ export function FestAssistantChat() {
               </span>
               <span className="pr-1 text-left">
                 <span className="block font-heading text-sm font-black uppercase leading-tight tracking-wide text-white">
-                  Rudigo
+                  Lolito
                 </span>
                 <span className="block text-[0.65rem] font-bold uppercase tracking-wider text-white/85">
                   Montar festa

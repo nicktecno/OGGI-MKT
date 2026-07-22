@@ -5,7 +5,7 @@ import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Meu pedido",
-  description: `Revise seu pedido Oggi Fest — ${SITE_NAME}.`,
+  description: `Revise seu pedido Los Los Fest — ${SITE_NAME}.`,
   robots: { index: false, follow: false },
 };
 
@@ -18,7 +18,7 @@ export default function CarrinhoPage() {
         </Link>
         <span className="mx-2 text-border">/</span>
         <Link href="/fest" className="hover:text-foreground">
-          Oggi Fest
+          Los Los Fest
         </Link>
         <span className="mx-2 text-border">/</span>
         <span className="text-foreground">Meu pedido</span>

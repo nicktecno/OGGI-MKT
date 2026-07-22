@@ -36,12 +36,12 @@ export function FestCartView() {
   if (!order || order.lines.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 px-6 py-16 text-center">
-        <p className="text-lg font-medium text-foreground">Seu carrinho Oggi Fest está vazio</p>
+        <p className="text-lg font-medium text-foreground">Seu carrinho Los Los Fest está vazio</p>
         <p className="mt-2 text-muted-foreground">
           Escolha um carrinho de 200 ou 300 unidades e monte seu pedido com modelos ou linhas de sorvete.
         </p>
         <Link href="/fest" className={cn(buttonVariants({ size: "lg" }), "mt-8 inline-flex")}>
-          Montar meu Oggi Fest
+          Montar meu Los Los Fest
         </Link>
       </div>
     );

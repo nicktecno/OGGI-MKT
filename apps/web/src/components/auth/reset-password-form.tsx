@@ -12,7 +12,7 @@ import { LottieLoading } from "@/components/ui/lottie-loading";
 import { SITE_NAME } from "@/lib/site";
 
 const INPUT_CLASS =
-  "border-2 border-primary/15 bg-white focus-visible:border-primary focus-visible:ring-primary/25";
+  "border-2 border-primary/15 bg-card focus-visible:border-primary focus-visible:ring-primary/25";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();

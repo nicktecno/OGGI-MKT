@@ -152,9 +152,9 @@ function LinesTab({
             {catalog.lines.map((line) => (
               <li
                 key={line.id}
-                className="flex items-center gap-3 rounded-xl border-2 border-primary/10 bg-white p-3"
+                className="flex items-center gap-3 rounded-xl border-2 border-primary/10 bg-card p-3"
               >
-                <div className="relative h-14 w-14 shrink-0 rounded-lg bg-oggi-pink-light">
+                <div className="relative h-14 w-14 shrink-0 rounded-lg bg-muted">
                   <Image src={line.imageUrl} alt="" fill className="object-contain p-0.5" sizes="56px" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -306,7 +306,7 @@ function TemplatesTab({
         <CardContent className="space-y-2">
           {catalog.templates.map((t) => (
             <div key={t.id} className="flex items-start justify-between gap-3 rounded-xl border-2 border-primary/10 p-3">
-              <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-oggi-pink-light">
+              <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                 <Image
                   src={t.imageUrl}
                   alt=""
@@ -361,7 +361,7 @@ function TemplatesTab({
             <div className="space-y-1">
               <Label>Ocasião</Label>
               <select
-                className="flex h-12 w-full rounded-xl border-2 border-primary/15 bg-white px-3 text-sm"
+                className="flex h-12 w-full rounded-xl border-2 border-primary/15 bg-card px-3 text-sm"
                 value={occasion}
                 onChange={(e) => setOccasion(e.target.value as FestTemplate["occasion"])}
               >

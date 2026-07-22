@@ -8,16 +8,16 @@ type Props = {
   className?: string;
 };
 
-/** Card de formulário com faixa rosa Oggi (login, recuperação de senha, etc.). */
+/** Card de formulário Los Los Fest (login, recuperação de senha, etc.). */
 export function AuthFormShell({ title, description, children, className }: Props) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border-2 border-primary/20 bg-white shadow-lg ring-1 ring-primary/5",
+        "overflow-hidden rounded-xl border border-primary/20 bg-card shadow-lg",
         className,
       )}
     >
-      <div className="border-b-2 border-primary/10 bg-primary px-6 py-5 text-primary-foreground">
+      <div className="border-b border-primary/20 bg-primary px-6 py-5 text-primary-foreground">
         <h1 className="font-heading text-xl font-extrabold uppercase tracking-wide">{title}</h1>
         <p className="mt-1.5 text-sm leading-relaxed text-primary-foreground/90">{description}</p>
       </div>

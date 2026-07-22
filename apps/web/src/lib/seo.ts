@@ -28,19 +28,19 @@ export function getSiteUrl(): string {
 export const SEO_DEFAULT_OG_IMAGE = MARKETING_IMAGES.homeHero;
 
 export const SEO_DEFAULT_DESCRIPTION =
-  "Alugue o carrinho Oggi Fest para sua festa: escolha 200 ou 300 picolés, monte por linha de sorvete ou use modelos. Retire na loja ou receba no evento.";
+  "Alugue o carrinho Los Los Fest para sua festa: escolha os sabores, monte por linha de sorvete ou use modelos prontos. Retire na loja ou receba no evento.";
 
-export const SEO_HOME_TITLE_SEGMENT = "Oggi Fest — carrinho de sorvete para sua festa";
+export const SEO_HOME_TITLE_SEGMENT = "Los Los Fest — carrinho de sorvete para sua festa";
 
 export const SEO_HOME_DESCRIPTION =
-  "A comemoração é sua e o sorvete é nosso. Monte seu pedido com modelos para aniversário, casamento e mais. Pedido mínimo R$ 300 — locação do carrinho grátis.";
+  "A comemoração é sua e o sorvete é nosso. Monte seu pedido com modelos para aniversário, casamento e mais. 29 sabores incríveis para encantar seus convidados.";
 
 export const SEO_KEYWORDS = [
   SITE_NAME,
-  "Oggi Sorvetes",
+  "Sorvetes Los Los",
   "carrinho de sorvete festa",
-  "picolé festa infantil",
-  "Oggi Fest",
+  "sorvete festa infantil",
+  "Los Los Fest",
   "sorvete evento",
   "aluguel carrinho sorvete",
 ] as const;

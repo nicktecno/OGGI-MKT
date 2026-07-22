@@ -1,55 +1,56 @@
-/** Tokens de marca Oggi Sorvetes / Oggi Fest (espelho do site institucional). */
+/** Tokens de marca Sorvetes Los Los / Los Los Fest (espelho do site institucional). */
 export const OGGI_BRAND = {
-  pink: "#E2007A",
-  pinkDark: "#B80062",
-  pinkLight: "#FFF0F7",
-  pinkSoft: "#FBD0E8",
-  yellow: "#FFC72C",
-  text: "#2D2D2D",
-  textMuted: "#5C5C5C",
+  pink: "#4EC9D4",
+  pinkDark: "#36B5C0",
+  pinkLight: "#E6F8FA",
+  pinkSoft: "#C2EEF1",
+  yellow: "#F5C842",
+  text: "#FFFFFF",
+  textMuted: "#9A9A9A",
   white: "#FFFFFF",
 } as const;
 
 /**
- * Imagens das linhas de picolé (extraídas de oggisorvetes.com.br/produtos/picoles/).
- * @see https://oggisorvetes.com.br/produtos/picoles/
+ * Imagens dos sabores Los Los (extraídas de sorvetesloslos.com.br).
+ * Depreciado: agora os URLs são definidos diretamente no mock-data.ts
+ * @see https://sorvetesloslos.com.br/sabores/
  */
 export const OGGI_LINE_IMAGE = {
-  classicos: "/oggi/lines/classicos.webp",
-  delicia: "/oggi/lines/delicia.webp",
-  meuSabor: "/oggi/lines/meu-sabor.png",
-  fazenda: "/oggi/lines/fazenda.webp",
-  festaAgua: "/oggi/lines/festa-agua.webp",
-  festaLeite: "/oggi/lines/festa-leite.webp",
-  frutos: "/oggi/lines/frutos.webp",
-  helloKitty: "/oggi/lines/hello-kitty.webp",
-  sensa: "/oggi/lines/sensa.webp",
+  classicos: "/loslos/products/chocolate.png",
+  delicia: "/loslos/products/ovomaltine.png",
+  meuSabor: "/loslos/products/leite-avela.png",
+  fazenda: "/loslos/products/cheesecake-morango.png",
+  festaAgua: "/loslos/products/maracuja.png",
+  festaLeite: "/loslos/products/doce-leite-aviacao.png",
+  frutos: "/loslos/products/brownie-site.png",
+  helloKitty: "/loslos/products/banoffee-nanica.png",
+  sensa: "/loslos/products/pistache.png",
 } as const;
 
 export const OGGI_CART_IMAGE = {
-  cart200: "/oggi/carts/carrinho-200.webp",
-  cart300: "/oggi/carts/carrinho-300.png",
+  cart200: "/loslos/carrinho-novo.png",
+  cart300: "/loslos/freezer-novo.png",
 } as const;
 
 export const OGGI_MARKETING = {
-  hero: "/oggi/marketing/hero-fest.svg",
-  /** Arte do hero /fest e home (produtos Oggi sobre fundo preto). */
-  festBanner: "/sorvetes-65b41d5ad00cb.webp",
-  loginHero: "/sorvetes-65b41d5ad00cb.webp",
+  hero: "/loslos/marketing/hero-festa.png",
+  /** Arte do hero /fest e home (carrinho Los Los em evento). */
+  festBanner: "/loslos/marketing/hero-festa.png",
+  loginHero: "/loslos/marketing/hero-festa.png",
 } as const;
 
-/** Logo SVG oficial e favicon local (derivado do logo). */
+/** Logo oficial e favicon local. */
 export const OGGI_LOGO_SVG_URL =
-  "https://oggisorvetes.com.br/wp-content/uploads/2023/05/oggi.svg";
+  "https://sorvetesloslos.com.br/storage/2026/02/logo_loslos_branco3.png";
 
 export const OGGI_LOGO = {
-  /** Branco — fundos rosa/escuros */
-  white: "/oggi.svg",
-  /** Rosa marca — header e fundos claros */
-  brand: "/oggi-logo-brand.svg",
+  /** Branco — fundos escuros */
+  white: "/loslos/logo-white.png",
+  /** Marca — header e fundos claros */
+  brand: "/loslos/logo-dark.png",
 } as const;
 
-export const OGGI_FAVICON_URL = "/oggi-favicon.svg";
+export const OGGI_FAVICON_URL = "/loslos/favicon.png";
 
 /** Fotos temáticas (Unsplash) para capas dos modelos de festa. */
 export const FEST_MODEL_IMAGE = {

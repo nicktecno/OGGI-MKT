@@ -3,7 +3,7 @@ import { hideDemoCredentialsUi } from "@/lib/deployment-env";
 
 /**
  * Login e sessão contra `mock-users` (sem Nest).
- * Padrão em desenvolvimento para o painel Oggi Fest mockado.
+ * Padrão em desenvolvimento para o painel Los Los Fest mockado.
  * Em produção usa a API quando `commerceUsesDatabase()` estiver ativo.
  */
 export function authUsesMockCredentials(): boolean {

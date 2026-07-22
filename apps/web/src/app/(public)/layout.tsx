@@ -26,9 +26,9 @@ export default async function PublicLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteJsonLd />
-      <header className="sticky top-0 z-40 border-b-4 border-primary bg-white shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-border bg-card shadow-md">
         <div className="relative mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:min-h-[5rem] sm:px-8 lg:px-12">
-          <OggiLogo variant="brand" priority className="h-10 sm:h-11 md:h-12" />
+          <OggiLogo variant="white" priority className="h-10 sm:h-11 md:h-12" />
           <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-5">
             <Link
               href="/fest"
@@ -75,20 +75,20 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t-4 border-primary bg-primary text-primary-foreground">
+      <footer className="border-t border-border bg-card text-foreground">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-12">
           <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
             <div>
-              <p className="font-heading text-2xl font-black uppercase tracking-wide">{SITE_NAME}</p>
-              <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-primary-foreground/85">
+              <OggiLogo variant="white" href="/" className="h-12 mb-2" />
+              <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {SITE_BRAND}
               </p>
             </div>
-            <p className="max-w-md text-sm leading-relaxed text-primary-foreground/90">
-              Leve o carrinho de sorvete para sua festa. Pedido mínimo R$ 300 — locação grátis do equipamento.
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+              Leve o carrinho de sorvete Los Los para sua festa. Combine os sabores como quiser e surpreenda seus convidados.
             </p>
           </div>
-          <p className="mt-8 text-center text-xs uppercase tracking-widest text-primary-foreground/75 sm:text-left">
+          <p className="mt-8 text-center text-xs uppercase tracking-widest text-muted-foreground sm:text-left">
             © {new Date().getFullYear()} {SITE_BRAND}
           </p>
         </div>

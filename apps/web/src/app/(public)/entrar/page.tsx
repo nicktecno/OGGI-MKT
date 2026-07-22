@@ -29,7 +29,7 @@ export default async function EntrarPage({ searchParams }: PageProps) {
       {redirectTo !== "/" ? (
         <p
           className={cn(
-            "mb-4 rounded-xl border-2 border-primary/15 bg-white px-3 py-2.5 text-center text-sm text-muted-foreground",
+            "mb-4 rounded-xl border-2 border-primary/15 bg-card px-3 py-2.5 text-center text-sm text-muted-foreground",
           )}
         >
           Após entrar você será redirecionado para{" "}

@@ -113,7 +113,7 @@ export default async function LojaPage({ searchParams }: LojaPageProps) {
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border/50 bg-black shadow-luxury-sm lg:aspect-[16/10]">
                 <Image
                   src={MARKETING_IMAGES.lojaBanner}
-                  alt="Produtos Oggi Sorvetes para festas"
+                  alt="Produtos Sorvetes Los Los para festas"
                   fill
                   className="object-contain object-center p-4 sm:p-6"
                   sizes="(max-width: 1200px) 100vw, 60vw"

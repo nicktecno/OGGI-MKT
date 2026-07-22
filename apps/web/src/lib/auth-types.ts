@@ -41,7 +41,7 @@ export function roleDisplayLabel(role: Role): string {
 export function roleDisplayHint(role: Role): string {
   switch (role) {
     case "ADMIN":
-      return "Oggi Fest — linhas, modelos e filiais";
+      return "Los Los Fest — linhas, modelos e filiais";
     case "SUPPLIER":
       return "Insumos e entregas às costureiras";
     case "EXECUTOR":

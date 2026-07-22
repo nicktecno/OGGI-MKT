@@ -26,8 +26,8 @@ export function HeaderFestCartLink() {
   return (
     <Link
       href="/carrinho"
-      title="Meu pedido Oggi Fest"
-      aria-label={`Meu pedido Oggi Fest${count > 0 ? `, ${count} unidades` : ""}`}
+      title="Meu pedido Los Los Fest"
+      aria-label={`Meu pedido Los Los Fest${count > 0 ? `, ${count} unidades` : ""}`}
       className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-accent"
     >
       <ShoppingCart className="h-[1.125rem] w-[1.125rem]" aria-hidden />

@@ -3,7 +3,7 @@ import { OggiFestLinhasAdminPage } from "@/components/oggi-fest/oggi-fest-admin-
 
 export const metadata: Metadata = {
   title: "Linhas de sorvete",
-  description: "Cadastro de linhas Oggi Fest.",
+  description: "Cadastro de linhas Los Los Fest.",
 };
 
 export default function OggiFestLinhasPage() {

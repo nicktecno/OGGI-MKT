@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
   /** Muitos browsers pedem `/favicon.ico` por padrão; servimos o mesmo ícone PNG. */
   async redirects() {
     return [
-      { source: "/favicon.ico", destination: "/oggi-favicon.svg", permanent: false },
+      { source: "/favicon.ico", destination: "/loslos/favicon.png", permanent: false },
       { source: "/loja", destination: "/fest", permanent: false },
       { source: "/loja/:path*", destination: "/fest", permanent: false },
       { source: "/painel/admin/oggi-fest/templates", destination: "/painel/admin/oggi-fest/modelos", permanent: true },
@@ -49,6 +49,16 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.pexels.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "sorvetesloslos.com.br",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "sp-ao.shortpixel.ai",
         pathname: "/**",
       },
       ...r2RemotePatterns,

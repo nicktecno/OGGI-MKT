@@ -11,9 +11,9 @@ export function FestCatalogTemplatePills() {
       {templates.map((t) => (
         <li
           key={t.id}
-          className="overflow-hidden rounded-2xl border-2 border-primary/15 bg-white shadow-sm transition hover:border-primary/35 hover:shadow-md"
+          className="overflow-hidden rounded-2xl border-2 border-primary/15 bg-card shadow-sm transition hover:border-primary/35 hover:shadow-md"
         >
-          <div className="relative aspect-[16/10] bg-oggi-pink-light">
+          <div className="relative aspect-[16/10] bg-muted">
             <Image
               src={t.imageUrl}
               alt={t.name}

@@ -31,7 +31,7 @@ export default async function FestConfigurePage({ params }: Props) {
         </Link>
         <span className="mx-2 text-primary">/</span>
         <Link href="/fest" className="hover:text-primary">
-          Oggi Fest
+          Los Los Fest
         </Link>
         <span className="mx-2 text-primary">/</span>
         <span className="text-primary">{cart.name}</span>

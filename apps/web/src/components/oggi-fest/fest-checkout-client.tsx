@@ -77,7 +77,7 @@ export function FestCheckoutClient() {
       <p className="text-muted-foreground">
         Nenhum pedido em andamento.{" "}
         <Link href="/fest" className="font-medium text-accent underline-offset-4 hover:underline">
-          Montar Oggi Fest
+          Montar Los Los Fest
         </Link>
       </p>
     );
@@ -244,7 +244,7 @@ export function FestCheckoutClient() {
             </div>
           ) : null}
           <Link href="/fest" className={cn(buttonVariants())}>
-            Novo pedido Oggi Fest
+            Novo pedido Los Los Fest
           </Link>
         </CardContent>
       </Card>

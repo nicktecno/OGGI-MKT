@@ -77,15 +77,14 @@ export const metadata: Metadata = {
     },
   },
   /**
-   * Favicon Oggi Sorvetes — `app/icon.svg` + assets em `public/`.
-   * Não usar `app/icon.png` (conflita com `public/icon.png` e quebra `/_next/image`).
+   * Favicon Los Los
    */
   icons: {
     icon: [
-      { url: "/oggi-favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/loslos/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/loslos/favicon.png", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    apple: [{ url: "/loslos/logo-dark.png", type: "image/png", sizes: "180x180" }],
   },
 };
 

@@ -4,7 +4,7 @@ import { OGGI_LOGO } from "@/lib/oggi-fest/brand";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  /** `brand` = rosa no fundo claro; `white` = branco no fundo rosa/escuro */
+  /** `brand` = versão escura no fundo claro; `white` = branco no fundo escuro */
   variant?: "brand" | "white";
   className?: string;
   /** Envolve em link para a home */
@@ -13,8 +13,8 @@ type Props = {
 };
 
 const LOGO = {
-  brand: { src: OGGI_LOGO.brand, width: 534, height: 233 },
-  white: { src: OGGI_LOGO.white, width: 534, height: 233 },
+  brand: { src: OGGI_LOGO.brand, width: 270, height: 270 },
+  white: { src: OGGI_LOGO.white, width: 123, height: 210 },
 } as const;
 
 export function OggiLogo({ variant = "brand", className, href = "/", priority }: Props) {
@@ -22,7 +22,7 @@ export function OggiLogo({ variant = "brand", className, href = "/", priority }:
   const image = (
     <Image
       src={src}
-      alt="Oggi Sorvetes"
+      alt="Sorvetes Los Los"
       width={width}
       height={height}
       priority={priority}

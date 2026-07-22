@@ -75,7 +75,7 @@ export function TemplateLinesModal({ open, onOpenChange, template, capacity, cat
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 rounded-full text-primary-foreground hover:bg-white/20 hover:text-primary-foreground"
+            className="shrink-0 rounded-full text-primary-foreground hover:bg-card/20 hover:text-primary-foreground"
             onClick={() => onOpenChange(false)}
             aria-label="Fechar"
           >
@@ -98,9 +98,9 @@ export function TemplateLinesModal({ open, onOpenChange, template, capacity, cat
               return (
                 <li
                   key={tl.lineId}
-                  className="flex gap-4 rounded-xl border-2 border-primary/15 bg-oggi-pink-light/40 p-3"
+                  className="flex gap-4 rounded-xl border-2 border-primary/15 bg-muted/40 p-3"
                 >
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-card">
                     <Image
                       src={meta.imageUrl}
                       alt=""

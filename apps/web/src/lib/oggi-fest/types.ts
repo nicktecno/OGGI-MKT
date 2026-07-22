@@ -1,4 +1,4 @@
-/** Tipos do marketplace Oggi Fest (front mockado). */
+/** Tipos do marketplace Los Los Fest (front mockado). */
 
 export type IceCreamLine = {
   id: string;
@@ -18,7 +18,7 @@ export type FestCartModel = {
   capacity: 200 | 300;
   description: string;
   imageUrl: string;
-  /** Locação gratuita acima do pedido mínimo (regra Oggi Fest). */
+  /** Locação gratuita acima do pedido mínimo (regra Los Los Fest). */
   rentalIncluded: boolean;
 };
 

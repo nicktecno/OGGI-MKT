@@ -3,7 +3,7 @@ import { OggiFestFiliaisAdminPage } from "@/components/oggi-fest/oggi-fest-admin
 
 export const metadata: Metadata = {
   title: "Filiais",
-  description: "Filiais para retirada do carrinho Oggi Fest.",
+  description: "Filiais para retirada do carrinho Los Los Fest.",
 };
 
 export default function OggiFestFiliaisPage() {
