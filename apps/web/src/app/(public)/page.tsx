@@ -19,6 +19,7 @@ import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_BRAND, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { cn, formatBrl } from "@/lib/utils";
 import { Calendar, Truck, Package } from "lucide-react";
+import { HomeCarousel } from "@/components/oggi-fest/home-carousel";
 
 export const revalidate = 86_400;
 
@@ -93,16 +94,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-lg md:max-w-none">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-[#141414] shadow-xl ring-1 ring-primary/20 sm:aspect-square md:aspect-[4/3]">
-              <Image
-                src={MARKETING_IMAGES.loginHero}
-                alt="Carrinho Los Los em evento"
-                fill
-                priority
-                className="object-contain object-center p-4 sm:p-6"
-                sizes="(max-width: 768px) 100vw, 45vw"
-              />
-            </div>
+            <HomeCarousel />
           </div>
         </div>
       </section>
