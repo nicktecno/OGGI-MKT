@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Ambulante, Order } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
