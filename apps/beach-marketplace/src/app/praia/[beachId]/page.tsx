@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, IceCream, MapPin, Users } from "lucide-react";
@@ -55,7 +56,7 @@ export default async function BeachLandingPage({ params }: Props) {
       {/* Hero da praia */}
       <div className="relative bg-gradient-to-br from-loslos-teal to-loslos-teal-dark text-white py-10 px-4 overflow-hidden">
         {beach.imageUrl && (
-          <img src={beach.imageUrl} alt={beach.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+          <Image src={beach.imageUrl} alt={beach.name} fill className="absolute inset-0 object-cover opacity-30" sizes="100vw" />
         )}
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="flex items-center gap-2 text-loslos-teal-light text-sm mb-2">
@@ -122,9 +123,9 @@ export default async function BeachLandingPage({ params }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 {cat.products.map((product) => (
                   <div key={product.id} className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                    <div className="h-24 bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden p-2">
+                    <div className="relative h-24 bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden p-2">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
+                        <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" sizes="(max-width: 768px) 50vw, 25vw" />
                       ) : (
                         <IceCream size={28} className="text-loslos-teal" />
                       )}

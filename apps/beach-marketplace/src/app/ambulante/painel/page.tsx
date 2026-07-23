@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, TrendingUp, User, ChevronRight, AlertCircle, LogOut } from "lucide-react";
@@ -196,7 +197,9 @@ export default function PainelAmbulantePage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-2 text-sm text-muted-foreground">
                       {item.productImage && (
-                        <img src={item.productImage} alt={item.productName} className="w-6 h-6 object-contain" />
+                          <div className="relative w-6 h-6 flex-shrink-0">
+                            <Image src={item.productImage} alt={item.productName} fill className="object-contain" sizes="24px" />
+                          </div>
                       )}
                       <span>
                         {item.quantity}x {item.productName}
@@ -282,7 +285,9 @@ export default function PainelAmbulantePage() {
                         {order.items.map((item) => (
                           <div key={item.id} className="flex items-center gap-2 text-sm text-muted-foreground">
                             {item.productImage && (
-                              <img src={item.productImage} alt={item.productName} className="w-5 h-5 object-contain" />
+                              <div className="relative w-5 h-5 flex-shrink-0">
+                                <Image src={item.productImage} alt={item.productName} fill className="object-contain" sizes="20px" />
+                              </div>
                             )}
                             <span>
                               {item.quantity}x {item.productName}

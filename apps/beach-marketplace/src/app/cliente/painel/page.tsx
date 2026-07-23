@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { IceCream, MapPin, Clock, CheckCircle, Package, Star, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut } from "lucide-react";
@@ -176,8 +177,8 @@ export default function PainelClientePage() {
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-3">
                         {item.productImage && (
-                          <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 flex-shrink-0">
-                            <img src={item.productImage} alt={item.productName} className="w-full h-full object-contain" />
+                          <div className="relative w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 flex-shrink-0">
+                            <Image src={item.productImage} alt={item.productName} fill className="object-contain p-1" sizes="40px" />
                           </div>
                         )}
                         <div className="flex-1">
@@ -221,8 +222,8 @@ export default function PainelClientePage() {
                 key={product.id}
                 className="bg-card rounded-xl shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 flex-shrink-0">
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
+                <div className="relative w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 flex-shrink-0">
+                  <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" sizes="48px" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>

@@ -85,7 +85,7 @@ export default function ConfirmacaoPage() {
 
         <OrderConfirmation
           order={order}
-          notificationStage={notificationStage as any}
+          notificationStage={notificationStage as "enviando" | "aguardando" | "aceito" | "rejeitado" | "ninguem_aceitou" | null}
           currentAttempt={currentAttempt}
           ambulante={order.ambulante}
         />

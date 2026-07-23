@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { IceCream, MapPin, QrCode, ShieldCheck, Star, Users } from "lucide-react";
 import { MOCK_BEACHES, MOCK_PRODUCTS } from "@/lib/beach-marketplace/mock-data";
@@ -150,9 +151,9 @@ export default function HomePage() {
                 href={`/praia/${beach.id}`}
                 className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border hover:shadow-md hover:-translate-y-1 transition-all group"
               >
-                <div className="h-32 bg-gradient-to-br from-loslos-teal to-loslos-teal-dark flex items-center justify-center overflow-hidden">
+                <div className="relative h-32 bg-gradient-to-br from-loslos-teal to-loslos-teal-dark flex items-center justify-center overflow-hidden">
                   {beach.imageUrl ? (
-                    <img src={beach.imageUrl} alt={beach.name} className="w-full h-full object-cover" />
+                    <Image src={beach.imageUrl} alt={beach.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
                   ) : (
                     <span className="text-5xl">🏖️</span>
                   )}
@@ -193,9 +194,9 @@ export default function HomePage() {
                     key={product.id}
                     className="bg-card rounded-xl p-4 border border-border"
                   >
-                    <div className="h-32 bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden p-2">
+                    <div className="relative h-32 bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden p-2">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
+                        <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-2" sizes="(max-width: 768px) 50vw, 25vw" />
                       ) : (
                         <IceCream size={32} className="text-loslos-teal" />
                       )}
