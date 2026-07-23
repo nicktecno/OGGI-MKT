@@ -509,18 +509,7 @@ export function festLinesUnitCount(lines: { quantity: number }[]): number {
 export const LOSLOS_STORES_MOCK = LOSLOS_STORES;
 
 /** Produtos complementares (ex.: Porta Picolé). */
-export const FEST_ADD_ONS: FestAddOnProduct[] = [
-  {
-    id: "add-porta-picole",
-    slug: "porta-picole",
-    name: "Porta Picolé",
-    description:
-      "Suporte prático para servir picolés no evento — mantém tudo organizado e à mão dos convidados.",
-    unitPrice: 24.9,
-    imageUrl: "/porta-picole.jpeg",
-    upsellAtCheckout: true,
-  },
-];
+export const FEST_ADD_ONS: FestAddOnProduct[] = [];
 
 export function getFestAddOnById(id: string): FestAddOnProduct | undefined {
   return FEST_ADD_ONS.find((p) => p.id === id);
