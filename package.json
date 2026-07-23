@@ -6,16 +6,21 @@
   ],
   "scripts": {
     "dev:api": "npm run start:dev -w api",
+    "dev:painel": "npm run dev -w web -- -p 3001",
+    "dev:praia": "npm run dev -w beach-marketplace -- -p 3002",
+    "dev:all": "npm run dev:painel & npm run dev:praia",
     "dev:web": "npm run dev -w web",
     "build:api": "npm run build -w api",
     "build:web": "npm run build -w web",
+    "build:beach": "npm run build -w beach-marketplace",
     "db:migrate": "npm run prisma:deploy -w api",
     "db:seed": "npm run prisma:seed -w api",
     "bootstrap:production": "npm run bootstrap:production -w api",
     "compose:up": "docker compose up -d --build",
     "compose:down": "docker compose down",
     "lint:api": "npm run lint -w api",
-    "lint:web": "npm run lint -w web"
+    "lint:web": "npm run lint -w web",
+    "lint:beach": "npm run lint -w beach-marketplace"
   },
   "engines": {
     "node": ">=20"

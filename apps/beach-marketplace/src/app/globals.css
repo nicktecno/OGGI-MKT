@@ -1,0 +1,174 @@
+/* Imports relativos: pacotes só exportam estes CSS em condição "style", que o Next não resolve em @import por nome */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Los Los na Praia — tema escuro, teal #4EC9D4 */
+  :root {
+    --loslos-teal: #4ec9d4;
+    --loslos-teal-dark: #36b5c0;
+    --loslos-teal-light: #e6f8fa;
+    --loslos-yellow: #f5c842;
+
+    --ambient-gradient: radial-gradient(
+        ellipse 100% 60% at 50% -10%,
+        color-mix(in srgb, var(--loslos-teal) 12%, #0a0a0a),
+        transparent 55%
+      ),
+      linear-gradient(180deg, #0f1a1b 0%, #0a0a0a 60%);
+
+    --background: #0a0a0a;
+
+    --foreground: #f0f0f0;
+
+    --card: #141414;
+
+    --card-foreground: #f0f0f0;
+
+    --popover: #1a1a1a;
+
+    --popover-foreground: #f0f0f0;
+
+    --primary: #4ec9d4;
+
+    --primary-foreground: #0a0a0a;
+
+    --secondary: #1e1e1e;
+
+    --secondary-foreground: #f0f0f0;
+
+    --muted: #1e1e1e;
+
+    --muted-foreground: #9a9a9a;
+
+    --accent: #4ec9d4;
+
+    --accent-foreground: #0a0a0a;
+
+    --destructive: oklch(0.5 0.2 18);
+
+    --destructive-foreground: oklch(0.99 0.005 95);
+
+    --border: #2a2a2a;
+
+    --input: #222222;
+
+    --ring: #4ec9d4;
+
+    --chart-1: #4ec9d4;
+
+    --chart-2: #f5c842;
+
+    --chart-3: #36b5c0;
+
+    --chart-4: #1e8a92;
+
+    --chart-5: #f5c842;
+
+    --radius: 0.75rem;
+
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --radius-md: calc(var(--radius) - 2px);
+
+    --sidebar: #111111;
+
+    --sidebar-foreground: #f0f0f0;
+
+    --sidebar-primary: #4ec9d4;
+
+    --sidebar-primary-foreground: #0a0a0a;
+
+    --sidebar-accent: #1e1e1e;
+
+    --sidebar-accent-foreground: #f0f0f0;
+
+    --sidebar-border: #2a2a2a;
+
+    --sidebar-ring: #4ec9d4;
+  }
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+    font-size: 112.5%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image: var(--ambient-gradient);
+    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading font-extrabold uppercase tracking-wide text-balance;
+  }
+
+  /* Destaque de texto selecionado — accent/20 no body era quase invisível em inputs */
+  ::selection {
+    background-color: color-mix(in oklch, var(--ring) 48%, transparent);
+    color: var(--foreground);
+  }
+
+  input::selection,
+  textarea::selection,
+  select::selection {
+    background-color: color-mix(in oklch, var(--ring) 55%, var(--background));
+    color: var(--foreground);
+  }
+
+  .dark input::selection,
+  .dark textarea::selection,
+  .dark select::selection {
+    background-color: color-mix(in oklch, var(--ring) 62%, var(--background));
+    color: var(--foreground);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-loslos-pink-light {
+    background-color: var(--loslos-teal-light);
+  }
+
+  .loslos-card {
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid #2a2a2a;
+    background-color: var(--card);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  }
+
+  .loslos-pill {
+    display: inline-flex;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary-foreground);
+  }
+
+  .shadow-luxury {
+    box-shadow: 0 28px 60px -18px oklch(0.2 0.03 285 / 0.14),
+      0 0 0 1px oklch(0.2 0.02 285 / 0.05);
+  }
+
+  .shadow-luxury-sm {
+    box-shadow: 0 12px 36px -12px oklch(0.2 0.03 285 / 0.12),
+      0 0 0 1px oklch(0.2 0.02 285 / 0.04);
+  }
+
+  .ring-luxury {
+    box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 0.45);
+  }
+}
