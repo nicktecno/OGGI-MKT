@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { OggiFestModelosAdminPage } from "@/components/oggi-fest/oggi-fest-admin-client";
+import { LoslosFestModelosAdminPage } from "@/components/loslos-fest/loslos-fest-admin-client";
 
 export const metadata: Metadata = {
   title: "Modelos",
   description: "Modelos de festa Los Los Fest.",
 };
 
-export default function OggiFestModelosPage() {
-  return <OggiFestModelosAdminPage />;
+export default function LoslosFestModelosPage() {
+  return <LoslosFestModelosAdminPage />;
 }

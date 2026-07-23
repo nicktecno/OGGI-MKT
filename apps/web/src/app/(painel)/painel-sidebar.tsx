@@ -40,11 +40,11 @@ function adminNavActive(pathname: string, href: string, exact?: boolean): boolea
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const ADMIN_OGGI_FEST_ITEMS = [
-  { href: "/painel/admin/oggi-fest", label: "Visão geral", exact: true as const },
-  { href: "/painel/admin/oggi-fest/linhas", label: "Linhas de sorvete" },
-  { href: "/painel/admin/oggi-fest/modelos", label: "Modelos" },
-  { href: "/painel/admin/oggi-fest/filiais", label: "Filiais (retirada)" },
+const ADMIN_LOSLOS_FEST_ITEMS = [
+  { href: "/painel/admin/loslos-fest", label: "Visão geral", exact: true as const },
+  { href: "/painel/admin/loslos-fest/linhas", label: "Linhas de sorvete" },
+  { href: "/painel/admin/loslos-fest/modelos", label: "Modelos" },
+  { href: "/painel/admin/loslos-fest/filiais", label: "Filiais (retirada)" },
 ] as const;
 
 export function PainelSidebar({ role, painelHome }: Props) {
@@ -58,7 +58,7 @@ export function PainelSidebar({ role, painelHome }: Props) {
     return (
       <div className="flex w-full flex-col gap-3">
         <SidebarTabRail aria-label="Menu Los Los Fest">
-          {ADMIN_OGGI_FEST_ITEMS.map((item) => (
+          {ADMIN_LOSLOS_FEST_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}

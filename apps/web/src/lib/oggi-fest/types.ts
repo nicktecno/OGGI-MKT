@@ -35,14 +35,19 @@ export type FestTemplate = {
   slug: string;
   name: string;
   description: string;
-  occasion: "aniversario" | "casamento" | "corporativo" | "churrasco" | "infantil";
+  occasion:
+    | "aniversario"
+    | "casamento"
+    | "corporativo"
+    | "churrasco"
+    | "infantil";
   imageUrl: string;
   lines: FestTemplateLine[];
   /** Destaque na vitrine */
   featured?: boolean;
 };
 
-export type OggiStore = {
+export type LoslosStore = {
   id: string;
   name: string;
   address: string;

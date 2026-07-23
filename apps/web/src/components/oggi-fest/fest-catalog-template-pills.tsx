@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
 
 export function FestCatalogTemplatePills() {
   const { templates } = useFestCatalog();

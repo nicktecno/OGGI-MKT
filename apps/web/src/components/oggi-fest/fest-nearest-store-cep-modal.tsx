@@ -8,17 +8,17 @@ import { Label } from "@/components/ui/label";
 import {
   findNearestStore,
   formatCepDisplay,
-} from "@/lib/oggi-fest/nearest-store";
-import type { OggiStore } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/nearest-store";
+import type { LoslosStore } from "@/lib/loslos-fest/types";
 import { applyViaCepOnBlur, onlyCepDigits } from "@/lib/viacep";
 import { cn } from "@/lib/utils";
 import { MapPin } from "lucide-react";
 
 type Props = {
   open: boolean;
-  stores: OggiStore[];
+  stores: LoslosStore[];
   initialCep?: string;
-  onConfirm: (cep: string, nearestStore: OggiStore | null) => void;
+  onConfirm: (cep: string, nearestStore: LoslosStore | null) => void;
   onCancel: () => void;
 };
 
@@ -99,7 +99,7 @@ export function FestNearestStoreCepModal({
 
         <div className="overflow-y-auto px-5 py-5 space-y-4">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Informe seu CEP para indicarmos a unidade Oggi mais próxima para retirada do carrinho.
+            Informe seu CEP para indicarmos a unidade Loslos mais próxima para retirada do carrinho.
           </p>
           <div className="space-y-2">
             <Label htmlFor="fest-pickup-cep">Seu CEP</Label>

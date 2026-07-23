@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FestCheckoutClient } from "@/components/oggi-fest/fest-checkout-client";
+import { FestCheckoutClient } from "@/components/loslos-fest/fest-checkout-client";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function CheckoutPage() {
       <header className="mt-8 space-y-2 border-b border-border/60 pb-8">
         <h1 className="font-serif text-3xl font-medium tracking-tight md:text-4xl">Finalizar pedido</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground leading-relaxed">
-          Escolha retirar o carrinho na loja Oggi ou receber no local do evento. Fluxo mockado — em
+          Escolha retirar o carrinho na loja Loslos ou receber no local do evento. Fluxo mockado — em
           produção a loja confirmará após o sinal de 50%.
         </p>
       </header>

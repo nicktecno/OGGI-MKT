@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CapacityBar } from "@/components/oggi-fest/capacity-bar";
-import { TemplateLinesModal } from "@/components/oggi-fest/template-lines-modal";
+import { CapacityBar } from "@/components/loslos-fest/capacity-bar";
+import { TemplateLinesModal } from "@/components/loslos-fest/template-lines-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
+import { LOSLOS_FEST_MIN_ORDER_BRL } from "@/lib/loslos-fest/constants";
 import {
   applyFestLines,
   applyFestTemplate,
@@ -22,10 +22,10 @@ import {
   setFestLine,
   writeFestOrder,
   FEST_CART_CHANGED_EVENT,
-} from "@/lib/oggi-fest/cart-storage";
-import { buildLinesFromTemplate } from "@/lib/oggi-fest/catalog-helpers";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
-import type { FestCartModel, FestOrderDraft, FestTemplate } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/cart-storage";
+import { buildLinesFromTemplate } from "@/lib/loslos-fest/catalog-helpers";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
+import type { FestCartModel, FestOrderDraft, FestTemplate } from "@/lib/loslos-fest/types";
 import { cn, formatBrl } from "@/lib/utils";
 import { Eye, Minus, Plus, Sparkles } from "lucide-react";
 
@@ -288,13 +288,13 @@ export function FestConfigurator({ cartModel }: Props) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Locação do carrinho</span>
                 <span className="text-accent font-medium">
-                  {meetsMin ? "Grátis" : "Incluída acima de " + formatBrl(OGGI_FEST_MIN_ORDER_BRL)}
+                  {meetsMin ? "Grátis" : "Incluída acima de " + formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)}
                 </span>
               </div>
             </div>
             {!meetsMin && isFull ? (
               <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                Pedido mínimo de {formatBrl(OGGI_FEST_MIN_ORDER_BRL)} em sorvetes Los Los. Ajuste as linhas ou
+                Pedido mínimo de {formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)} em sorvetes Los Los. Ajuste as linhas ou
                 escolha sabores com valor unitário maior.
               </p>
             ) : null}

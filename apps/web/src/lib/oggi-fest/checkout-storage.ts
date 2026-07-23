@@ -1,6 +1,6 @@
 import type { FestCheckoutDraft } from "./types";
 
-export const FEST_CHECKOUT_STORAGE_KEY = "oggi_fest_checkout_v1";
+export const FEST_CHECKOUT_STORAGE_KEY = "loslos_fest_checkout_v1";
 
 export function readFestCheckout(): FestCheckoutDraft | null {
   if (typeof window === "undefined") return null;

@@ -1,8 +1,8 @@
 "use client";
 
-import { IceCreamLineCard } from "@/components/oggi-fest/ice-cream-line-card";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
-import type { IceCreamLine } from "@/lib/oggi-fest/types";
+import { IceCreamLineCard } from "@/components/loslos-fest/ice-cream-line-card";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
+import type { IceCreamLine } from "@/lib/loslos-fest/types";
 
 type Props = {
   className?: string;

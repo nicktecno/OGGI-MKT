@@ -4,7 +4,7 @@ import type {
   FestCartModel,
   FestTemplate,
   IceCreamLine,
-  OggiStore,
+  LoslosStore,
 } from "./types";
 
 /**
@@ -22,7 +22,8 @@ const PALITOS: IceCreamLine[] = [
     id: "palito-brigadeiro",
     slug: "brigadeiro",
     name: "Brigadeiro",
-    description: "O clássico brasileiro em sorvete. Cremoso, doce e irresistível.",
+    description:
+      "O clássico brasileiro em sorvete. Cremoso, doce e irresistível.",
     unitPrice: 5.2,
     imageUrl: "/loslos/products/palito-brigadeiro.png",
     tags: ["premium", "chocolate"],
@@ -32,7 +33,8 @@ const PALITOS: IceCreamLine[] = [
     id: "palito-ovomaltine",
     slug: "ovomaltine",
     name: "Ovomaltine®",
-    description: "Cremoso, cheio de sabor e com aquele gostinho único do Ovomaltine.",
+    description:
+      "Cremoso, cheio de sabor e com aquele gostinho único do Ovomaltine.",
     unitPrice: 5.9,
     imageUrl: "/loslos/products/palito-ovomaltine.png",
     tags: ["premium", "exclusivo"],
@@ -62,7 +64,8 @@ const PALITOS: IceCreamLine[] = [
     id: "palito-pistache",
     slug: "pistache-recheado",
     name: "Pistache Recheado",
-    description: "Pistache cremoso com recheio surpresa. Sofisticação em sorvete.",
+    description:
+      "Pistache cremoso com recheio surpresa. Sofisticação em sorvete.",
     unitPrice: 6.0,
     imageUrl: "/loslos/products/palito-pistache.png",
     tags: ["premium", "sofisticado"],
@@ -72,7 +75,8 @@ const PALITOS: IceCreamLine[] = [
     id: "palito-dubai",
     slug: "chocolate-dubai",
     name: "Chocolate Dubai",
-    description: "A tendência mundial: chocolate com pistacho e Kadayif crocante.",
+    description:
+      "A tendência mundial: chocolate com pistacho e Kadayif crocante.",
     unitPrice: 6.8,
     imageUrl: "/loslos/products/palito-dubai.png",
     tags: ["premium", "sofisticado"],
@@ -414,7 +418,7 @@ export const FEST_TEMPLATES: FestTemplate[] = [
   },
 ];
 
-export const OGGI_STORES: OggiStore[] = [
+export const LOSLOS_STORES: LoslosStore[] = [
   {
     id: "store-consolacao",
     name: "Loja Consolação",
@@ -460,7 +464,13 @@ export function getTemplateById(id: string): FestTemplate | undefined {
 export function buildLinesFromTemplate(
   template: FestTemplate,
   capacity: number,
-): { lineId: string; lineName: string; unitPrice: number; quantity: number; imageUrl?: string }[] {
+): {
+  lineId: string;
+  lineName: string;
+  unitPrice: number;
+  quantity: number;
+  imageUrl?: string;
+}[] {
   const raw = template.lines.map((tl) => {
     const line = getIceCreamLineById(tl.lineId);
     if (!line) return null;
@@ -477,13 +487,18 @@ export function buildLinesFromTemplate(
   const sum = lines.reduce((n, l) => n + l.quantity, 0);
   const diff = capacity - sum;
   if (diff !== 0 && lines.length > 0) {
-    const idx = lines.reduce((best, l, i, arr) => (l.quantity > arr[best].quantity ? i : best), 0);
+    const idx = lines.reduce(
+      (best, l, i, arr) => (l.quantity > arr[best].quantity ? i : best),
+      0,
+    );
     lines[idx] = { ...lines[idx], quantity: lines[idx].quantity + diff };
   }
   return lines;
 }
 
-export function festLinesTotal(lines: { unitPrice: number; quantity: number }[]): number {
+export function festLinesTotal(
+  lines: { unitPrice: number; quantity: number }[],
+): number {
   return lines.reduce((n, l) => n + l.unitPrice * l.quantity, 0);
 }
 
@@ -491,7 +506,7 @@ export function festLinesUnitCount(lines: { quantity: number }[]): number {
   return lines.reduce((n, l) => n + l.quantity, 0);
 }
 
-export const OGGI_STORES_MOCK = OGGI_STORES;
+export const LOSLOS_STORES_MOCK = LOSLOS_STORES;
 
 /** Produtos complementares (ex.: Porta Picolé). */
 export const FEST_ADD_ONS: FestAddOnProduct[] = [
@@ -511,7 +526,9 @@ export function getFestAddOnById(id: string): FestAddOnProduct | undefined {
   return FEST_ADD_ONS.find((p) => p.id === id);
 }
 
-export function getCheckoutUpsellProducts(order: { addOns: { productId: string }[] }): FestAddOnProduct[] {
+export function getCheckoutUpsellProducts(order: {
+  addOns: { productId: string }[];
+}): FestAddOnProduct[] {
   const inCart = new Set(order.addOns.map((a) => a.productId));
   return FEST_ADD_ONS.filter((p) => p.upsellAtCheckout && !inCart.has(p.id));
 }

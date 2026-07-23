@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { IceCreamLine } from "@/lib/oggi-fest/types";
+import type { IceCreamLine } from "@/lib/loslos-fest/types";
 import { formatBrl } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 

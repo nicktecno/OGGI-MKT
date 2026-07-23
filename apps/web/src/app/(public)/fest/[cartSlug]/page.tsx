@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FestConfigurator } from "@/components/oggi-fest/fest-configurator";
-import { OggiHeading } from "@/components/oggi-fest/oggi-heading";
-import { getCartModelBySlug } from "@/lib/oggi-fest/mock-data";
+import { FestConfigurator } from "@/components/loslos-fest/fest-configurator";
+import { LoslosHeading } from "@/components/loslos-fest/loslos-heading";
+import { getCartModelBySlug } from "@/lib/loslos-fest/mock-data";
 import { SITE_NAME } from "@/lib/site";
 
 type Props = { params: Promise<{ cartSlug: string }> };
@@ -38,7 +38,7 @@ export default async function FestConfigurePage({ params }: Props) {
       </nav>
 
       <div className="mt-8">
-        <OggiHeading
+        <LoslosHeading
           band
           eyebrow="Passo 2"
           title={`Monte seu ${cart.name}`}

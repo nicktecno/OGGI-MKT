@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { OGGI_LOGO } from "@/lib/oggi-fest/brand";
+import { LOSLOS_LOGO } from "@/lib/loslos-fest/brand";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,11 +13,11 @@ type Props = {
 };
 
 const LOGO = {
-  brand: { src: OGGI_LOGO.brand, width: 270, height: 270 },
-  white: { src: OGGI_LOGO.white, width: 123, height: 210 },
+  brand: { src: LOSLOS_LOGO.brand, width: 270, height: 270 },
+  white: { src: LOSLOS_LOGO.white, width: 123, height: 210 },
 } as const;
 
-export function OggiLogo({ variant = "brand", className, href = "/", priority }: Props) {
+export function LoslosLogo({ variant = "brand", className, href = "/", priority }: Props) {
   const { src, width, height } = LOGO[variant];
   const image = (
     <Image

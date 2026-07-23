@@ -1,5 +1,5 @@
 import { onlyCepDigits } from "@/lib/viacep";
-import type { OggiStore } from "./types";
+import type { LoslosStore } from "./types";
 
 /** Distância mock entre CEPs (baseada na diferença numérica dos primeiros 5 dígitos). */
 export function estimateCepDistanceKm(cepA: string, cepB: string): number {
@@ -14,20 +14,29 @@ export function formatCepDisplay(cep: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-export function rankStoresByCep(stores: OggiStore[], customerCep: string): OggiStore[] {
+export function rankStoresByCep(
+  stores: LoslosStore[],
+  customerCep: string,
+): LoslosStore[] {
   const digits = onlyCepDigits(customerCep);
   if (digits.length !== 8) return [...stores];
   return [...stores]
-    .map((s) => ({ ...s, distanceKm: estimateCepDistanceKm(customerCep, s.cep) }))
+    .map((s) => ({
+      ...s,
+      distanceKm: estimateCepDistanceKm(customerCep, s.cep),
+    }))
     .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
 }
 
-export function findNearestStore(stores: OggiStore[], customerCep: string): OggiStore | null {
+export function findNearestStore(
+  stores: LoslosStore[],
+  customerCep: string,
+): LoslosStore | null {
   const ranked = rankStoresByCep(stores, customerCep);
   return ranked[0] ?? null;
 }
 
-export function storeDirectionsUrl(store: OggiStore): string {
+export function storeDirectionsUrl(store: LoslosStore): string {
   const destination = encodeURIComponent(
     `${store.address}, ${store.city} - ${store.uf}, ${formatCepDisplay(store.cep)}, Brasil`,
   );

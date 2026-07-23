@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FestCartView } from "@/components/oggi-fest/fest-cart-view";
+import { FestCartView } from "@/components/loslos-fest/fest-cart-view";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {

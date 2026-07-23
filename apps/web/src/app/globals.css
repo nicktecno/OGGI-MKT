@@ -214,11 +214,11 @@
     text-wrap: balance;
   }
 
-  .bg-oggi-pink-light {
+  .bg-loslos-pink-light {
     background-color: var(--loslos-teal-light);
   }
 
-  .oggi-card {
+  .loslos-card {
     overflow: hidden;
     border-radius: 0.75rem;
     border: 1px solid #2a2a2a;
@@ -226,7 +226,7 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
   }
 
-  .oggi-pill {
+  .loslos-pill {
     display: inline-flex;
     border-radius: 9999px;
     background-color: var(--primary);

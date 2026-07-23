@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { createAssistantOrder } from "@/lib/oggi-fest/assistant-build-order";
+import { createAssistantOrder } from "@/lib/loslos-fest/assistant-build-order";
 import {
   GUEST_RANGE_OPTIONS,
   OCCASION_OPTIONS,
@@ -15,19 +15,19 @@ import {
   occasionLabel,
   suggestCartSlug,
   suggestTemplate,
-} from "@/lib/oggi-fest/assistant-suggest";
+} from "@/lib/loslos-fest/assistant-suggest";
 import {
   festOrderMeetsMinimum,
   festOrderSubtotal,
   readFestOrder,
   setFestCustomerCep,
   writeFestOrder,
-} from "@/lib/oggi-fest/cart-storage";
-import { OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
-import { fetchCepFromGeolocation } from "@/lib/oggi-fest/location-cep";
-import { findNearestStore, formatCepDisplay } from "@/lib/oggi-fest/nearest-store";
-import type { FestCartModel, FestTemplate } from "@/lib/oggi-fest/types";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
+} from "@/lib/loslos-fest/cart-storage";
+import { LOSLOS_FEST_MIN_ORDER_BRL } from "@/lib/loslos-fest/constants";
+import { fetchCepFromGeolocation } from "@/lib/loslos-fest/location-cep";
+import { findNearestStore, formatCepDisplay } from "@/lib/loslos-fest/nearest-store";
+import type { FestCartModel, FestTemplate } from "@/lib/loslos-fest/types";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
 import { cn, formatBrl } from "@/lib/utils";
 import { RotateCcw, X } from "lucide-react";
 
@@ -191,7 +191,7 @@ export function FestAssistantChat() {
     }
     setTemplate(tpl);
     pushBot(
-      `Aplico o modelo "${tpl.name}"? Ele distribui as linhas Oggi automaticamente até completar ${activeCart.capacity} picolés.`,
+      `Aplico o modelo "${tpl.name}"? Ele distribui as linhas Loslos automaticamente até completar ${activeCart.capacity} picolés.`,
     );
     setStep("model");
   }
@@ -217,12 +217,12 @@ export function FestAssistantChat() {
       `Pronto! ${order.capacity} picolés · ${formatBrl(subtotal)}${
         meetsMin
           ? " · pedido mínimo atingido ✓"
-          : ` · faltam ${formatBrl(OGGI_FEST_MIN_ORDER_BRL - subtotal)} para o mínimo`
+          : ` · faltam ${formatBrl(LOSLOS_FEST_MIN_ORDER_BRL - subtotal)} para o mínimo`
       }. Modelo: ${tpl.name}.`,
     );
     setSummaryHref(`/fest/${activeCart.slug}`);
     pushBot(
-      "Para indicar a loja Oggi mais próxima na finalização, posso usar sua localização e descobrir seu CEP?",
+      "Para indicar a loja Loslos mais próxima na finalização, posso usar sua localização e descobrir seu CEP?",
     );
     setStep("location");
   }
@@ -433,7 +433,7 @@ export function FestAssistantChat() {
         </div>
       </div>
 
-      {/* FAB — cores Oggi (rosa, amarelo, pink light) */}
+      {/* FAB — cores Loslos (rosa, amarelo, pink light) */}
       <button
         type="button"
         onClick={toggleOpen}

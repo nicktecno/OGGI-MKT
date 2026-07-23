@@ -2,9 +2,9 @@ import { IceCream, LayoutDashboard, LogIn, Mail } from "lucide-react";
 import Link from "next/link";
 import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { FestAssistantChat } from "@/components/oggi-fest/fest-assistant-chat";
-import { HeaderFestCartLink } from "@/components/oggi-fest/header-fest-cart-link";
-import { OggiLogo } from "@/components/oggi-fest/oggi-logo";
+import { FestAssistantChat } from "@/components/loslos-fest/fest-assistant-chat";
+import { HeaderFestCartLink } from "@/components/loslos-fest/header-fest-cart-link";
+import { LoslosLogo } from "@/components/loslos-fest/loslos-logo";
 import { dashboardPathForRole } from "@/lib/auth-types";
 import { getSession } from "@/lib/session";
 import { SITE_BRAND, SITE_NAME } from "@/lib/site";
@@ -28,7 +28,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <SiteJsonLd />
       <header className="sticky top-0 z-40 border-b border-border bg-card shadow-md">
         <div className="relative mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:min-h-[5rem] sm:px-8 lg:px-12">
-          <OggiLogo variant="white" priority className="h-14 sm:h-16 md:h-18" />
+          <LoslosLogo variant="white" priority className="h-14 sm:h-16 md:h-18" />
           <nav className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:gap-x-5">
             <Link
               href="/fest"
@@ -79,7 +79,7 @@ export default async function PublicLayout({ children }: { children: React.React
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-12">
           <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
             <div>
-              <OggiLogo variant="white" href="/" className="h-12 mb-2" />
+              <LoslosLogo variant="white" href="/" className="h-12 mb-2" />
               <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {SITE_BRAND}
               </p>

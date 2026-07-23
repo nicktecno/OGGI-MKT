@@ -2,7 +2,8 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const r2Base = process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL;
-const r2RemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
+const r2RemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] =
+  [];
 if (r2Base) {
   try {
     const u = new URL(r2Base);
@@ -33,10 +34,18 @@ const nextConfig: NextConfig = {
   /** Muitos browsers pedem `/favicon.ico` por padrão; servimos o mesmo ícone PNG. */
   async redirects() {
     return [
-      { source: "/favicon.ico", destination: "/loslos/favicon.png", permanent: false },
+      {
+        source: "/favicon.ico",
+        destination: "/loslos/favicon.png",
+        permanent: false,
+      },
       { source: "/loja", destination: "/fest", permanent: false },
       { source: "/loja/:path*", destination: "/fest", permanent: false },
-      { source: "/painel/admin/oggi-fest/templates", destination: "/painel/admin/oggi-fest/modelos", permanent: true },
+      {
+        source: "/painel/admin/loslos-fest/templates",
+        destination: "/painel/admin/loslos-fest/modelos",
+        permanent: true,
+      },
     ];
   },
   images: {

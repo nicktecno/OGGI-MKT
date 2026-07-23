@@ -5,11 +5,11 @@ type Props = {
   title: string;
   subtitle?: string;
   className?: string;
-  /** Faixa rosa no topo (estilo site Oggi) */
+  /** Faixa rosa no topo (estilo site Loslos) */
   band?: boolean;
 };
 
-export function OggiHeading({ eyebrow, title, subtitle, className, band }: Props) {
+export function LoslosHeading({ eyebrow, title, subtitle, className, band }: Props) {
   return (
     <header
       className={cn(

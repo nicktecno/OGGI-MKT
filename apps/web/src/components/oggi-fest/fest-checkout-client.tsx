@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FestAddOnUpsellModal } from "@/components/oggi-fest/fest-add-on-upsell-modal";
-import { FestAddOnsSection } from "@/components/oggi-fest/fest-add-ons-section";
-import { FestNearestStoreCepModal } from "@/components/oggi-fest/fest-nearest-store-cep-modal";
+import { FestAddOnUpsellModal } from "@/components/loslos-fest/fest-add-on-upsell-modal";
+import { FestAddOnsSection } from "@/components/loslos-fest/fest-add-ons-section";
+import { FestNearestStoreCepModal } from "@/components/loslos-fest/fest-nearest-store-cep-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,26 +20,26 @@ import {
   setFestAddOn,
   setFestCustomerCep,
   writeFestOrder,
-} from "@/lib/oggi-fest/cart-storage";
-import { OGGI_FEST_DEPOSIT_PERCENT, OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
-import { clearFestCheckout, readFestCheckout, writeFestCheckout } from "@/lib/oggi-fest/checkout-storage";
-import { getCheckoutUpsellProducts } from "@/lib/oggi-fest/mock-data";
+} from "@/lib/loslos-fest/cart-storage";
+import { LOSLOS_FEST_DEPOSIT_PERCENT, LOSLOS_FEST_MIN_ORDER_BRL } from "@/lib/loslos-fest/constants";
+import { clearFestCheckout, readFestCheckout, writeFestCheckout } from "@/lib/loslos-fest/checkout-storage";
+import { getCheckoutUpsellProducts } from "@/lib/loslos-fest/mock-data";
 import {
   findNearestStore,
   formatCepDisplay,
   rankStoresByCep,
   resolveCustomerCep,
   storeDirectionsUrl,
-} from "@/lib/oggi-fest/nearest-store";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
-import type { FestAddOnProduct, FestCheckoutDraft, FestDeliveryMode, FestOrderDraft, OggiStore } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/nearest-store";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
+import type { FestAddOnProduct, FestCheckoutDraft, FestDeliveryMode, FestOrderDraft, LoslosStore } from "@/lib/loslos-fest/types";
 import { cn, formatBrl } from "@/lib/utils";
 import { MapPin, Package, Store } from "lucide-react";
 
 const MOCK_DELIVERY_FEE = 89.9;
 
 export function FestCheckoutClient() {
-  const { stores: oggiStores } = useFestCatalog();
+  const { stores: loslosStores } = useFestCatalog();
   const [order, setOrder] = useState(readFestOrder());
   const [done, setDone] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<FestDeliveryMode>("retirada");
@@ -48,7 +48,7 @@ export function FestCheckoutClient() {
   const [upsellQueue, setUpsellQueue] = useState<FestAddOnProduct[]>([]);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [cepModalOpen, setCepModalOpen] = useState(false);
-  const [finalizedStore, setFinalizedStore] = useState<OggiStore | null>(null);
+  const [finalizedStore, setFinalizedStore] = useState<LoslosStore | null>(null);
   const [finalizedCep, setFinalizedCep] = useState("");
 
   useEffect(() => {
@@ -62,15 +62,15 @@ export function FestCheckoutClient() {
   }, []);
 
   useEffect(() => {
-    if (oggiStores.length === 0) return;
-    setStoreId((prev) => (prev && oggiStores.some((s) => s.id === prev) ? prev : oggiStores[0].id));
-  }, [oggiStores]);
+    if (loslosStores.length === 0) return;
+    setStoreId((prev) => (prev && loslosStores.some((s) => s.id === prev) ? prev : loslosStores[0].id));
+  }, [loslosStores]);
 
   useEffect(() => {
-    if (oggiStores.length === 0 || !order?.customerCep) return;
-    const nearest = findNearestStore(oggiStores, order.customerCep);
+    if (loslosStores.length === 0 || !order?.customerCep) return;
+    const nearest = findNearestStore(loslosStores, order.customerCep);
     if (nearest) setStoreId(nearest.id);
-  }, [oggiStores, order?.customerCep]);
+  }, [loslosStores, order?.customerCep]);
 
   if (!order || order.lines.length === 0) {
     return (
@@ -89,24 +89,24 @@ export function FestCheckoutClient() {
   const filled = festOrderUnitCount(order);
   const meetsMin = festOrderMeetsMinimum(order);
   const isFull = filled === order.capacity;
-  const deposit = (productsTotal * OGGI_FEST_DEPOSIT_PERCENT) / 100;
+  const deposit = (productsTotal * LOSLOS_FEST_DEPOSIT_PERCENT) / 100;
   const deliveryFee = deliveryMode === "entrega" ? MOCK_DELIVERY_FEE : 0;
   const totalMock = productsTotal + deliveryFee;
   const currentUpsell = upsellQueue[0] ?? null;
   const customerCep = resolveCustomerCep(order.customerCep, form.cep);
   const rankedStores =
-    customerCep.length === 8 ? rankStoresByCep(oggiStores, customerCep) : oggiStores;
+    customerCep.length === 8 ? rankStoresByCep(loslosStores, customerCep) : loslosStores;
   const nearestStore =
-    customerCep.length === 8 ? findNearestStore(oggiStores, customerCep) : null;
+    customerCep.length === 8 ? findNearestStore(loslosStores, customerCep) : null;
 
   const patch = (p: Partial<FestCheckoutDraft>) => setForm((f) => ({ ...f, ...p }));
 
   function buildCheckoutDraft(current: FestOrderDraft, cepOverride?: string): FestCheckoutDraft {
     const cep = cepOverride ?? resolveCustomerCep(current.customerCep, form.cep);
-    const nearest = cep.length === 8 ? findNearestStore(oggiStores, cep) : null;
+    const nearest = cep.length === 8 ? findNearestStore(loslosStores, cep) : null;
     const selectedId =
       deliveryMode === "retirada" ? (nearest?.id ?? storeId) : nearest?.id ?? storeId;
-    const selectedStore = oggiStores.find((s) => s.id === selectedId) ?? nearest;
+    const selectedStore = loslosStores.find((s) => s.id === selectedId) ?? nearest;
     return {
       version: 1,
       deliveryMode,
@@ -129,10 +129,10 @@ export function FestCheckoutClient() {
     const active = currentOrder ?? order;
     if (!active) return;
     const cep = resolveCustomerCep(active.customerCep, form.cep);
-    const ranked = cep.length === 8 ? rankStoresByCep(oggiStores, cep) : oggiStores;
+    const ranked = cep.length === 8 ? rankStoresByCep(loslosStores, cep) : loslosStores;
     const selected =
       ranked.find((s) => s.id === storeId) ??
-      (cep.length === 8 ? findNearestStore(oggiStores, cep) : oggiStores.find((s) => s.id === storeId));
+      (cep.length === 8 ? findNearestStore(loslosStores, cep) : loslosStores.find((s) => s.id === storeId));
     if (selected) setFinalizedStore(selected);
     if (cep) setFinalizedCep(cep);
     writeFestCheckout(buildCheckoutDraft(active, cep));
@@ -144,7 +144,7 @@ export function FestCheckoutClient() {
     setCepModalOpen(false);
   }
 
-  function applyCepAndProceed(cep: string, nearest: OggiStore | null) {
+  function applyCepAndProceed(cep: string, nearest: LoslosStore | null) {
     if (!order) return;
     const next = setFestCustomerCep(order, cep);
     writeFestOrder(next);
@@ -183,7 +183,7 @@ export function FestCheckoutClient() {
       setCepModalOpen(true);
       return;
     }
-    applyCepAndProceed(cep, findNearestStore(oggiStores, cep));
+    applyCepAndProceed(cep, findNearestStore(loslosStores, cep));
   }
 
   function handleUpsellAdd(quantity: number) {
@@ -213,7 +213,7 @@ export function FestCheckoutClient() {
           <CardTitle className="text-2xl font-serif">Solicitação enviada (mock)</CardTitle>
           <CardDescription>
             Em produção, a loja retornará em até 48h úteis. O pedido será confirmado após o pagamento de{" "}
-            {OGGI_FEST_DEPOSIT_PERCENT}% do orçamento.
+            {LOSLOS_FEST_DEPOSIT_PERCENT}% do orçamento.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -271,7 +271,7 @@ export function FestCheckoutClient() {
                 <Store className="h-6 w-6 text-accent" />
                 <span className="font-semibold">Retirar na loja</span>
                 <span className="text-sm text-muted-foreground">
-                  Você retira o carrinho e os produtos na unidade Oggi escolhida.
+                  Você retira o carrinho e os produtos na unidade Loslos escolhida.
                 </span>
               </button>
               <button
@@ -472,7 +472,7 @@ export function FestCheckoutClient() {
                 <span>{formatBrl(totalMock)}</span>
               </div>
               <div className="flex justify-between text-accent">
-                <span>Sinal ({OGGI_FEST_DEPOSIT_PERCENT}%)</span>
+                <span>Sinal ({LOSLOS_FEST_DEPOSIT_PERCENT}%)</span>
                 <span className="font-semibold">{formatBrl(deposit)}</span>
               </div>
               {order.addOns.length > 0 ? (
@@ -496,7 +496,7 @@ export function FestCheckoutClient() {
                 Confirmar solicitação
               </Button>
               <p className="text-xs text-muted-foreground">
-                Mínimo {formatBrl(OGGI_FEST_MIN_ORDER_BRL)} em picolés. Pagamento tratado diretamente com a
+                Mínimo {formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)} em picolés. Pagamento tratado diretamente com a
                 loja (mock).
               </p>
             </CardContent>
@@ -513,7 +513,7 @@ export function FestCheckoutClient() {
 
       <FestNearestStoreCepModal
         open={cepModalOpen}
-        stores={oggiStores}
+        stores={loslosStores}
         initialCep={order.customerCep ?? ""}
         onConfirm={applyCepAndProceed}
         onCancel={() => setCepModalOpen(false)}

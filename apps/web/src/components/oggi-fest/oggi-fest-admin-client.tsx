@@ -6,20 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { festModelImageUrl, OGGI_LINE_IMAGE } from "@/lib/oggi-fest/brand";
+import { festModelImageUrl, LOSLOS_LINE_IMAGE } from "@/lib/loslos-fest/brand";
 import {
   newLineId,
   newStoreId,
   newTemplateId,
   slugify,
   type AdminCatalog,
-} from "@/lib/oggi-fest/admin-catalog-storage";
-import type { FestTemplate, IceCreamLine, OggiStore } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/admin-catalog-storage";
+import type { FestTemplate, IceCreamLine, LoslosStore } from "@/lib/loslos-fest/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
-  OggiFestAdminToolbar,
-  useOggiFestAdminPersist,
-} from "@/components/oggi-fest/oggi-fest-admin-shell";
+  LoslosFestAdminToolbar,
+  useLoslosFestAdminPersist,
+} from "@/components/loslos-fest/loslos-fest-admin-shell";
 
 const OCCASIONS: FestTemplate["occasion"][] = [
   "aniversario",
@@ -29,31 +29,31 @@ const OCCASIONS: FestTemplate["occasion"][] = [
   "infantil",
 ];
 
-export function OggiFestLinhasAdminPage() {
-  const { catalog, persist, saved } = useOggiFestAdminPersist();
+export function LoslosFestLinhasAdminPage() {
+  const { catalog, persist, saved } = useLoslosFestAdminPersist();
   return (
     <div className="space-y-6">
-      <OggiFestAdminToolbar catalog={catalog} saved={saved} />
+      <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
       <LinesTab catalog={catalog} onSave={persist} />
     </div>
   );
 }
 
-export function OggiFestModelosAdminPage() {
-  const { catalog, persist, saved } = useOggiFestAdminPersist();
+export function LoslosFestModelosAdminPage() {
+  const { catalog, persist, saved } = useLoslosFestAdminPersist();
   return (
     <div className="space-y-6">
-      <OggiFestAdminToolbar catalog={catalog} saved={saved} />
+      <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
       <TemplatesTab catalog={catalog} onSave={persist} />
     </div>
   );
 }
 
-export function OggiFestFiliaisAdminPage() {
-  const { catalog, persist, saved } = useOggiFestAdminPersist();
+export function LoslosFestFiliaisAdminPage() {
+  const { catalog, persist, saved } = useLoslosFestAdminPersist();
   return (
     <div className="space-y-6">
-      <OggiFestAdminToolbar catalog={catalog} saved={saved} />
+      <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
       <StoresTab catalog={catalog} onSave={persist} />
     </div>
   );
@@ -80,7 +80,7 @@ function LinesTab({
       name: "",
       description: "",
       unitPrice: 3.5,
-      imageUrl: OGGI_LINE_IMAGE.classicos,
+      imageUrl: LOSLOS_LINE_IMAGE.classicos,
     };
   }
 
@@ -112,7 +112,7 @@ function LinesTab({
       name,
       description: form.description.trim(),
       unitPrice: Number(form.unitPrice) || 0,
-      imageUrl: form.imageUrl.trim() || OGGI_LINE_IMAGE.classicos,
+      imageUrl: form.imageUrl.trim() || LOSLOS_LINE_IMAGE.classicos,
       tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
       type: editing?.type ?? "palitos",
     };
@@ -435,16 +435,16 @@ function StoresTab({
   catalog: AdminCatalog;
   onSave: (c: AdminCatalog) => void;
 }) {
-  const [editing, setEditing] = useState<OggiStore | null>(null);
+  const [editing, setEditing] = useState<LoslosStore | null>(null);
   const [form, setForm] = useState(emptyStore());
 
-  function emptyStore(): Omit<OggiStore, "id"> & { id?: string } {
+  function emptyStore(): Omit<LoslosStore, "id"> & { id?: string } {
     return { name: "", address: "", city: "", uf: "", cep: "", phone: "" };
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const store: OggiStore = {
+    const store: LoslosStore = {
       id: editing?.id ?? newStoreId(),
       name: form.name.trim(),
       address: form.address.trim(),

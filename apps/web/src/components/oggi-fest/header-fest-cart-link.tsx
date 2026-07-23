@@ -7,7 +7,7 @@ import {
   FEST_CART_CHANGED_EVENT,
   festOrderUnitCount,
   readFestOrder,
-} from "@/lib/oggi-fest/cart-storage";
+} from "@/lib/loslos-fest/cart-storage";
 import { cn } from "@/lib/utils";
 
 export function HeaderFestCartLink() {

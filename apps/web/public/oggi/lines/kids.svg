@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" role="img" aria-label="Kids Oggi">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" role="img" aria-label="Kids Loslos">
   <rect width="400" height="480" fill="#F0F9FF"/>
   <rect width="400" height="64" fill="#E2007A"/>
-  <text x="200" y="42" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700">OGGI</text>
+  <text x="200" y="42" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700">LOSLOS</text>
   <circle cx="150" cy="220" r="35" fill="#FFC72C"/>
   <rect x="142" y="220" width="16" height="70" rx="4" fill="#FF9500"/>
   <circle cx="200" cy="200" r="38" fill="#FF6B9D"/>
@@ -13,5 +13,5 @@
   <circle cx="225" cy="305" r="8" fill="#fff"/>
   <circle cx="227" cy="306" r="3" fill="#2D2D2D"/>
   <text x="200" y="400" text-anchor="middle" fill="#E2007A" font-family="Arial,Helvetica,sans-serif" font-size="26" font-weight="800">KIDS</text>
-  <text x="200" y="432" text-anchor="middle" fill="#5C5C5C" font-family="Arial,Helvetica,sans-serif" font-size="16">Diversão garantida</text>
+  <text x="200" y="432" text-anchor="middle" fill="#5C5C5C" font-family="Arial,Helvetica,sans-serif" font-size="16">Diversï¿½o garantida</text>
 </svg>

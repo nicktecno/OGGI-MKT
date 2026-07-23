@@ -9,9 +9,9 @@ import {
   FEST_CART_CHANGED_EVENT,
   setFestAddOn,
   writeFestOrder,
-} from "@/lib/oggi-fest/cart-storage";
-import { FEST_ADD_ONS } from "@/lib/oggi-fest/mock-data";
-import type { FestOrderDraft } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/cart-storage";
+import { FEST_ADD_ONS } from "@/lib/loslos-fest/mock-data";
+import type { FestOrderDraft } from "@/lib/loslos-fest/types";
 import { formatBrl } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
 

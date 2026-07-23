@@ -1,9 +1,14 @@
-import type { FestAddOnLine, FestAddOnProduct, FestCartLine, FestOrderDraft } from "./types";
+import type {
+  FestAddOnLine,
+  FestAddOnProduct,
+  FestCartLine,
+  FestOrderDraft,
+} from "./types";
 import { festLinesTotal, festLinesUnitCount } from "./mock-data";
-import { OGGI_FEST_MIN_ORDER_BRL } from "./constants";
+import { LOSLOS_FEST_MIN_ORDER_BRL } from "./constants";
 
-export const FEST_CART_STORAGE_KEY = "oggi_fest_order_v1";
-export const FEST_CART_CHANGED_EVENT = "oggi-fest-cart-changed";
+export const FEST_CART_STORAGE_KEY = "loslos_fest_order_v1";
+export const FEST_CART_CHANGED_EVENT = "loslos-fest-cart-changed";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -17,7 +22,8 @@ function parse(raw: string | null): FestOrderDraft | null {
   if (!raw) return null;
   try {
     const v = JSON.parse(raw) as FestOrderDraft;
-    if (v?.version !== 1 || !v.cartModelId || !Array.isArray(v.lines)) return null;
+    if (v?.version !== 1 || !v.cartModelId || !Array.isArray(v.lines))
+      return null;
     if (!Array.isArray(v.addOns)) v.addOns = [];
     return v;
   } catch {
@@ -61,7 +67,7 @@ export function festOrderUnitCount(order: FestOrderDraft): number {
 }
 
 export function festOrderMeetsMinimum(order: FestOrderDraft): boolean {
-  return festOrderSubtotal(order) >= OGGI_FEST_MIN_ORDER_BRL;
+  return festOrderSubtotal(order) >= LOSLOS_FEST_MIN_ORDER_BRL;
 }
 
 export function festOrderCapacityFilled(order: FestOrderDraft): boolean {
@@ -90,7 +96,9 @@ export function updateFestLineQuantity(
   } else if (idx === -1) {
     lines = [...order.lines];
   } else {
-    lines = order.lines.map((l) => (l.lineId === lineId ? { ...l, quantity: q } : l));
+    lines = order.lines.map((l) =>
+      l.lineId === lineId ? { ...l, quantity: q } : l,
+    );
   }
 
   if (q > 0 && idx === -1) {
@@ -98,7 +106,15 @@ export function updateFestLineQuantity(
     return { ...order, lines };
   }
 
-  return { ...order, lines: q === 0 ? lines : order.lines.map((l) => (l.lineId === lineId ? { ...l, quantity: q } : l)) };
+  return {
+    ...order,
+    lines:
+      q === 0
+        ? lines
+        : order.lines.map((l) =>
+            l.lineId === lineId ? { ...l, quantity: q } : l,
+          ),
+  };
 }
 
 export function setFestLine(
@@ -111,17 +127,25 @@ export function setFestLine(
   const maxForLine = order.capacity - usedElsewhere;
   const quantity = Math.min(Math.max(0, line.quantity), maxForLine);
   if (quantity === 0) {
-    return { ...order, lines: order.lines.filter((l) => l.lineId !== line.lineId) };
+    return {
+      ...order,
+      lines: order.lines.filter((l) => l.lineId !== line.lineId),
+    };
   }
   const idx = order.lines.findIndex((l) => l.lineId === line.lineId);
   const lines =
     idx === -1
       ? [...order.lines, { ...line, quantity }]
-      : order.lines.map((l) => (l.lineId === line.lineId ? { ...line, quantity } : l));
+      : order.lines.map((l) =>
+          l.lineId === line.lineId ? { ...line, quantity } : l,
+        );
   return { ...order, lines };
 }
 
-export function applyFestLines(order: FestOrderDraft, lines: FestCartLine[]): FestOrderDraft {
+export function applyFestLines(
+  order: FestOrderDraft,
+  lines: FestCartLine[],
+): FestOrderDraft {
   return { ...order, lines, templateId: undefined, templateName: undefined };
 }
 
@@ -134,18 +158,27 @@ export function applyFestTemplate(
   return { ...order, templateId, templateName, lines };
 }
 
-export function setFestCustomerCep(order: FestOrderDraft, customerCep: string): FestOrderDraft {
+export function setFestCustomerCep(
+  order: FestOrderDraft,
+  customerCep: string,
+): FestOrderDraft {
   const digits = customerCep.replace(/\D/g, "").slice(0, 8);
   return { ...order, customerCep: digits.length === 8 ? digits : undefined };
 }
 
 export function setFestAddOn(
   order: FestOrderDraft,
-  product: FestAddOnProduct | Pick<FestAddOnLine, "productId" | "productName" | "unitPrice" | "imageUrl">,
+  product:
+    | FestAddOnProduct
+    | Pick<
+        FestAddOnLine,
+        "productId" | "productName" | "unitPrice" | "imageUrl"
+      >,
   quantity: number,
 ): FestOrderDraft {
   const productId = "productId" in product ? product.productId : product.id;
-  const productName = "productName" in product ? product.productName : product.name;
+  const productName =
+    "productName" in product ? product.productName : product.name;
   const { unitPrice, imageUrl } = product;
   const q = Math.max(0, Math.floor(quantity));
   const addOns = order.addOns.filter((a) => a.productId !== productId);

@@ -9,12 +9,12 @@ import {
   resetAdminCatalogToSeed,
   writeAdminCatalog,
   type AdminCatalog,
-} from "@/lib/oggi-fest/admin-catalog-storage";
-import { useFestCatalog } from "@/lib/oggi-fest/use-fest-catalog";
+} from "@/lib/loslos-fest/admin-catalog-storage";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
 import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
 
-export function useOggiFestAdminPersist() {
+export function useLoslosFestAdminPersist() {
   const catalog = useFestCatalog();
   const [saved, setSaved] = useState(false);
 
@@ -27,7 +27,7 @@ export function useOggiFestAdminPersist() {
   return { catalog, persist, saved };
 }
 
-export function OggiFestAdminToolbar({
+export function LoslosFestAdminToolbar({
   catalog,
   saved,
 }: {
@@ -65,7 +65,7 @@ export function OggiFestAdminToolbar({
   );
 }
 
-export function OggiFestCartsCard() {
+export function LoslosFestCartsCard() {
   return (
     <Card className="border-primary/15">
       <CardHeader>
@@ -83,18 +83,18 @@ export function OggiFestCartsCard() {
   );
 }
 
-export function OggiFestAdminOverview() {
-  const { catalog, saved } = useOggiFestAdminPersist();
+export function LoslosFestAdminOverview() {
+  const { catalog, saved } = useLoslosFestAdminPersist();
 
   const links = [
-    { href: "/painel/admin/oggi-fest/linhas", label: "Linhas de sorvete", count: catalog.lines.length },
-    { href: "/painel/admin/oggi-fest/modelos", label: "Modelos", count: catalog.templates.length },
-    { href: "/painel/admin/oggi-fest/filiais", label: "Filiais (retirada)", count: catalog.stores.length },
+    { href: "/painel/admin/loslos-fest/linhas", label: "Linhas de sorvete", count: catalog.lines.length },
+    { href: "/painel/admin/loslos-fest/modelos", label: "Modelos", count: catalog.templates.length },
+    { href: "/painel/admin/loslos-fest/filiais", label: "Filiais (retirada)", count: catalog.stores.length },
   ];
 
   return (
     <div className="space-y-6">
-      <OggiFestAdminToolbar catalog={catalog} saved={saved} />
+      <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
       <div className="grid gap-4 sm:grid-cols-3">
         {links.map((item) => (
           <Link
@@ -110,7 +110,7 @@ export function OggiFestAdminOverview() {
           </Link>
         ))}
       </div>
-      <OggiFestCartsCard />
+      <LoslosFestCartsCard />
       <Link href="/fest" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
         Ver vitrine pública
       </Link>

@@ -9,7 +9,7 @@ export function isRole(value: unknown): value is Role {
 export function dashboardPathForRole(role: Role): string {
   switch (role) {
     case "ADMIN":
-      return "/painel/admin/oggi-fest";
+      return "/painel/admin/loslos-fest";
     case "SUPPLIER":
       return "/painel/fornecedor";
     case "EXECUTOR":

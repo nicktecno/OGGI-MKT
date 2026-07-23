@@ -1,25 +1,25 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FestCatalogLinesGrid } from "@/components/oggi-fest/fest-catalog-lines-grid";
-import { FestCatalogTemplatePills } from "@/components/oggi-fest/fest-catalog-template-pills";
-import { OggiHeading } from "@/components/oggi-fest/oggi-heading";
-import { OggiLogo } from "@/components/oggi-fest/oggi-logo";
+import { FestCatalogLinesGrid } from "@/components/loslos-fest/fest-catalog-lines-grid";
+import { FestCatalogTemplatePills } from "@/components/loslos-fest/fest-catalog-template-pills";
+import { LoslosHeading } from "@/components/loslos-fest/loslos-heading";
+import { LoslosLogo } from "@/components/loslos-fest/loslos-logo";
 import { buttonVariants } from "@/components/ui/button";
 import {
-  OGGI_FEST_LEAD_DAYS_RECOMMENDED,
-  OGGI_FEST_MIN_ORDER_BRL,
-  OGGI_FEST_RENTAL_HOURS,
-  OGGI_SITE_URL,
-} from "@/lib/oggi-fest/constants";
-import { OGGI_CART_IMAGE } from "@/lib/oggi-fest/brand";
-import { FEST_CART_MODELS } from "@/lib/oggi-fest/mock-data";
+  LOSLOS_FEST_LEAD_DAYS_RECOMMENDED,
+  LOSLOS_FEST_MIN_ORDER_BRL,
+  LOSLOS_FEST_RENTAL_HOURS,
+  LOSLOS_SITE_URL,
+} from "@/lib/loslos-fest/constants";
+import { LOSLOS_CART_IMAGE } from "@/lib/loslos-fest/brand";
+import { FEST_CART_MODELS } from "@/lib/loslos-fest/mock-data";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 import { SEO_HOME_DESCRIPTION, SEO_HOME_TITLE_SEGMENT } from "@/lib/seo";
 import { SITE_BRAND, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { cn, formatBrl } from "@/lib/utils";
 import { Calendar, Truck, Package } from "lucide-react";
-import { HomeCarousel } from "@/components/oggi-fest/home-carousel";
+import { HomeCarousel } from "@/components/loslos-fest/home-carousel";
 
 export const revalidate = 86_400;
 
@@ -38,11 +38,11 @@ export const metadata: Metadata = {
 const faq = [
   {
     q: "Com quanto tempo de antecedência solicitar?",
-    a: `De ${OGGI_FEST_LEAD_DAYS_RECOMMENDED} a 10 dias no mínimo. Quanto antes reservar, melhor.`,
+    a: `De ${LOSLOS_FEST_LEAD_DAYS_RECOMMENDED} a 10 dias no mínimo. Quanto antes reservar, melhor.`,
   },
   {
     q: "Qual o valor mínimo?",
-    a: `${formatBrl(OGGI_FEST_MIN_ORDER_BRL)} em produtos Los Los. Locação do carrinho sem custo acima desse valor.`,
+    a: `${formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)} em produtos Los Los. Locação do carrinho sem custo acima desse valor.`,
   },
   {
     q: "Entregam o carrinho?",
@@ -50,7 +50,7 @@ const faq = [
   },
   {
     q: "Quanto tempo dura a locação?",
-    a: `Em média ${OGGI_FEST_RENTAL_HOURS} no horário de funcionamento.`,
+    a: `Em média ${LOSLOS_FEST_RENTAL_HOURS} no horário de funcionamento.`,
   },
 ];
 
@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-center md:gap-12 md:py-20 lg:py-24">
           <div className="max-w-2xl">
-            <OggiLogo variant="white" href={undefined} className="mb-8 h-14 sm:h-16 md:h-20" priority />
+            <LoslosLogo variant="white" href={undefined} className="mb-8 h-14 sm:h-16 md:h-20" priority />
             <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-primary">{SITE_NAME}</p>
             <h1 className="mt-4 font-heading text-[2.125rem] font-black uppercase leading-[1.08] tracking-tight text-foreground sm:text-5xl md:text-[3.25rem] lg:text-6xl">
               {SITE_TAGLINE}
@@ -81,7 +81,7 @@ export default function HomePage() {
                 Montar meu pedido
               </Link>
               <a
-                href={OGGI_SITE_URL}
+                href={LOSLOS_SITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
@@ -135,16 +135,16 @@ export default function HomePage() {
 
       <section className="py-16" aria-labelledby="carrinhos-heading">
         <div className="mx-auto max-w-6xl px-6">
-          <OggiHeading eyebrow="Equipamentos" title="Escolha o formato" />
+          <LoslosHeading eyebrow="Equipamentos" title="Escolha o formato" />
           <div className="mt-10 grid gap-8 md:grid-cols-2">
             {FEST_CART_MODELS.map((cart) => {
               const imageUrl =
-                cart.id === "cart-200" ? OGGI_CART_IMAGE.cart200 : OGGI_CART_IMAGE.cart300;
+                cart.id === "cart-200" ? LOSLOS_CART_IMAGE.cart200 : LOSLOS_CART_IMAGE.cart300;
               return (
               <Link
                 key={cart.id}
                 href={`/fest/${cart.slug}`}
-                className="oggi-card group transition hover:-translate-y-1 hover:shadow-lg hover:ring-primary/40"
+                className="loslos-card group transition hover:-translate-y-1 hover:shadow-lg hover:ring-primary/40"
               >
                 <div className="relative aspect-[16/10] bg-white">
                   <Image
@@ -158,7 +158,7 @@ export default function HomePage() {
                 <div className="border-t border-border p-6">
                   <h3 className="font-heading text-xl font-extrabold uppercase text-primary">{cart.name}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{cart.description}</p>
-                  <span className="oggi-pill mt-4 inline-flex">{cart.capacity} unidades</span>
+                  <span className="loslos-pill mt-4 inline-flex">{cart.capacity} unidades</span>
                 </div>
               </Link>
             );
@@ -169,7 +169,7 @@ export default function HomePage() {
 
       <section className="bg-card border-y border-border py-16" aria-labelledby="linhas-home-heading">
         <div className="mx-auto max-w-6xl px-6">
-          <OggiHeading
+          <LoslosHeading
             eyebrow="Catálogo"
             title="Sabores Los Los"
             subtitle="29 opções incríveis para combinar como quiser na sua festa."
@@ -180,14 +180,14 @@ export default function HomePage() {
 
       <section className="py-16" aria-labelledby="modelos-heading">
         <div className="mx-auto max-w-6xl px-6">
-          <OggiHeading title="Modelos para cada ocasião" />
+          <LoslosHeading title="Modelos para cada ocasião" />
           <FestCatalogTemplatePills />
         </div>
       </section>
 
       <section className="border-t border-border bg-card py-16" aria-labelledby="faq-heading">
         <div className="mx-auto max-w-3xl px-6">
-          <OggiHeading title="Perguntas frequentes" className="text-center [&_h1]:text-center" />
+          <LoslosHeading title="Perguntas frequentes" className="text-center [&_h1]:text-center" />
           <dl className="mt-10 space-y-4">
             {faq.map((item) => (
               <div key={item.q} className="rounded-2xl border border-primary/20 bg-muted p-5">

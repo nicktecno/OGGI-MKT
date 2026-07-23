@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { buildLinesFromTemplate, getLineById } from "@/lib/oggi-fest/catalog-helpers";
-import type { AdminCatalog } from "@/lib/oggi-fest/admin-catalog-storage";
-import type { FestTemplate } from "@/lib/oggi-fest/types";
+import { buildLinesFromTemplate, getLineById } from "@/lib/loslos-fest/catalog-helpers";
+import type { AdminCatalog } from "@/lib/loslos-fest/admin-catalog-storage";
+import type { FestTemplate } from "@/lib/loslos-fest/types";
 import { cn, formatBrl } from "@/lib/utils";
 import { X } from "lucide-react";
 

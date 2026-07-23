@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CapacityBar } from "@/components/oggi-fest/capacity-bar";
-import { FestAddOnsSection } from "@/components/oggi-fest/fest-add-ons-section";
+import { CapacityBar } from "@/components/loslos-fest/capacity-bar";
+import { FestAddOnsSection } from "@/components/loslos-fest/fest-add-ons-section";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   clearFestOrder,
@@ -15,9 +15,9 @@ import {
   festOrderUnitCount,
   readFestOrder,
   FEST_CART_CHANGED_EVENT,
-} from "@/lib/oggi-fest/cart-storage";
-import { OGGI_FEST_DEPOSIT_PERCENT, OGGI_FEST_MIN_ORDER_BRL } from "@/lib/oggi-fest/constants";
-import type { FestOrderDraft } from "@/lib/oggi-fest/types";
+} from "@/lib/loslos-fest/cart-storage";
+import { LOSLOS_FEST_DEPOSIT_PERCENT, LOSLOS_FEST_MIN_ORDER_BRL } from "@/lib/loslos-fest/constants";
+import type { FestOrderDraft } from "@/lib/loslos-fest/types";
 import { cn, formatBrl } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
 
@@ -52,7 +52,7 @@ export function FestCartView() {
   const addOnsSubtotal = festOrderAddOnsSubtotal(order);
   const grandTotal = festOrderGrandTotal(order);
   const meetsMin = festOrderMeetsMinimum(order);
-  const deposit = (grandTotal * OGGI_FEST_DEPOSIT_PERCENT) / 100;
+  const deposit = (grandTotal * LOSLOS_FEST_DEPOSIT_PERCENT) / 100;
   const isFull = filled === order.capacity;
 
   return (
@@ -151,11 +151,11 @@ export function FestCartView() {
           <span>{formatBrl(grandTotal)}</span>
         </div>
         <div className="flex justify-between text-muted-foreground">
-          <span>Locação do carrinho (acima de {formatBrl(OGGI_FEST_MIN_ORDER_BRL)})</span>
+          <span>Locação do carrinho (acima de {formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)})</span>
           <span className="text-accent font-medium">{meetsMin ? "Sem custo" : "—"}</span>
         </div>
         <div className="flex justify-between border-t border-border/60 pt-3 font-medium">
-          <span>Sinal para reserva ({OGGI_FEST_DEPOSIT_PERCENT}%)</span>
+          <span>Sinal para reserva ({LOSLOS_FEST_DEPOSIT_PERCENT}%)</span>
           <span>{formatBrl(deposit)}</span>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -168,7 +168,7 @@ export function FestCartView() {
         <p className="text-sm text-destructive">
           {!isFull
             ? `Complete ${order.capacity - filled} unidades no carrinho.`
-            : `Valor mínimo de ${formatBrl(OGGI_FEST_MIN_ORDER_BRL)} em produtos.`}
+            : `Valor mínimo de ${formatBrl(LOSLOS_FEST_MIN_ORDER_BRL)} em produtos.`}
         </p>
       ) : null}
 

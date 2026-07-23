@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Oggi Fest hero">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Loslos Fest hero">
   <defs>
     <linearGradient id="heroGrad" x1="0" y1="0" x2="0.6" y2="1">
       <stop offset="0%" stop-color="#E2007A"/>
@@ -10,8 +10,8 @@
   <rect width="1600" height="900" fill="url(#heroGrad)"/>
   <circle cx="200" cy="150" r="80" fill="#fff" opacity="0.08"/>
   <circle cx="1400" cy="700" r="200" fill="#fff" opacity="0.06"/>
-  <text x="120" y="280" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" letter-spacing="8">OGGI SORVETES</text>
-  <text x="120" y="380" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="72" font-weight="900">LEVE A OGGI</text>
+  <text x="120" y="280" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" letter-spacing="8">LOSLOS SORVETES</text>
+  <text x="120" y="380" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="72" font-weight="900">LEVE A LOSLOS</text>
   <text x="120" y="460" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="72" font-weight="900">PARA A SUA FESTA!</text>
   <text x="120" y="540" fill="#FFE5F1" font-family="Arial,Helvetica,sans-serif" font-size="32" font-weight="600">A comemoracao e sua e o sorvete e nosso.</text>
   <g transform="translate(950,180)">
