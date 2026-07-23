@@ -48,10 +48,13 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-loslos-teal-dark via-loslos-teal to-loslos-teal-dark text-white py-20 px-4">
         {/* Foto da praia ao fundo */}
-        <img
+        <Image
           src="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1600&h=900&fit=crop"
           alt="Praia do Rio de Janeiro"
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          fill
+          className="absolute inset-0 object-cover opacity-30"
+          sizes="100vw"
+          priority
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-loslos-teal-dark/60 via-loslos-teal/40 to-loslos-teal-dark/80" />
 

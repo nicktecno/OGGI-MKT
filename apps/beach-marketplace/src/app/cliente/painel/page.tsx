@@ -3,14 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Clock, CheckCircle, Package, Star, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut } from "lucide-react";
+import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut } from "lucide-react";
 import { MOCK_ORDERS, MOCK_PRODUCTS, getBeachById } from "@/lib/beach-marketplace/mock-data";
-import { Order, OrderStatus } from "@/lib/beach-marketplace/types";
+import { OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
 
 // Simulando o cliente logado (pedidos de "Lucas Mendes")
 const CLIENTE_NOME = "Lucas Mendes";
-const CLIENTE_PHONE = "(21) 99999-1111";
 
 function statusLabel(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
@@ -64,7 +63,6 @@ function timeAgo(dateStr: string): string {
 const FAVORITOS = MOCK_PRODUCTS.slice(0, 4);
 
 export default function PainelClientePage() {
-  const [tab, setTab] = useState<"pedidos" | "historico">("pedidos");
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
   const meusOrders = MOCK_ORDERS.filter((o) => o.clienteNome === CLIENTE_NOME);
@@ -202,7 +200,7 @@ export default function PainelClientePage() {
         )}
 
         {/* Botão novo pedido */}
-        <a
+        <Link
           href="/"
           className="flex items-center justify-between bg-loslos-teal-dark text-white rounded-xl p-4 hover:bg-loslos-teal transition-colors"
         >
@@ -211,7 +209,7 @@ export default function PainelClientePage() {
             <span className="font-semibold">Fazer novo pedido</span>
           </div>
           <ChevronRight className="w-4 h-4" />
-        </a>
+        </Link>
 
         {/* Favoritos */}
         <div>
@@ -286,13 +284,13 @@ export default function PainelClientePage() {
                     )}
 
                     {/* Pedir de novo */}
-                    <a
+                    <Link
                       href="/"
                       className="flex items-center gap-1 text-xs text-loslos-teal font-semibold mt-2 hover:underline"
                     >
                       <RotateCcw className="w-3 h-3" />
                       Pedir de novo
-                    </a>
+                    </Link>
                   </div>
                 );
               })}
