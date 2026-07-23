@@ -2,6 +2,7 @@
 
 import { MOCK_PRODUCTS } from "@/lib/beach-marketplace/mock-data";
 import { formatBrl } from "@/lib/utils";
+import Image from "next/image";
 import { IceCream, Plus } from "lucide-react";
 import { BeachProduct } from "@/lib/beach-marketplace/types";
 
@@ -42,12 +43,14 @@ export function BeachCatalog({ onAddToCart }: BeachCatalogProps) {
                   key={product.id}
                   className="bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col"
                 >
-                  <div className="h-28 bg-white flex items-center justify-center p-2 overflow-hidden">
+                  <div className="relative h-28 bg-white flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img
+                      <Image
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-contain"
+                        fill
+                        className="object-contain p-2"
+                        sizes="(max-width: 768px) 50vw, 33vw"
                       />
                     ) : (
                       <IceCream size={30} className="text-loslos-teal" />

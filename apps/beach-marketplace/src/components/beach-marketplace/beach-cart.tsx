@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { getProductById } from "@/lib/beach-marketplace/mock-data";
 import { formatBrl } from "@/lib/utils";
 import { Trash2, ShoppingCart, IceCream, Minus, Plus } from "lucide-react";
@@ -69,12 +70,14 @@ export function BeachCart({
               key={item.productId}
               className="flex gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
             >
-              <div className="w-14 h-14 bg-white rounded-lg flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
+              <div className="w-14 h-14 bg-white rounded-lg flex-shrink-0 flex items-center justify-center p-1 overflow-hidden relative">
                 {product.imageUrl ? (
-                  <img
+                  <Image
                     src={product.imageUrl}
                     alt={product.name}
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain p-1"
+                    sizes="56px"
                   />
                 ) : (
                   <IceCream className="w-6 h-6 text-loslos-teal" />
