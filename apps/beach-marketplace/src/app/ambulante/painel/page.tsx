@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, TrendingUp, User, ChevronRight, AlertCircle, LogOut } from "lucide-react";
+import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, ChevronRight, AlertCircle, LogOut } from "lucide-react";
 import { MOCK_ORDERS, MOCK_AMBULANTES, getBeachById } from "@/lib/beach-marketplace/mock-data";
 import { Order, OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
@@ -107,11 +107,9 @@ export default function PainelAmbulantePage() {
             <Link href="/login" className="text-muted-foreground hover:text-foreground transition">
               <LogOut className="w-5 h-5" />
             </Link>
-            <img
-              src={AMBULANTE_LOGADO.fotoPerfil}
-              alt={AMBULANTE_LOGADO.nome}
-              className="w-8 h-8 rounded-full object-cover border-2 border-border"
-            />
+            <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-border">
+              <Image src={AMBULANTE_LOGADO.fotoPerfil ?? "/loslos/logo-white.png"} alt={AMBULANTE_LOGADO.nome} fill className="object-cover" sizes="32px" />
+            </div>
           </div>
         </div>
       </header>
@@ -120,11 +118,9 @@ export default function PainelAmbulantePage() {
         {/* Card de perfil + status */}
         <div className="bg-card rounded-xl shadow-sm p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src={AMBULANTE_LOGADO.fotoPerfil}
-              alt={AMBULANTE_LOGADO.nome}
-              className="w-12 h-12 rounded-full object-cover border-2 border-border"
-            />
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border">
+              <Image src={AMBULANTE_LOGADO.fotoPerfil ?? "/loslos/logo-white.png"} alt={AMBULANTE_LOGADO.nome} fill className="object-cover" sizes="48px" />
+            </div>
             <div>
               <p className="font-semibold text-foreground">{AMBULANTE_LOGADO.nome}</p>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">

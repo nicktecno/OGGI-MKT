@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getBeachById, getAmbulantesbyBeach } from "@/lib/beach-marketplace/mock-data";
 import { AmbulanteDashboard } from "@/components/beach-marketplace/ambulante-dashboard";
@@ -8,14 +9,8 @@ import { Order } from "@/lib/beach-marketplace/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
-interface AmbullantePageProps {
-  params: {
-    beachId: string;
-  };
-}
-
-export default function AmbulantePage({ params }: AmbullantePageProps) {
-  const { beachId } = params;
+export default function AmbulantePage() {
+  const { beachId } = useParams<{ beachId: string }>();
   const beach = getBeachById(beachId);
   const ambulantes = getAmbulantesbyBeach(beachId);
 
