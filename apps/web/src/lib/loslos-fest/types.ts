@@ -58,6 +58,17 @@ export type LoslosStore = {
   distanceKm?: number;
 };
 
+/** Slide do carrossel do hero na home (imagem editável pelo admin). */
+export type HomeSlide = {
+  src: string;
+  alt: string;
+};
+
+/** Imagens do site exibidas na home, editáveis no painel admin. */
+export type HomeImages = {
+  heroSlides: HomeSlide[];
+};
+
 export type FestCartLine = {
   lineId: string;
   lineName: string;

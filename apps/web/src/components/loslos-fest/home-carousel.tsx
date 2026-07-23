@@ -4,18 +4,30 @@ import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const SLIDES = [
-  { src: "/loslos/carousel-01.png", alt: "Los Los Fest — evento" },
-  { src: "/loslos/carousel-02.png", alt: "Los Los Fest — carrinho em festa" },
-  { src: "/loslos/carousel-03.png", alt: "Los Los Fest — sorvetes no evento" },
-];
+import { HOME_IMAGE_DEFAULTS } from "@/lib/loslos-fest/admin-catalog-storage";
+import { useFestCatalog } from "@/lib/loslos-fest/use-fest-catalog";
 
 export function HomeCarousel() {
+  const catalog = useFestCatalog();
+  const SLIDES =
+    catalog.homeImages?.heroSlides?.length
+      ? catalog.homeImages.heroSlides
+      : HOME_IMAGE_DEFAULTS.heroSlides;
+
   const [current, setCurrent] = useState(0);
 
-  const prev = useCallback(() => setCurrent((c) => (c - 1 + SLIDES.length) % SLIDES.length), []);
-  const next = useCallback(() => setCurrent((c) => (c + 1) % SLIDES.length), []);
+  const prev = useCallback(
+    () => setCurrent((c) => (c - 1 + SLIDES.length) % SLIDES.length),
+    [SLIDES.length],
+  );
+  const next = useCallback(
+    () => setCurrent((c) => (c + 1) % SLIDES.length),
+    [SLIDES.length],
+  );
+
+  useEffect(() => {
+    if (current > SLIDES.length - 1) setCurrent(0);
+  }, [current, SLIDES.length]);
 
   useEffect(() => {
     const t = setInterval(next, 4000);

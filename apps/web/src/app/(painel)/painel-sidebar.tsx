@@ -42,6 +42,7 @@ function adminNavActive(pathname: string, href: string, exact?: boolean): boolea
 
 const ADMIN_LOSLOS_FEST_ITEMS = [
   { href: "/painel/admin/loslos-fest", label: "Visão geral", exact: true as const },
+  { href: "/painel/admin/loslos-fest/imagens", label: "Imagens da home" },
   { href: "/painel/admin/loslos-fest/linhas", label: "Linhas de sorvete" },
   { href: "/painel/admin/loslos-fest/modelos", label: "Modelos" },
   { href: "/painel/admin/loslos-fest/filiais", label: "Filiais (retirada)" },

@@ -5,18 +5,32 @@ import {
   ICE_CREAM_LINES,
   LOSLOS_STORES_MOCK,
 } from "./mock-data";
-import type { FestTemplate, IceCreamLine, LoslosStore } from "./types";
+import type { FestTemplate, HomeImages, IceCreamLine, LoslosStore } from "./types";
 
 export const LOSLOS_ADMIN_CATALOG_KEY = "loslos_fest_admin_catalog_v1";
 export const LOSLOS_CATALOG_CHANGED_EVENT = "loslos-fest-catalog-changed";
 
-const CATALOG_VERSION = 4 as const;
+const CATALOG_VERSION = 5 as const;
+
+/** Slides padrão do carrossel do hero na home (fallback quando não editado). */
+export const HOME_IMAGE_DEFAULTS: HomeImages = {
+  heroSlides: [
+    { src: "/loslos/carousel-01.png", alt: "Los Los Fest — evento" },
+    { src: "/loslos/carousel-02.png", alt: "Los Los Fest — carrinho em festa" },
+    { src: "/loslos/carousel-03.png", alt: "Los Los Fest — sorvetes no evento" },
+  ],
+};
+
+function seedHomeImages(): HomeImages {
+  return { heroSlides: HOME_IMAGE_DEFAULTS.heroSlides.map((s) => ({ ...s })) };
+}
 
 export type AdminCatalog = {
   version: typeof CATALOG_VERSION;
   lines: IceCreamLine[];
   templates: FestTemplate[];
   stores: LoslosStore[];
+  homeImages: HomeImages;
   updatedAt: string;
 };
 
@@ -26,6 +40,7 @@ function seedCatalog(): AdminCatalog {
     lines: ICE_CREAM_LINES.map((l) => ({ ...l })),
     templates: FEST_TEMPLATES.map((t) => ({ ...t, lines: [...t.lines] })),
     stores: LOSLOS_STORES_MOCK.map((s) => ({ ...s })),
+    homeImages: seedHomeImages(),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -48,7 +63,12 @@ function usesLinePackagingImage(url: string): boolean {
 }
 
 function migrateCatalog(catalog: AdminCatalog): AdminCatalog {
-  if (catalog.version === CATALOG_VERSION) return catalog;
+  const hasHomeImages =
+    !!catalog.homeImages &&
+    Array.isArray(catalog.homeImages.heroSlides) &&
+    catalog.homeImages.heroSlides.length > 0;
+
+  if (catalog.version === CATALOG_VERSION && hasHomeImages) return catalog;
 
   const templates = catalog.templates.map((t) => {
     const shouldRefresh =
@@ -65,6 +85,7 @@ function migrateCatalog(catalog: AdminCatalog): AdminCatalog {
     ...catalog,
     version: CATALOG_VERSION,
     templates,
+    homeImages: hasHomeImages ? catalog.homeImages : seedHomeImages(),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -80,7 +101,12 @@ function parse(raw: string | null): AdminCatalog | null {
     ) {
       return null;
     }
-    if (v.version !== CATALOG_VERSION && v.version !== 2 && v.version !== 3)
+    if (
+      v.version !== CATALOG_VERSION &&
+      v.version !== 2 &&
+      v.version !== 3 &&
+      v.version !== 4
+    )
       return null;
     return migrateCatalog(v);
   } catch {

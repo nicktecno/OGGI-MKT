@@ -87,6 +87,7 @@ export function LoslosFestAdminOverview() {
   const { catalog, saved } = useLoslosFestAdminPersist();
 
   const links = [
+    { href: "/painel/admin/loslos-fest/imagens", label: "Imagens da home", count: catalog.homeImages?.heroSlides?.length ?? 0 },
     { href: "/painel/admin/loslos-fest/linhas", label: "Linhas de sorvete", count: catalog.lines.length },
     { href: "/painel/admin/loslos-fest/modelos", label: "Modelos", count: catalog.templates.length },
     { href: "/painel/admin/loslos-fest/filiais", label: "Filiais (retirada)", count: catalog.stores.length },

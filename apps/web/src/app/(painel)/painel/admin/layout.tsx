@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getSession } from "@/lib/session";
 import { AdminSectionFallback } from "./admin-section-fallback";
 
 export const metadata: Metadata = {
@@ -8,7 +10,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminPainelLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminPainelLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  if (!session) redirect("/entrar");
+  if (session.role !== "ADMIN") redirect("/painel");
+
   return (
     <div className="space-y-8">
       <div className="relative overflow-hidden rounded-2xl border-2 border-primary/15 bg-gradient-to-br from-primary/5 via-white to-primary/10 p-6 shadow-sm sm:p-8">

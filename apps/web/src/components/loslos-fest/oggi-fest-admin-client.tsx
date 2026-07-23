@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { festModelImageUrl, LOSLOS_LINE_IMAGE } from "@/lib/loslos-fest/brand";
 import {
+  HOME_IMAGE_DEFAULTS,
   newLineId,
   newStoreId,
   newTemplateId,
   slugify,
   type AdminCatalog,
 } from "@/lib/loslos-fest/admin-catalog-storage";
-import type { FestTemplate, IceCreamLine, LoslosStore } from "@/lib/loslos-fest/types";
+import type { FestTemplate, HomeSlide, IceCreamLine, LoslosStore } from "@/lib/loslos-fest/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   LoslosFestAdminToolbar,
@@ -55,6 +56,16 @@ export function LoslosFestFiliaisAdminPage() {
     <div className="space-y-6">
       <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
       <StoresTab catalog={catalog} onSave={persist} />
+    </div>
+  );
+}
+
+export function LoslosFestImagensAdminPage() {
+  const { catalog, persist, saved } = useLoslosFestAdminPersist();
+  return (
+    <div className="space-y-6">
+      <LoslosFestAdminToolbar catalog={catalog} saved={saved} />
+      <HomeImagesTab catalog={catalog} onSave={persist} />
     </div>
   );
 }
@@ -533,5 +544,145 @@ function StoresTab({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function HomeImagesTab({
+  catalog,
+  onSave,
+}: {
+  catalog: AdminCatalog;
+  onSave: (c: AdminCatalog) => void;
+}) {
+  const slides = catalog.homeImages?.heroSlides ?? [];
+
+  function updateSlides(next: HomeSlide[]) {
+    onSave({ ...catalog, homeImages: { ...catalog.homeImages, heroSlides: next } });
+  }
+
+  function updateSlide(index: number, patch: Partial<HomeSlide>) {
+    updateSlides(slides.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  }
+
+  function addSlide() {
+    updateSlides([...slides, { src: "", alt: "" }]);
+  }
+
+  function removeSlide(index: number) {
+    if (!confirm("Remover este slide do carrossel da home?")) return;
+    updateSlides(slides.filter((_, i) => i !== index));
+  }
+
+  function move(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= slides.length) return;
+    const next = [...slides];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateSlides(next);
+  }
+
+  function restoreDefaults() {
+    if (!confirm("Restaurar os slides padrão da home?")) return;
+    updateSlides(HOME_IMAGE_DEFAULTS.heroSlides.map((s) => ({ ...s })));
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Imagens da home</CardTitle>
+          <CardDescription>
+            Carrossel do topo da página inicial. As alterações aparecem na vitrine ao salvar.
+          </CardDescription>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={restoreDefaults}>
+            Restaurar padrão
+          </Button>
+          <Button type="button" size="sm" onClick={addSlide}>
+            <Plus className="mr-1 h-4 w-4" />
+            Novo slide
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {slides.length === 0 ? (
+          <p className="rounded-xl border-2 border-dashed border-primary/20 p-6 text-center text-sm text-muted-foreground">
+            Nenhum slide. Adicione ao menos um para o carrossel da home.
+          </p>
+        ) : null}
+        {slides.map((slide, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-3 rounded-xl border-2 border-primary/10 bg-card p-3 sm:flex-row"
+          >
+            <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:w-40">
+              {slide.src ? (
+                <Image src={slide.src} alt={slide.alt || ""} fill className="object-cover" sizes="160px" />
+              ) : (
+                <span className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                  Sem imagem
+                </span>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="space-y-1">
+                <Label htmlFor={`slide-src-${i}`}>URL da imagem</Label>
+                <Input
+                  id={`slide-src-${i}`}
+                  value={slide.src}
+                  placeholder="/loslos/carousel-01.png ou https://…"
+                  onChange={(e) => updateSlide(i, { src: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor={`slide-alt-${i}`}>Descrição (alt)</Label>
+                <Input
+                  id={`slide-alt-${i}`}
+                  value={slide.alt}
+                  placeholder="Los Los Fest — evento"
+                  onChange={(e) => updateSlide(i, { alt: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-1 sm:flex-col">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Mover para cima"
+                disabled={i === 0}
+                onClick={() => move(i, -1)}
+              >
+                ↑
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Mover para baixo"
+                disabled={i === slides.length - 1}
+                onClick={() => move(i, 1)}
+              >
+                ↓
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Remover slide"
+                onClick={() => removeSlide(i)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        <p className="text-xs text-muted-foreground">
+          Dica: use imagens locais em <code>/public/loslos/…</code> ou uma URL externa. Proporção
+          recomendada 16:9.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
