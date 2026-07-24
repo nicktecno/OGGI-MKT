@@ -46,62 +46,79 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-loslos-teal-dark via-loslos-teal to-loslos-teal-dark text-white py-20 px-4">
-        {/* Foto da praia ao fundo */}
-        <Image
-          src="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1600&h=900&fit=crop"
-          alt="Praia do Rio de Janeiro"
-          fill
-          className="absolute inset-0 object-cover opacity-30"
-          sizes="100vw"
-          priority
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-loslos-teal-dark/60 via-loslos-teal/40 to-loslos-teal-dark/80" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-loslos-teal-dark via-[#0a3d35] to-loslos-teal-dark text-white">
+        {/* Blobs decorativos */}
+        <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-loslos-yellow/15 blur-3xl" />
+        <div className="pointer-events-none absolute top-0 right-0 w-80 h-80 rounded-full bg-loslos-teal/30 blur-3xl" />
 
-        {/* Elementos decorativos */}
-        <div className="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -right-16 w-96 h-96 rounded-full bg-loslos-yellow/20 blur-3xl" />
-        <div className="pointer-events-none absolute top-10 right-10 text-6xl opacity-20 rotate-12 select-none">🍦</div>
-        <div className="pointer-events-none absolute bottom-8 left-8 text-5xl opacity-20 -rotate-12 select-none">🧊</div>
+        <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+          {/* Coluna de texto */}
+          <div className="flex flex-col items-start">
+            <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur border border-white/25 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-6">
+              <QrCode size={15} /> Escaneou, pediu, chegou
+            </span>
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur border border-white/25 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-6">
-            <QrCode size={15} /> Escaneou, pediu, chegou
-          </span>
+            <h1 className="text-5xl md:text-6xl font-black mb-5 leading-[1.05] tracking-tight drop-shadow-sm">
+              Sorvete Los Los
+              <br />
+              <span className="text-loslos-yellow">com o pé na areia</span>
+            </h1>
 
-          <h1 className="text-5xl md:text-6xl font-black mb-5 leading-[1.05] tracking-tight drop-shadow-sm">
-            Sorvete Los Los
-            <br />
-            <span className="text-loslos-yellow">com o pé na areia</span>
-          </h1>
+            <p className="text-loslos-teal-light text-lg md:text-xl mb-9 max-w-md leading-relaxed">
+              Escaneie o QR code na praia e receba seu sorvete favorito{" "}
+              <span className="font-semibold text-white">sem sair do lugar.</span>
+            </p>
 
-          <p className="text-loslos-teal-light text-lg md:text-xl mb-9 max-w-xl mx-auto leading-relaxed">
-            Escaneie o QR code na praia e receba seu sorvete favorito{" "}
-            <span className="font-semibold text-white">sem sair do lugar.</span>
-          </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="#praias"
+                className="group inline-flex items-center gap-2 bg-white text-loslos-teal-dark font-black px-8 py-4 rounded-2xl shadow-xl shadow-black/20 hover:scale-105 hover:shadow-2xl transition-all"
+              >
+                <MapPin size={20} className="group-hover:animate-bounce" />
+                Ver praias disponíveis
+              </Link>
+              <Link
+                href="#catalogo"
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white font-bold px-8 py-4 rounded-2xl border border-white/40 hover:bg-white/20 transition-all"
+              >
+                <IceCream size={20} />
+                Ver catálogo
+              </Link>
+            </div>
 
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link
-              href="#praias"
-              className="group inline-flex items-center gap-2 bg-white text-loslos-teal-dark font-black px-8 py-4 rounded-2xl shadow-xl shadow-black/20 hover:scale-105 hover:shadow-2xl transition-all"
-            >
-              <MapPin size={20} className="group-hover:animate-bounce" />
-              Ver praias disponíveis
-            </Link>
-            <Link
-              href="#catalogo"
-              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white font-bold px-8 py-4 rounded-2xl border border-white/40 hover:bg-white/20 transition-all"
-            >
-              <IceCream size={20} />
-              Ver catálogo
-            </Link>
+            {/* Selos de confiança */}
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-loslos-teal-light">
+              <span className="flex items-center gap-1.5"><Star size={15} className="fill-loslos-yellow text-loslos-yellow" /> Entrega rápida</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck size={15} /> Ambulantes verificados</span>
+              <span className="flex items-center gap-1.5"><IceCream size={15} /> Sorvetes Los Los</span>
+            </div>
           </div>
 
-          {/* Selos de confiança */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-loslos-teal-light">
-            <span className="flex items-center gap-1.5"><Star size={15} className="fill-loslos-yellow text-loslos-yellow" /> Entrega rápida</span>
-            <span className="flex items-center gap-1.5"><ShieldCheck size={15} /> Ambulantes verificados</span>
-            <span className="flex items-center gap-1.5"><IceCream size={15} /> Sorvetes Los Los</span>
+          {/* Coluna de fotos — destaque editorial */}
+          <div className="relative flex items-center justify-center h-[520px] md:h-[620px]">
+            {/* Foto de fundo — inclinada para a esquerda */}
+            <div className="absolute left-0 top-4 w-[260px] h-[400px] md:w-[310px] md:h-[480px] rounded-3xl overflow-hidden shadow-2xl -rotate-3 ring-4 ring-white/20">
+              <Image
+                src="/hero-praia-2.jpeg"
+                alt="Surfista Los Los Sorvetes na praia"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 768px) 260px, 310px"
+                priority
+              />
+            </div>
+            {/* Foto da frente — inclinada para a direita, sobreposta */}
+            <div className="absolute right-0 bottom-4 w-[260px] h-[400px] md:w-[310px] md:h-[480px] rounded-3xl overflow-hidden shadow-2xl rotate-3 ring-4 ring-white/20">
+              <Image
+                src="/hero-praia-1.jpeg"
+                alt="Los Los Sorvetes — coma na praia"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 768px) 260px, 310px"
+                priority
+              />
+            </div>
           </div>
         </div>
       </section>
