@@ -6,6 +6,7 @@ import { formatBrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LiveTrackingMap } from "@/components/beach-marketplace/live-tracking-map";
 import {
   CheckCircle2,
   Clock,
@@ -184,10 +185,14 @@ export function OrderConfirmation({
               </div>
             </div>
 
-            {/* Mapa simplificado (será real em Fase 2) */}
-            <div className="bg-secondary border border-border rounded-xl h-32 flex items-center justify-center text-sm text-muted-foreground">
-              🗺️ Mapa em tempo real (em breve)
-            </div>
+            {/* Rastreamento em tempo real (mockado) */}
+            <LiveTrackingMap
+              ambulanteLat={ambulante.latitude}
+              ambulanteLon={ambulante.longitude}
+              clienteLat={order.clienteLat}
+              clienteLon={order.clienteLon}
+              etaMinutos={order.etaMinutos}
+            />
           </CardContent>
         </Card>
       )}

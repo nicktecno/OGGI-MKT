@@ -47,6 +47,16 @@ export default function ConfirmacaoPage() {
 
   const { notificationStage, currentAttempt } = useOrderNotificationSimulation(order);
 
+  // Quando o ambulante aceita (mock), o pedido passa a ACEITO e inicia o
+  // rastreamento em tempo real na tela.
+  useEffect(() => {
+    if (notificationStage === "aceito" && order && order.status === "PENDENTE") {
+      const updated = { ...order, status: "ACEITO" as const, updatedAt: new Date().toISOString() };
+      setOrder(updated);
+      localStorage.setItem(`order-${order.id}`, JSON.stringify(updated));
+    }
+  }, [notificationStage, order]);
+
   function cancelarPedido() {
     if (!order) return;
     if (!confirm("Deseja cancelar este pedido?")) return;
