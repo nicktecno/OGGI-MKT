@@ -71,8 +71,19 @@ export function findNearestAmbulantes(
  */
 export function getCurrentLocation(): Promise<GeoLocation> {
   return new Promise((resolve, reject) => {
+    // Geolocalização só funciona em contexto seguro (HTTPS ou localhost).
+    // Ao acessar por um IP de rede via http://, `navigator.geolocation`
+    // fica indisponível e o navegador nem chega a exibir o popup.
+    if (
+      typeof window !== "undefined" &&
+      window.isSecureContext === false
+    ) {
+      reject(new Error("INSECURE_CONTEXT"));
+      return;
+    }
+
     if (!navigator.geolocation) {
-      reject(new Error("Geolocalização não suportada"));
+      reject(new Error("INSECURE_CONTEXT"));
       return;
     }
 
@@ -89,11 +100,34 @@ export function getCurrentLocation(): Promise<GeoLocation> {
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        timeout: 15000,
+        maximumAge: 60000,
       }
     );
   });
+}
+
+/**
+ * Converte um erro de geolocalização em uma mensagem amigável em pt-BR.
+ */
+export function getGeolocationErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message === "INSECURE_CONTEXT") {
+    return "A localização só funciona em conexão segura (HTTPS) ou em localhost. Abra o site por HTTPS para permitir a localização.";
+  }
+
+  // GeolocationPositionError: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+  const code = (error as { code?: number })?.code;
+  if (code === 1) {
+    return "Permissão de localização negada. Ative a localização para este site nas configurações do navegador e tente novamente.";
+  }
+  if (code === 2) {
+    return "Não foi possível obter sua localização. Verifique se o GPS/localização do dispositivo está ativado e tente novamente.";
+  }
+  if (code === 3) {
+    return "Tempo esgotado ao obter a localização. Tente novamente.";
+  }
+
+  return "Precisamos da sua localização para enviar o pedido ao ambulante. Ative o compartilhamento de localização e tente novamente.";
 }
 
 /**

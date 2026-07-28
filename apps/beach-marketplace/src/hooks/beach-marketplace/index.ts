@@ -28,10 +28,12 @@ export function useGeolocation() {
     try {
       const loc = await getCurrentLocation();
       setLocation(loc);
+      return loc;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao obter localização"
       );
+      throw err;
     } finally {
       setLoading(false);
     }

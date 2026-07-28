@@ -7,6 +7,7 @@ import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, Che
 import { MOCK_ORDERS, MOCK_AMBULANTES, getBeachById } from "@/lib/beach-marketplace/mock-data";
 import { Order, OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
+import { OrderLocationMap } from "@/components/beach-marketplace/order-location-map";
 
 // Simulando o ambulante logado
 const AMBULANTE_LOGADO = MOCK_AMBULANTES[0];
@@ -203,6 +204,7 @@ export default function PainelAmbulantePage() {
                     </div>
                   ))}
                 </div>
+                <OrderLocationMap lat={order.clienteLat} lon={order.clienteLon} />
                 <div className="flex gap-2">
                   <button
                     onClick={() => aceitarPedido(order.id)}

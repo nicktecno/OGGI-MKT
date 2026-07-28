@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { getProductById } from "@/lib/beach-marketplace/mock-data";
 import { formatBrl } from "@/lib/utils";
-import { Trash2, ShoppingCart, IceCream, Minus, Plus } from "lucide-react";
+import { Trash2, ShoppingCart, IceCream, Minus, Plus, MapPin, AlertCircle, ChevronDown } from "lucide-react";
 
 interface BeachCartItem {
   productId: string;
@@ -16,6 +16,7 @@ interface BeachCartProps {
   onRemoveItem: (productId: string) => void;
   onCheckout: () => void;
   checkoutLoading?: boolean;
+  locationError?: string | null;
 }
 
 export function BeachCart({
@@ -24,6 +25,7 @@ export function BeachCart({
   onRemoveItem,
   onCheckout,
   checkoutLoading = false,
+  locationError = null,
 }: BeachCartProps) {
   if (items.length === 0) {
     return (
@@ -144,13 +146,39 @@ export function BeachCart({
           </div>
         </div>
 
+        {locationError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-500 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{locationError}</span>
+            </div>
+            <details className="group">
+              <summary className="cursor-pointer font-semibold text-red-500 hover:underline list-none flex items-center gap-1">
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                Como ativar a localização?
+              </summary>
+              <ol className="mt-2 ml-1 space-y-1 list-decimal list-inside text-red-500/90">
+                <li>Toque no ícone de cadeado 🔒 (ou de configurações) na barra de endereço.</li>
+                <li>Toque em <span className="font-semibold">&ldquo;Redefinir permissão&rdquo;</span> ou ative a opção <span className="font-semibold">&ldquo;Local&rdquo;</span>.</li>
+                <li>Recarregue a página.</li>
+                <li>Toque em <span className="font-semibold">&ldquo;Finalizar pedido&rdquo;</span> e permita a localização.</li>
+              </ol>
+            </details>
+          </div>
+        )}
+
         <button
           onClick={onCheckout}
           disabled={checkoutLoading || items.length === 0}
           className="w-full bg-loslos-teal-dark text-white font-black h-12 rounded-xl hover:bg-loslos-teal transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {checkoutLoading ? "Enviando pedido..." : "Finalizar pedido"}
+          {checkoutLoading ? "Enviando pedido..." : locationError ? "Tentar novamente" : "Finalizar pedido"}
         </button>
+
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+          <MapPin className="w-3 h-3 text-loslos-teal" />
+          Ao finalizar, você compartilha sua localização com o ambulante.
+        </p>
       </div>
     </div>
   );

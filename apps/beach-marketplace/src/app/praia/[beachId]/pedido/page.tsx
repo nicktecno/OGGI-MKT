@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getBeachById, getAmbulantesbyBeach, getProductById } from "@/lib/beach-marketplace/mock-data";
+import { getGeolocationErrorMessage } from "@/lib/beach-marketplace/geolocation";
 import { useBeachCart, useGeolocation, useNearestAmbulantes } from "@/hooks/beach-marketplace";
 import { BeachCatalog } from "@/components/beach-marketplace/beach-catalog";
 import { BeachCart } from "@/components/beach-marketplace/beach-cart";
@@ -26,12 +27,7 @@ export default function PedidoPage() {
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
-
-  useEffect(() => {
-    getLocation().catch(() => {
-      console.log("Usando localização padrão da praia");
-    });
-  }, [getLocation]);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   if (!beach) {
     return (
@@ -54,7 +50,21 @@ export default function PedidoPage() {
   };
 
   const handleCheckout = async () => {
+    setLocationError(null);
     setCheckoutLoading(true);
+
+    // A localização do cliente é obrigatória: o pedido só é fechado
+    // quando o cliente autoriza compartilhar a localização com o ambulante.
+    let clientLocation = location;
+    if (!clientLocation) {
+      try {
+        clientLocation = await getLocation();
+      } catch (err) {
+        setCheckoutLoading(false);
+        setLocationError(getGeolocationErrorMessage(err));
+        return;
+      }
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -69,8 +79,8 @@ export default function PedidoPage() {
       id: `order-${Date.now()}`,
       beachId,
       clienteNome: "Cliente",
-      clienteLat: location?.latitude || beach.latitude,
-      clienteLon: location?.longitude || beach.longitude,
+      clienteLat: clientLocation.latitude,
+      clienteLon: clientLocation.longitude,
       items: cart.items.map((item) => {
         const product = getProductById(item.productId);
         return {
@@ -173,6 +183,7 @@ export default function PedidoPage() {
                   onRemoveItem={cart.removeItem}
                   onCheckout={handleCheckout}
                   checkoutLoading={checkoutLoading}
+                  locationError={locationError}
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { IceCream, MapPin, QrCode, ShieldCheck, Star, Users } from "lucide-react";
+import { CreditCard, IceCream, MapPin, QrCode, ShieldCheck, Star, Truck, Users } from "lucide-react";
 import { MOCK_BEACHES, MOCK_PRODUCTS } from "@/lib/beach-marketplace/mock-data";
 import { formatBrl } from "@/lib/utils";
 
@@ -127,29 +127,42 @@ export default function HomePage() {
       <section className="py-14 px-4 bg-background">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-black text-center text-foreground mb-10">Como funciona?</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
             {[
               {
-                icon: <QrCode size={36} className="text-loslos-teal" />,
-                title: "Escaneie o QR",
-                desc: "Encontre o QR code fixado nos postes ou guarda-sóis da praia.",
+                icon: <QrCode size={32} className="text-loslos-teal" />,
+                title: "QR Code no guarda-sol",
+                desc: "Escaneie o QR code fixado no guarda-sol ou poste da praia.",
               },
               {
-                icon: <IceCream size={36} className="text-loslos-teal" />,
-                title: "Escolha o sorvete",
-                desc: "Veja o catálogo completo e monte seu pedido direto pelo celular.",
+                icon: <IceCream size={32} className="text-loslos-teal" />,
+                title: "Escolha os produtos",
+                desc: "Veja o catálogo completo e monte seu pedido pelo celular.",
               },
               {
-                icon: <MapPin size={36} className="text-loslos-teal" />,
-                title: "Receba na areia",
-                desc: "O ambulante mais próximo recebe o pedido e te encontra na praia.",
+                icon: <CreditCard size={32} className="text-loslos-teal" />,
+                title: "Pix ou cartão",
+                desc: "Pague de forma rápida e segura direto pelo app.",
               },
-            ].map((step) => (
+              {
+                icon: <MapPin size={32} className="text-loslos-teal" />,
+                title: "Compartilhe a localização",
+                desc: "Autorize sua localização para o ambulante te encontrar na areia.",
+              },
+              {
+                icon: <Truck size={32} className="text-loslos-teal" />,
+                title: "Entrega em poucos minutos",
+                desc: "O ambulante mais próximo leva seu pedido até você.",
+              },
+            ].map((step, index) => (
               <div key={step.title} className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="relative w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   {step.icon}
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-loslos-teal-dark text-white text-xs font-black flex items-center justify-center">
+                    {index + 1}
+                  </span>
                 </div>
-                <h3 className="font-bold text-foreground text-lg mb-2">{step.title}</h3>
+                <h3 className="font-bold text-foreground text-base mb-2">{step.title}</h3>
                 <p className="text-muted-foreground text-sm">{step.desc}</p>
               </div>
             ))}

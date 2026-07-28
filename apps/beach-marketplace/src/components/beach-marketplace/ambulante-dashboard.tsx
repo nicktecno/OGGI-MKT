@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { OrderLocationMap } from "@/components/beach-marketplace/order-location-map";
 import { Bell, Check, X, Clock } from "lucide-react";
 
 interface AmbulanteDashboardProps {
@@ -108,15 +109,13 @@ export function AmbulanteDashboard({
                   </div>
 
                   {/* Cliente Info */}
-                  <div className="text-xs text-muted-foreground mb-4 space-y-1">
+                  <div className="text-xs text-muted-foreground mb-4 space-y-2">
                     {order.clientePhone && (
                       <div>
                         📞 <span>{order.clientePhone}</span>
                       </div>
                     )}
-                    <div>
-                      📍 Lat: {order.clienteLat.toFixed(4)}, Lon: {order.clienteLon.toFixed(4)}
-                    </div>
+                    <OrderLocationMap lat={order.clienteLat} lon={order.clienteLon} />
                   </div>
 
                   {/* Botões */}

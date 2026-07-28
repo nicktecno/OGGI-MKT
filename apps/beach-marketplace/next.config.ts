@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
         hostname: "sp-ao.shortpixel.ai",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+        pathname: "/**",
+      },
       ...r2RemotePatterns,
     ],
   },
