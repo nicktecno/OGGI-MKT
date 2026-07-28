@@ -155,14 +155,16 @@ export default function HomePage() {
                 desc: "O ambulante mais próximo leva seu pedido até você.",
               },
             ].map((step, index) => (
-              <div key={step.title} className="text-center">
-                <div className="relative w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div key={step.title} className="flex flex-col items-center text-center">
+                <div className="relative w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
                   {step.icon}
                   <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-loslos-teal-dark text-white text-xs font-black flex items-center justify-center">
                     {index + 1}
                   </span>
                 </div>
-                <h3 className="font-bold text-foreground text-base mb-2">{step.title}</h3>
+                <h3 className="font-bold text-foreground text-base mb-2 min-h-[3rem] flex items-center justify-center">
+                  {step.title}
+                </h3>
                 <p className="text-muted-foreground text-sm">{step.desc}</p>
               </div>
             ))}
