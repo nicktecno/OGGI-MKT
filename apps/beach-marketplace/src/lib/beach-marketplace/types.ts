@@ -17,12 +17,39 @@ export interface Beach {
   updatedAt: string;
 }
 
+// ============ DISTRIBUIDOR ============
+// Cada ambulante é vinculado a um distribuidor. O distribuidor gerencia
+// os pontos de referência da(s) praia(s) onde atua.
+export interface Distribuidor {
+  id: string;
+  nome: string;
+  telefone?: string;
+  beachIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============ PONTO DE REFERÊNCIA ============
+// Cadastrado pelo distribuidor. O cliente pode escolher um ponto de
+// referência no lugar de compartilhar a localização exata.
+export interface PontoReferencia {
+  id: string;
+  beachId: string;
+  distribuidorId: string;
+  nome: string; // ex: "Cadeira 42", "Entrada da praia"
+  descricao?: string;
+  latitude?: number;
+  longitude?: number;
+  createdAt: string;
+}
+
 // ============ AMBULANTE (VENDEDOR) ============
 export type AmbullanteStatus = "DISPONIVEL" | "INDISPONIVEL" | "OFFLINE";
 
 export interface Ambulante {
   id: string;
   beachId: string;
+  distribuidorId: string;
   nome: string;
   telefone: string;
   fotoPerfil?: string;
@@ -78,6 +105,15 @@ export interface OrderItem {
   price: number;
 }
 
+// ============ PAGAMENTO (acerto direto com o ambulante, sem gateway) ============
+export type PaymentMethod = "PIX" | "CARTAO" | "DINHEIRO";
+
+export interface OrderPayment {
+  metodo: PaymentMethod;
+  /** Quando DINHEIRO: valor para o qual o cliente precisa de troco (opcional) */
+  trocoPara?: number;
+}
+
 export interface Order {
   id: string;
   beachId: string;
@@ -85,6 +121,8 @@ export interface Order {
   clienteLat: number;
   clienteLon: number;
   clientePhone?: string;
+  /** WhatsApp informado pelo cliente para contato/entrega */
+  clienteWhatsapp?: string;
   items: OrderItem[];
   ambulanteId?: string;
   ambulante?: Ambulante;
@@ -93,6 +131,13 @@ export interface Order {
   ambulanteAttempts: AmbulnanteAttempt[];
   entregueEm?: string;
   totalPrice: number;
+  /** Forma de pagamento escolhida (paga direto ao ambulante) */
+  pagamento?: OrderPayment;
+  /** Ponto de referência escolhido quando o cliente não libera a localização exata */
+  pontoReferenciaId?: string;
+  pontoReferencia?: string;
+  /** Estimativa de entrega em minutos calculada no pedido */
+  etaMinutos?: number;
   createdAt: string;
   updatedAt: string;
 }

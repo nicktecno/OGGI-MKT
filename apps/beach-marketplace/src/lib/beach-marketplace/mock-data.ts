@@ -3,7 +3,7 @@
  * Em produção (Fase 2), virá da API
  */
 
-import { Beach, Ambulante, BeachProduct, Order } from "./types";
+import { Beach, Ambulante, BeachProduct, Order, Distribuidor, PontoReferencia } from "./types";
 
 // ============ PRAIAS ============
 export const MOCK_BEACHES: Beach[] = [
@@ -45,12 +45,109 @@ export const MOCK_BEACHES: Beach[] = [
   },
 ];
 
+// ============ DISTRIBUIDORES ============
+// Cada ambulante é vinculado a um distribuidor, que gerencia os pontos
+// de referência da(s) praia(s) onde atua.
+export const MOCK_DISTRIBUIDORES: Distribuidor[] = [
+  {
+    id: "dist-los-copa",
+    nome: "Los Los Copacabana",
+    telefone: "(21) 3333-0001",
+    beachIds: ["beach-copacabana-001"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "dist-los-ipa",
+    nome: "Los Los Ipanema",
+    telefone: "(21) 3333-0002",
+    beachIds: ["beach-ipanema-001"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "dist-los-leb",
+    nome: "Los Los Leblon",
+    telefone: "(21) 3333-0003",
+    beachIds: ["beach-leblon-001"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// ============ PONTOS DE REFERÊNCIA ============
+// Cadastrados pelo distribuidor. O cliente pode escolher um destes no
+// lugar de compartilhar a localização exata.
+export const MOCK_PONTOS_REFERENCIA: PontoReferencia[] = [
+  {
+    id: "ref-copa-entrada",
+    beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
+    nome: "Entrada da praia (Posto 3)",
+    descricao: "Próximo à travessia principal do Posto 3",
+    latitude: -22.9862,
+    longitude: -43.1828,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "ref-copa-quiosque",
+    beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
+    nome: "Quiosque do João",
+    descricao: "Quiosque em frente ao Posto 4",
+    latitude: -22.9875,
+    longitude: -43.1835,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "ref-copa-guardasol",
+    beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
+    nome: "Guarda-sol Los Los (fileira 2)",
+    descricao: "Guarda-sol com tag Los Los, segunda fileira",
+    latitude: -22.9868,
+    longitude: -43.182,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "ref-ipa-posto9",
+    beachId: "beach-ipanema-001",
+    distribuidorId: "dist-los-ipa",
+    nome: "Posto 9",
+    descricao: "Clássico ponto de encontro do Posto 9",
+    latitude: -22.9835,
+    longitude: -43.2058,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "ref-ipa-arpoador",
+    beachId: "beach-ipanema-001",
+    distribuidorId: "dist-los-ipa",
+    nome: "Pedra do Arpoador",
+    descricao: "Início da praia, próximo ao Arpoador",
+    latitude: -22.9885,
+    longitude: -43.1935,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "ref-leb-baixo",
+    beachId: "beach-leblon-001",
+    distribuidorId: "dist-los-leb",
+    nome: "Baixão do Leblon",
+    descricao: "Ponto central do Leblon",
+    latitude: -22.9862,
+    longitude: -43.2225,
+    createdAt: new Date().toISOString(),
+  },
+];
+
 // ============ AMBULANTES ============
 export const MOCK_AMBULANTES: Ambulante[] = [
   // Copacabana
   {
     id: "ambulante-copa-001",
     beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
     nome: "João da Praia",
     telefone: "(21) 98888-0001",
     fotoPerfil: "https://i.pravatar.cc/150?img=1",
@@ -66,6 +163,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-copa-002",
     beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
     nome: "Maria Sorvetes",
     telefone: "(21) 98888-0002",
     fotoPerfil: "https://i.pravatar.cc/150?img=2",
@@ -81,6 +179,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-copa-003",
     beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
     nome: "Pedro Picolé",
     telefone: "(21) 98888-0003",
     fotoPerfil: "https://i.pravatar.cc/150?img=3",
@@ -96,6 +195,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-copa-004",
     beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
     nome: "Ana Gelado",
     telefone: "(21) 98888-0004",
     fotoPerfil: "https://i.pravatar.cc/150?img=4",
@@ -111,6 +211,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-copa-005",
     beachId: "beach-copacabana-001",
+    distribuidorId: "dist-los-copa",
     nome: "Carlos Paleteiro",
     telefone: "(21) 98888-0005",
     fotoPerfil: "https://i.pravatar.cc/150?img=5",
@@ -128,6 +229,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-ipa-001",
     beachId: "beach-ipanema-001",
+    distribuidorId: "dist-los-ipa",
     nome: "Roberto Frio",
     telefone: "(21) 98888-1001",
     fotoPerfil: "https://i.pravatar.cc/150?img=6",
@@ -143,6 +245,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-ipa-002",
     beachId: "beach-ipanema-001",
+    distribuidorId: "dist-los-ipa",
     nome: "Fernanda Doces",
     telefone: "(21) 98888-1002",
     fotoPerfil: "https://i.pravatar.cc/150?img=7",
@@ -160,6 +263,7 @@ export const MOCK_AMBULANTES: Ambulante[] = [
   {
     id: "ambulante-leb-001",
     beachId: "beach-leblon-001",
+    distribuidorId: "dist-los-leb",
     nome: "Thiago Geleia",
     telefone: "(21) 98888-2001",
     fotoPerfil: "https://i.pravatar.cc/150?img=8",
@@ -522,4 +626,20 @@ export function getProductById(productId: string): BeachProduct | undefined {
 
 export function getProductsByCategory(category: BeachProduct["category"]): BeachProduct[] {
   return MOCK_PRODUCTS.filter((p) => p.category === category && p.disponivel);
+}
+
+export function getDistribuidorById(distribuidorId: string): Distribuidor | undefined {
+  return MOCK_DISTRIBUIDORES.find((d) => d.id === distribuidorId);
+}
+
+export function getPontosReferenciaByBeach(beachId: string): PontoReferencia[] {
+  return MOCK_PONTOS_REFERENCIA.filter((p) => p.beachId === beachId);
+}
+
+export function getPontoReferenciaById(id: string): PontoReferencia | undefined {
+  return MOCK_PONTOS_REFERENCIA.find((p) => p.id === id);
+}
+
+export function getAmbulantesByDistribuidor(distribuidorId: string): Ambulante[] {
+  return MOCK_AMBULANTES.filter((a) => a.distribuidorId === distribuidorId);
 }

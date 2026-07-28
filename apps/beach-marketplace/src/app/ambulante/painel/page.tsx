@@ -3,11 +3,26 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, ChevronRight, AlertCircle, LogOut } from "lucide-react";
-import { MOCK_ORDERS, MOCK_AMBULANTES, getBeachById } from "@/lib/beach-marketplace/mock-data";
-import { Order, OrderStatus } from "@/lib/beach-marketplace/types";
+import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, ChevronRight, AlertCircle, LogOut, Banknote, Phone, Boxes } from "lucide-react";
+import { MOCK_ORDERS, MOCK_AMBULANTES, MOCK_PRODUCTS, getBeachById, getProductById, getDistribuidorById } from "@/lib/beach-marketplace/mock-data";
+import { Order, OrderStatus, OrderItem, PaymentMethod } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
 import { OrderLocationMap } from "@/components/beach-marketplace/order-location-map";
+
+const REJECT_REASONS = ["Sem estoque", "Muito longe", "Fim do expediente", "Outro"];
+
+function pagamentoLabel(metodo: PaymentMethod): string {
+  return metodo === "PIX" ? "Pix" : metodo === "CARTAO" ? "Cartão" : "Dinheiro";
+}
+
+/** Retorna o estoque registrado para um item do pedido, ou null se desconhecido. */
+function stockForItem(item: OrderItem, skuStock: Record<string, number>): number | null {
+  const byId = getProductById(item.id);
+  if (byId) return skuStock[byId.id] ?? 0;
+  const byName = MOCK_PRODUCTS.find((p) => p.name === item.productName);
+  if (byName) return skuStock[byName.id] ?? 0;
+  return null;
+}
 
 // Simulando o ambulante logado
 const AMBULANTE_LOGADO = MOCK_AMBULANTES[0];
@@ -49,9 +64,17 @@ export default function PainelAmbulantePage() {
   const [status, setStatus] = useState<"DISPONIVEL" | "INDISPONIVEL">(
     AMBULANTE_LOGADO.status === "DISPONIVEL" ? "DISPONIVEL" : "INDISPONIVEL"
   );
-  const [estoque, setEstoque] = useState(AMBULANTE_LOGADO.estoque);
+  const [skuStock, setSkuStock] = useState<Record<string, number>>(() =>
+    Object.fromEntries(MOCK_PRODUCTS.map((p) => [p.id, 6]))
+  );
+  const [showStock, setShowStock] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [tab, setTab] = useState<"ativos" | "historico">("ativos");
+
+  const distribuidor = getDistribuidorById(AMBULANTE_LOGADO.distribuidorId);
+  const estoqueTotal = Object.values(skuStock).reduce((a, b) => a + b, 0);
 
   const minhaOrders = orders.filter((o) => o.ambulanteId === AMBULANTE_LOGADO.id);
   const pedidosPendentes = orders.filter((o) => o.status === "PENDENTE" && !o.ambulanteId);
@@ -63,6 +86,18 @@ export default function PainelAmbulantePage() {
     .reduce((sum, o) => sum + o.totalPrice, 0);
 
   function aceitarPedido(orderId: string) {
+    const order = orders.find((o) => o.id === orderId);
+    if (order) {
+      // Abate o estoque por SKU ao aceitar o pedido.
+      setSkuStock((prev) => {
+        const next = { ...prev };
+        for (const item of order.items) {
+          const prod = getProductById(item.id) || MOCK_PRODUCTS.find((p) => p.name === item.productName);
+          if (prod) next[prod.id] = Math.max(0, (next[prod.id] ?? 0) - item.quantity);
+        }
+        return next;
+      });
+    }
     setOrders((prev) =>
       prev.map((o) =>
         o.id === orderId ? { ...o, status: "ACEITO", ambulanteId: AMBULANTE_LOGADO.id } : o
@@ -70,8 +105,19 @@ export default function PainelAmbulantePage() {
     );
   }
 
-  function rejeitarPedido(orderId: string) {
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: "CANCELADO" } : o)));
+  function rejeitarPedido(orderId: string, motivo: string) {
+    // Ao recusar (com justificativa), o pedido seria redirecionado ao
+    // ambulante mais próximo. Aqui (mock) apenas registramos a recusa.
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, status: "CANCELADO", rejectionCount: o.rejectionCount + 1 }
+          : o
+      )
+    );
+    setRejectingId(null);
+    setRejectReason("");
+    void motivo;
   }
 
   function marcarEntregue(orderId: string) {
@@ -128,6 +174,11 @@ export default function PainelAmbulantePage() {
                 <MapPin className="w-3.5 h-3.5" />
                 <span>{beach?.name ?? "Praia"}</span>
               </div>
+              {distribuidor && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Distribuidor: <span className="font-medium text-foreground">{distribuidor.nome}</span>
+                </p>
+              )}
             </div>
           </div>
           <button
@@ -152,25 +203,53 @@ export default function PainelAmbulantePage() {
             <p className="text-2xl font-bold text-loslos-teal">{pedidosHistorico.filter((o) => o.status === "PRONTO").length}</p>
             <p className="text-xs text-muted-foreground mt-1">Entregas</p>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-3 text-center relative">
-            <div className="flex items-center justify-center gap-1">
-              <button
-                onClick={() => setEstoque((e) => Math.max(0, e - 1))}
-                className="w-6 h-6 rounded-full bg-secondary text-foreground font-bold text-sm hover:bg-secondary/80 flex items-center justify-center"
-              >
-                −
-              </button>
-              <p className="text-2xl font-bold text-loslos-teal w-10 text-center">{estoque}</p>
-              <button
-                onClick={() => setEstoque((e) => e + 1)}
-                className="w-6 h-6 rounded-full bg-primary/10 text-loslos-teal font-bold text-sm hover:bg-primary/20 flex items-center justify-center"
-              >
-                +
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Estoque</p>
-          </div>
+          <button
+            onClick={() => setShowStock((v) => !v)}
+            className="bg-card rounded-xl shadow-sm p-3 text-center hover:bg-secondary/50 transition"
+          >
+            <p className="text-2xl font-bold text-loslos-teal">{estoqueTotal}</p>
+            <p className="text-xs text-muted-foreground mt-1">Estoque (gerenciar)</p>
+          </button>
         </div>
+
+        {/* Início da jornada — estoque por SKU */}
+        {showStock && (
+          <div className="bg-card rounded-xl shadow-sm p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Boxes className="w-4 h-4 text-loslos-teal" />
+              <p className="font-semibold text-foreground">Início da jornada — meu estoque</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Registre a quantidade de cada produto que você levou no carrinho.
+            </p>
+            <div className="max-h-72 overflow-y-auto divide-y divide-border">
+              {MOCK_PRODUCTS.map((p) => (
+                <div key={p.id} className="flex items-center gap-2 py-2">
+                  <span className="text-sm text-foreground flex-1 truncate">{p.name}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() =>
+                        setSkuStock((s) => ({ ...s, [p.id]: Math.max(0, (s[p.id] ?? 0) - 1) }))
+                      }
+                      className="w-6 h-6 rounded-full bg-secondary text-foreground text-sm font-bold flex items-center justify-center hover:bg-secondary/70"
+                      aria-label={`Diminuir ${p.name}`}
+                    >
+                      &minus;
+                    </button>
+                    <span className="w-8 text-center text-sm font-bold text-foreground">{skuStock[p.id] ?? 0}</span>
+                    <button
+                      onClick={() => setSkuStock((s) => ({ ...s, [p.id]: (s[p.id] ?? 0) + 1 }))}
+                      className="w-6 h-6 rounded-full bg-primary/10 text-loslos-teal text-sm font-bold flex items-center justify-center hover:bg-primary/20"
+                      aria-label={`Aumentar ${p.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Novos pedidos */}
         {pedidosPendentes.length > 0 && (
@@ -191,36 +270,122 @@ export default function PainelAmbulantePage() {
                   <p className="font-bold text-loslos-teal">{formatBrl(order.totalPrice)}</p>
                 </div>
                 <div className="space-y-1 mb-3">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {item.productImage && (
+                  {order.items.map((item) => {
+                    const stock = stockForItem(item, skuStock);
+                    const emEstoque = stock == null || stock >= item.quantity;
+                    return (
+                      <div key={item.id} className="flex items-center gap-2 text-sm">
+                        {item.productImage && (
                           <div className="relative w-6 h-6 flex-shrink-0">
                             <Image src={item.productImage} alt={item.productName} fill className="object-contain" sizes="24px" />
                           </div>
-                      )}
+                        )}
+                        <span className="text-muted-foreground">
+                          {item.quantity}x {item.productName}
+                        </span>
+                        <span
+                          className={`ml-auto text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                            emEstoque ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {emEstoque ? "Em estoque" : "Sem estoque"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Dados do cliente e pagamento */}
+                <div className="mb-3 space-y-1 text-xs text-muted-foreground">
+                  {order.pontoReferencia && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-loslos-teal" />
                       <span>
-                        {item.quantity}x {item.productName}
+                        Ponto de referência: <span className="font-semibold text-foreground">{order.pontoReferencia}</span>
                       </span>
                     </div>
-                  ))}
+                  )}
+                  {order.pagamento && (
+                    <div className="flex items-center gap-1.5">
+                      <Banknote className="w-3.5 h-3.5 text-loslos-teal" />
+                      <span>
+                        Pagamento: <span className="font-semibold text-foreground">{pagamentoLabel(order.pagamento.metodo)}</span>
+                        {order.pagamento.metodo === "DINHEIRO" && order.pagamento.trocoPara
+                          ? ` (troco p/ ${formatBrl(order.pagamento.trocoPara)})`
+                          : ""}
+                      </span>
+                    </div>
+                  )}
+                  {order.clienteWhatsapp && (
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-loslos-teal" />
+                      <span>{order.clienteWhatsapp}</span>
+                    </div>
+                  )}
                 </div>
+
                 <OrderLocationMap lat={order.clienteLat} lon={order.clienteLon} />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => aceitarPedido(order.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-green-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Aceitar
-                  </button>
-                  <button
-                    onClick={() => rejeitarPedido(order.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    Recusar
-                  </button>
-                </div>
+                {rejectingId === order.id ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-red-700">Por que está recusando?</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {REJECT_REASONS.map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setRejectReason(r)}
+                          className={`text-xs px-2 py-1.5 rounded-lg border transition ${
+                            rejectReason === r
+                              ? "border-red-500 bg-red-100 text-red-700 font-semibold"
+                              : "border-red-200 text-red-600 hover:bg-red-100"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        disabled={!rejectReason}
+                        onClick={() => rejeitarPedido(order.id, rejectReason)}
+                        className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                      >
+                        Confirmar recusa
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRejectingId(null);
+                          setRejectReason("");
+                        }}
+                        className="flex-1 bg-white border border-border text-foreground py-2 rounded-lg text-sm font-semibold hover:bg-secondary transition"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-red-600/80">
+                      O pedido será redirecionado automaticamente ao ambulante mais próximo.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => aceitarPedido(order.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-green-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Aceitar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRejectingId(order.id);
+                        setRejectReason("");
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Recusar
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, IceCream, Users, CheckCircle, Trash2, Pencil, X, Check, Clock } from "lucide-react";
-import { MOCK_BEACHES, MOCK_AMBULANTES } from "@/lib/beach-marketplace/mock-data";
+import { MOCK_BEACHES, MOCK_AMBULANTES, MOCK_DISTRIBUIDORES } from "@/lib/beach-marketplace/mock-data";
 import type { Ambulante } from "@/lib/beach-marketplace/types";
 
 type TabType = "aprovados" | "pendentes";
@@ -26,9 +26,11 @@ export default function AdminAmbulantesPage() {
   function approve(id: string) {
     const person = pending.find((p) => p.id === id);
     if (!person) return;
+    const distribuidor = MOCK_DISTRIBUIDORES.find((d) => d.beachIds.includes(person.beachId));
     const newAmbulante: Ambulante = {
       id: `ambulante-${Date.now()}`,
       beachId: person.beachId,
+      distribuidorId: distribuidor?.id ?? MOCK_DISTRIBUIDORES[0].id,
       nome: person.nome,
       telefone: person.telefone,
       latitude: 0,

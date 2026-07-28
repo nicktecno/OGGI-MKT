@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Ambulante, Order } from "@/lib/beach-marketplace/types";
+import { Ambulante, Order, PaymentMethod } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,12 @@ import {
   MapPin,
   Phone,
   Loader2,
+  Banknote,
 } from "lucide-react";
+
+function pagamentoLabel(metodo: PaymentMethod): string {
+  return metodo === "PIX" ? "Pix" : metodo === "CARTAO" ? "Cartão" : "Dinheiro";
+}
 
 interface OrderConfirmationProps {
   order: Order;
@@ -186,6 +191,52 @@ export function OrderConfirmation({
           </CardContent>
         </Card>
       )}
+
+      {/* Detalhes da entrega */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Detalhes da entrega</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {order.etaMinutos != null && (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-loslos-teal" />
+              <span>
+                Entrega em aproximadamente <strong>{order.etaMinutos} min</strong>
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-loslos-teal" />
+            {order.pontoReferencia ? (
+              <span>
+                Ponto de referência: <strong>{order.pontoReferencia}</strong>
+              </span>
+            ) : (
+              <span>Localização compartilhada com o ambulante</span>
+            )}
+          </div>
+          {order.pagamento && (
+            <div className="flex items-center gap-2">
+              <Banknote className="w-4 h-4 text-loslos-teal" />
+              <span>
+                Pagamento: <strong>{pagamentoLabel(order.pagamento.metodo)}</strong>
+                {order.pagamento.metodo === "DINHEIRO" && order.pagamento.trocoPara
+                  ? ` (troco para ${formatBrl(order.pagamento.trocoPara)})`
+                  : ""}
+              </span>
+            </div>
+          )}
+          {order.clienteWhatsapp && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-loslos-teal" />
+              <span>
+                WhatsApp: <strong>{order.clienteWhatsapp}</strong>
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Itens do Pedido */}
       <Card>

@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IceCream, User, Truck, Eye, EyeOff, ArrowLeft, ShieldCheck } from "lucide-react";
+import { IceCream, User, Truck, Eye, EyeOff, ArrowLeft, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 
-type Perfil = "cliente" | "ambulante" | "admin" | null;
+type Perfil = "cliente" | "ambulante" | "distribuidor" | "admin" | null;
 
 // Credenciais mock para demonstração
 const MOCK_CREDENTIALS = {
   cliente: { email: "lucas@example.com", senha: "123456" },
   ambulante: { email: "joao@ambulante.com", senha: "123456" },
+  distribuidor: { email: "distribuidor@loslos.com", senha: "123456" },
   admin: { email: "admin@loslos.com", senha: "admin123" },
 };
 
@@ -45,6 +46,8 @@ export default function LoginPage() {
         router.push("/cliente/painel");
       } else if (perfil === "ambulante") {
         router.push("/ambulante/painel");
+      } else if (perfil === "distribuidor") {
+        router.push("/distribuidor/painel");
       } else {
         router.push("/admin");
       }
@@ -78,7 +81,7 @@ export default function LoginPage() {
           </div>
 
           {/* Seleção de perfil */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => { setPerfil("cliente"); setEmail(""); setSenha(""); setErro(""); }}
               className={`rounded-2xl p-4 border-2 text-left transition-all ${
@@ -114,6 +117,23 @@ export default function LoginPage() {
             </button>
 
             <button
+              onClick={() => { setPerfil("distribuidor"); setEmail(""); setSenha(""); setErro(""); }}
+              className={`rounded-2xl p-4 border-2 text-left transition-all ${
+                perfil === "distribuidor"
+                  ? "border-loslos-teal-dark bg-card shadow-md"
+                  : "border-transparent bg-secondary hover:bg-card hover:shadow-sm"
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                perfil === "distribuidor" ? "bg-loslos-teal text-white" : "bg-primary/10 text-loslos-teal"
+              }`}>
+                <Store className="w-5 h-5" />
+              </div>
+              <p className="font-bold text-foreground text-sm">Distribuidor</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Pontos de ref.</p>
+            </button>
+
+            <button
               onClick={() => { setPerfil("admin"); setEmail(""); setSenha(""); setErro(""); }}
               className={`rounded-2xl p-4 border-2 text-left transition-all ${
                 perfil === "admin"
@@ -136,7 +156,13 @@ export default function LoginPage() {
             <div className="bg-card rounded-2xl shadow-sm p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-foreground text-sm">
-                  {perfil === "cliente" ? "Entrar como Cliente" : perfil === "ambulante" ? "Entrar como Ambulante" : "Entrar como Admin"}
+                  {perfil === "cliente"
+                    ? "Entrar como Cliente"
+                    : perfil === "ambulante"
+                    ? "Entrar como Ambulante"
+                    : perfil === "distribuidor"
+                    ? "Entrar como Distribuidor"
+                    : "Entrar como Admin"}
                 </p>
                 <button
                   type="button"

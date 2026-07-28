@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { getBeachById, getAmbulantesbyBeach, getProductById } from "@/lib/beach-marketplace/mock-data";
-import { getGeolocationErrorMessage } from "@/lib/beach-marketplace/geolocation";
+import { getBeachById, getAmbulantesbyBeach, getProductById, getPontosReferenciaByBeach, getPontoReferenciaById } from "@/lib/beach-marketplace/mock-data";
+import { getGeolocationErrorMessage, calculateDistance } from "@/lib/beach-marketplace/geolocation";
 import { useBeachCart, useGeolocation, useNearestAmbulantes } from "@/hooks/beach-marketplace";
 import { BeachCatalog } from "@/components/beach-marketplace/beach-catalog";
 import { BeachCart } from "@/components/beach-marketplace/beach-cart";
+import { BeachCheckoutForm, CheckoutData } from "@/components/beach-marketplace/beach-checkout-form";
 import { BeachProduct, Order } from "@/lib/beach-marketplace/types";
 import { ArrowLeft, IceCream, MapPin, CheckCircle2, Users } from "lucide-react";
 
@@ -28,6 +29,13 @@ export default function PedidoPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [step, setStep] = useState<"cart" | "checkout">("cart");
+
+  const pontos = getPontosReferenciaByBeach(beachId);
+  const cartTotal = cart.items.reduce((sum, item) => {
+    const product = getProductById(item.productId);
+    return sum + (product?.price || 0) * item.quantity;
+  }, 0);
 
   if (!beach) {
     return (
@@ -49,38 +57,59 @@ export default function PedidoPage() {
     cart.addItem(product.id, 1);
   };
 
-  const handleCheckout = async () => {
+  const handleConfirm = async (data: CheckoutData) => {
     setLocationError(null);
     setCheckoutLoading(true);
 
-    // A localização do cliente é obrigatória: o pedido só é fechado
-    // quando o cliente autoriza compartilhar a localização com o ambulante.
-    let clientLocation = location;
-    if (!clientLocation) {
-      try {
-        clientLocation = await getLocation();
-      } catch (err) {
-        setCheckoutLoading(false);
-        setLocationError(getGeolocationErrorMessage(err));
-        return;
+    let clienteLat: number;
+    let clienteLon: number;
+    let pontoRefLabel: string | undefined;
+    let pontoRefId: string | undefined;
+
+    if (data.usarLocalizacao) {
+      // Localização obrigatória quando o cliente opta por compartilhá-la.
+      let loc = location;
+      if (!loc) {
+        try {
+          loc = await getLocation();
+        } catch (err) {
+          setCheckoutLoading(false);
+          setLocationError(getGeolocationErrorMessage(err));
+          return;
+        }
       }
+      clienteLat = loc.latitude;
+      clienteLon = loc.longitude;
+    } else {
+      // Cliente escolheu um ponto de referência cadastrado pelo distribuidor.
+      const ponto = data.pontoReferenciaId
+        ? getPontoReferenciaById(data.pontoReferenciaId)
+        : undefined;
+      clienteLat = ponto?.latitude ?? beach.latitude;
+      clienteLon = ponto?.longitude ?? beach.longitude;
+      pontoRefLabel = ponto?.nome;
+      pontoRefId = ponto?.id;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const total = cart.items.reduce((sum, item) => {
-      const product = getProductById(item.productId);
-      return sum + (product?.price || 0) * item.quantity;
-    }, 0);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
 
     const ambulanteEscolhido = nearest[0] || ambulantes[0];
+    const distMeters = ambulanteEscolhido
+      ? calculateDistance(clienteLat, clienteLon, ambulanteEscolhido.latitude, ambulanteEscolhido.longitude)
+      : null;
+    const etaMinutos =
+      distMeters != null
+        ? Math.min(20, Math.max(3, Math.round(distMeters / 70)))
+        : 8 + Math.floor(Math.random() * 7);
 
     const order: Order = {
       id: `order-${Date.now()}`,
       beachId,
-      clienteNome: "Cliente",
-      clienteLat: clientLocation.latitude,
-      clienteLon: clientLocation.longitude,
+      clienteNome: `${data.nome} ${data.sobrenome}`.trim(),
+      clienteWhatsapp: data.whatsapp,
+      clientePhone: data.whatsapp,
+      clienteLat,
+      clienteLon,
       items: cart.items.map((item) => {
         const product = getProductById(item.productId);
         return {
@@ -96,7 +125,11 @@ export default function PedidoPage() {
       status: "PENDENTE",
       rejectionCount: 0,
       ambulanteAttempts: [],
-      totalPrice: total,
+      totalPrice: cartTotal,
+      pagamento: { metodo: data.metodoPagamento, trocoPara: data.trocoPara },
+      pontoReferencia: pontoRefLabel,
+      pontoReferenciaId: pontoRefId,
+      etaMinutos,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -143,7 +176,19 @@ export default function PedidoPage() {
             <p className="text-muted-foreground mb-1">
               Pedido <span className="font-bold text-foreground">#{lastOrder.id.slice(-6)}</span> enviado para
             </p>
-            <p className="text-loslos-teal font-bold mb-6">{lastOrder.ambulante?.nome}</p>
+            <p className="text-loslos-teal font-bold mb-2">{lastOrder.ambulante?.nome}</p>
+            {lastOrder.etaMinutos != null && (
+              <p className="text-sm text-muted-foreground mb-2">
+                Chega em aproximadamente{" "}
+                <span className="font-bold text-foreground">{lastOrder.etaMinutos} min</span>
+              </p>
+            )}
+            {lastOrder.pontoReferencia && (
+              <p className="text-sm text-muted-foreground mb-6">
+                Ponto de referência: <span className="font-semibold text-foreground">{lastOrder.pontoReferencia}</span>
+              </p>
+            )}
+            {!lastOrder.pontoReferencia && <div className="mb-6" />}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href={`/praia/${beachId}/confirmacao/${lastOrder.id}`}
@@ -163,6 +208,17 @@ export default function PedidoPage() {
             </div>
           </div>
         </div>
+      ) : step === "checkout" ? (
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <BeachCheckoutForm
+            pontosReferencia={pontos}
+            total={cartTotal}
+            onBack={() => setStep("cart")}
+            onConfirm={handleConfirm}
+            submitting={checkoutLoading}
+            locationError={locationError}
+          />
+        </div>
       ) : (
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-6">
@@ -181,9 +237,12 @@ export default function PedidoPage() {
                   items={cart.items}
                   onUpdateQuantity={cart.updateQuantity}
                   onRemoveItem={cart.removeItem}
-                  onCheckout={handleCheckout}
-                  checkoutLoading={checkoutLoading}
-                  locationError={locationError}
+                  onCheckout={() => {
+                    setLocationError(null);
+                    setStep("checkout");
+                  }}
+                  checkoutLoading={false}
+                  locationError={null}
                 />
               </div>
             </div>
