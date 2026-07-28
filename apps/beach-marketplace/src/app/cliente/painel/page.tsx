@@ -4,9 +4,10 @@ import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut, XCircle } from "lucide-react";
-import { MOCK_ORDERS, MOCK_PRODUCTS, getBeachById } from "@/lib/beach-marketplace/mock-data";
+import { MOCK_ORDERS, MOCK_PRODUCTS, getBeachById, getAmbullanteById } from "@/lib/beach-marketplace/mock-data";
 import { OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
+import { LiveTrackingMap } from "@/components/beach-marketplace/live-tracking-map";
 
 // Simulando o cliente logado (pedidos de "Lucas Mendes")
 const CLIENTE_NOME = "Lucas Mendes";
@@ -135,6 +136,7 @@ export default function PainelClientePage() {
               const beach = getBeachById(order.beachId);
               const step = statusSteps(order.status);
               const steps = ["Recebido", "Aceito", "A caminho", "Entregue"];
+              const ambulante = order.ambulanteId ? getAmbullanteById(order.ambulanteId) : undefined;
               return (
                 <div key={order.id} className="bg-card rounded-xl shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-border">
@@ -177,6 +179,19 @@ export default function PainelClientePage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Rastreamento em tempo real (mockado) */}
+                  {order.status === "ACEITO" && ambulante && (
+                    <div className="p-4 border-b border-border">
+                      <LiveTrackingMap
+                        ambulanteLat={ambulante.latitude}
+                        ambulanteLon={ambulante.longitude}
+                        clienteLat={order.clienteLat}
+                        clienteLon={order.clienteLon}
+                        etaMinutos={order.etaMinutos}
+                      />
+                    </div>
+                  )}
 
                   {/* Itens */}
                   <div className="p-4 space-y-2">
