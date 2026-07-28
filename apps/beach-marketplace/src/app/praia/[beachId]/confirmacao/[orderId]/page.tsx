@@ -7,7 +7,7 @@ import { getBeachById } from "@/lib/beach-marketplace/mock-data";
 import { useOrderNotificationSimulation } from "@/hooks/beach-marketplace";
 import { OrderConfirmation } from "@/components/beach-marketplace/order-confirmation";
 import { Order } from "@/lib/beach-marketplace/types";
-import { ArrowLeft, IceCream, MapPin } from "lucide-react";
+import { ArrowLeft, IceCream, MapPin, XCircle } from "lucide-react";
 
 export default function ConfirmacaoPage() {
   const params = useParams<{ beachId: string; orderId: string }>();
@@ -46,6 +46,14 @@ export default function ConfirmacaoPage() {
   }, [orderId, beachId]);
 
   const { notificationStage, currentAttempt } = useOrderNotificationSimulation(order);
+
+  function cancelarPedido() {
+    if (!order) return;
+    if (!confirm("Deseja cancelar este pedido?")) return;
+    const updated = { ...order, status: "CANCELADO" as const, updatedAt: new Date().toISOString() };
+    setOrder(updated);
+    localStorage.setItem(`order-${order.id}`, JSON.stringify(updated));
+  }
 
   if (!beach || !order) {
     return (
@@ -89,6 +97,16 @@ export default function ConfirmacaoPage() {
           currentAttempt={currentAttempt}
           ambulante={order.ambulante}
         />
+
+        {(order.status === "PENDENTE" || order.status === "ACEITO") && (
+          <button
+            onClick={cancelarPedido}
+            className="mt-6 w-full flex items-center justify-center gap-1.5 border border-red-200 text-red-600 py-3 rounded-xl text-sm font-bold hover:bg-red-50 transition-colors"
+          >
+            <XCircle className="w-4 h-4" />
+            Cancelar pedido
+          </button>
+        )}
 
         <div className="mt-8 text-center">
           <Link

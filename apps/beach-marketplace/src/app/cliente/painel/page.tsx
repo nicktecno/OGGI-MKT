@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut } from "lucide-react";
+import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut, XCircle } from "lucide-react";
 import { MOCK_ORDERS, MOCK_PRODUCTS, getBeachById } from "@/lib/beach-marketplace/mock-data";
 import { OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
@@ -64,8 +64,9 @@ const FAVORITOS = MOCK_PRODUCTS.slice(0, 4);
 
 export default function PainelClientePage() {
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [orders, setOrders] = useState(MOCK_ORDERS);
 
-  const meusOrders = MOCK_ORDERS.filter((o) => o.clienteNome === CLIENTE_NOME);
+  const meusOrders = orders.filter((o) => o.clienteNome === CLIENTE_NOME);
   const pedidosAtivos = meusOrders.filter(
     (o) => o.status === "PENDENTE" || o.status === "ACEITO" || o.status === "EM_PREPARACAO"
   );
@@ -79,6 +80,13 @@ export default function PainelClientePage() {
 
   function rate(orderId: string, stars: number) {
     setRatings((prev) => ({ ...prev, [orderId]: stars }));
+  }
+
+  function cancelarPedido(orderId: string) {
+    if (!confirm("Deseja cancelar este pedido?")) return;
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: "CANCELADO" as const } : o))
+    );
   }
 
   return (
@@ -193,6 +201,18 @@ export default function PainelClientePage() {
                       <span className="font-bold text-loslos-teal">{formatBrl(order.totalPrice)}</span>
                     </div>
                   </div>
+
+                  {(order.status === "PENDENTE" || order.status === "ACEITO") && (
+                    <div className="px-4 pb-4">
+                      <button
+                        onClick={() => cancelarPedido(order.id)}
+                        className="w-full flex items-center justify-center gap-1.5 border border-red-200 text-red-600 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Cancelar pedido
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
