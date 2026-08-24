@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut, XCircle } from "lucide-react";
+import { IceCream, MapPin, Clock, CheckCircle, Package, RotateCcw, ChevronRight, ShoppingBag, Truck, LogOut, XCircle, PackageCheck } from "lucide-react";
 import { MOCK_ORDERS, MOCK_PRODUCTS, getBeachById, getAmbullanteById } from "@/lib/beach-marketplace/mock-data";
 import { OrderStatus } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
@@ -17,6 +17,7 @@ function statusLabel(status: OrderStatus): string {
     PENDENTE: "Buscando ambulante...",
     ACEITO: "Ambulante a caminho!",
     EM_PREPARACAO: "Em preparação",
+    AGUARDANDO_CONFIRMACAO: "Confirme o recebimento",
     PRONTO: "Entregue ✓",
     CANCELADO: "Cancelado",
     NINGUEM_ACEITOU: "Não atendido",
@@ -29,6 +30,7 @@ function statusColor(status: OrderStatus): string {
     PENDENTE: "bg-yellow-100 text-yellow-700",
     ACEITO: "bg-blue-100 text-blue-700",
     EM_PREPARACAO: "bg-purple-100 text-purple-700",
+    AGUARDANDO_CONFIRMACAO: "bg-amber-100 text-amber-700",
     PRONTO: "bg-green-100 text-green-700",
     CANCELADO: "bg-red-100 text-red-700",
     NINGUEM_ACEITOU: "bg-gray-100 text-gray-700",
@@ -39,6 +41,7 @@ function statusColor(status: OrderStatus): string {
 function statusIcon(status: OrderStatus) {
   if (status === "PENDENTE") return <Clock className="w-5 h-5 text-yellow-600 animate-pulse" />;
   if (status === "ACEITO" || status === "EM_PREPARACAO") return <Truck className="w-5 h-5 text-blue-600" />;
+  if (status === "AGUARDANDO_CONFIRMACAO") return <PackageCheck className="w-5 h-5 text-amber-600" />;
   if (status === "PRONTO") return <CheckCircle className="w-5 h-5 text-green-600" />;
   return <Package className="w-5 h-5 text-gray-400" />;
 }
@@ -47,6 +50,7 @@ function statusSteps(status: OrderStatus): number {
   if (status === "PENDENTE") return 1;
   if (status === "ACEITO") return 2;
   if (status === "EM_PREPARACAO") return 3;
+  if (status === "AGUARDANDO_CONFIRMACAO") return 3;
   if (status === "PRONTO") return 4;
   return 0;
 }
@@ -69,7 +73,11 @@ export default function PainelClientePage() {
 
   const meusOrders = orders.filter((o) => o.clienteNome === CLIENTE_NOME);
   const pedidosAtivos = meusOrders.filter(
-    (o) => o.status === "PENDENTE" || o.status === "ACEITO" || o.status === "EM_PREPARACAO"
+    (o) =>
+      o.status === "PENDENTE" ||
+      o.status === "ACEITO" ||
+      o.status === "EM_PREPARACAO" ||
+      o.status === "AGUARDANDO_CONFIRMACAO"
   );
   const pedidosHistorico = meusOrders.filter(
     (o) => o.status === "PRONTO" || o.status === "CANCELADO" || o.status === "NINGUEM_ACEITOU"
@@ -87,6 +95,18 @@ export default function PainelClientePage() {
     if (!confirm("Deseja cancelar este pedido?")) return;
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: "CANCELADO" as const } : o))
+    );
+  }
+
+  /** O pedido só é concluído depois que o próprio cliente confirma que recebeu. */
+  function confirmarRecebimento(orderId: string) {
+    const agora = new Date().toISOString();
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, status: "PRONTO" as const, confirmadoPeloClienteEm: agora, updatedAt: agora }
+          : o
+      )
     );
   }
 
@@ -216,6 +236,25 @@ export default function PainelClientePage() {
                       <span className="font-bold text-loslos-teal">{formatBrl(order.totalPrice)}</span>
                     </div>
                   </div>
+
+                  {(order.status === "ACEITO" ||
+                    order.status === "EM_PREPARACAO" ||
+                    order.status === "AGUARDANDO_CONFIRMACAO") && (
+                    <div className="px-4 pb-4">
+                      {order.status === "AGUARDANDO_CONFIRMACAO" && (
+                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
+                          O ambulante registrou a entrega. Confirme que você recebeu para concluir o pedido.
+                        </p>
+                      )}
+                      <button
+                        onClick={() => confirmarRecebimento(order.id)}
+                        className="w-full flex items-center justify-center gap-1.5 bg-green-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                      >
+                        <PackageCheck className="w-4 h-4" />
+                        Confirmar recebimento
+                      </button>
+                    </div>
+                  )}
 
                   {(order.status === "PENDENTE" || order.status === "ACEITO") && (
                     <div className="px-4 pb-4">

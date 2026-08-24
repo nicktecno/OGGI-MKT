@@ -15,6 +15,7 @@ import {
   Phone,
   Loader2,
   Banknote,
+  PackageCheck,
 } from "lucide-react";
 
 function pagamentoLabel(metodo: PaymentMethod): string {
@@ -26,6 +27,7 @@ interface OrderConfirmationProps {
   notificationStage?: "enviando" | "aguardando" | "aceito" | "rejeitado" | "ninguem_aceitou" | null;
   currentAttempt?: number;
   ambulante?: Ambulante | null;
+  onConfirmarRecebimento?: () => void;
 }
 
 export function OrderConfirmation({
@@ -33,6 +35,7 @@ export function OrderConfirmation({
   notificationStage,
   currentAttempt = 1,
   ambulante,
+  onConfirmarRecebimento,
 }: OrderConfirmationProps) {
   const statusConfig = {
     PENDENTE: {
@@ -53,8 +56,14 @@ export function OrderConfirmation({
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
+    AGUARDANDO_CONFIRMACAO: {
+      label: "Confirme o recebimento",
+      icon: PackageCheck,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+    },
     PRONTO: {
-      label: "Pronto para retirar",
+      label: "Recebimento confirmado",
       icon: CheckCircle2,
       color: "text-green-600",
       bg: "bg-green-50",
@@ -90,6 +99,45 @@ export function OrderConfirmation({
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmação de recebimento pelo cliente */}
+      {onConfirmarRecebimento &&
+        (order.status === "ACEITO" ||
+          order.status === "EM_PREPARACAO" ||
+          order.status === "AGUARDANDO_CONFIRMACAO") && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recebeu seu pedido?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {order.status === "AGUARDANDO_CONFIRMACAO"
+                  ? "O ambulante registrou a entrega. Confirme o recebimento para concluir o pedido."
+                  : "Assim que o ambulante entregar, confirme o recebimento para concluir o pedido."}
+              </p>
+              <button
+                onClick={onConfirmarRecebimento}
+                className="w-full flex items-center justify-center gap-2 bg-green-500 text-white py-3 rounded-xl text-sm font-bold hover:bg-green-600 transition-colors"
+              >
+                <PackageCheck className="w-4 h-4" />
+                Confirmar recebimento
+              </button>
+            </CardContent>
+          </Card>
+        )}
+
+      {order.status === "PRONTO" && order.confirmadoPeloClienteEm && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Recebimento confirmado em{" "}
+            <span suppressHydrationWarning>
+              {new Date(order.confirmadoPeloClienteEm).toLocaleString("pt-BR")}
+            </span>
+            .
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Status de Notificação (Simulada) */}
       {notificationStage && (

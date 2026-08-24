@@ -65,6 +65,20 @@ export default function ConfirmacaoPage() {
     localStorage.setItem(`order-${order.id}`, JSON.stringify(updated));
   }
 
+  function confirmarRecebimento() {
+    if (!order) return;
+    const agora = new Date().toISOString();
+    const updated = {
+      ...order,
+      status: "PRONTO" as const,
+      confirmadoPeloClienteEm: agora,
+      entregueEm: order.entregueEm ?? agora,
+      updatedAt: agora,
+    };
+    setOrder(updated);
+    localStorage.setItem(`order-${order.id}`, JSON.stringify(updated));
+  }
+
   if (!beach || !order) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -106,6 +120,7 @@ export default function ConfirmacaoPage() {
           notificationStage={notificationStage as "enviando" | "aguardando" | "aceito" | "rejeitado" | "ninguem_aceitou" | null}
           currentAttempt={currentAttempt}
           ambulante={order.ambulante}
+          onConfirmarRecebimento={confirmarRecebimento}
         />
 
         {(order.status === "PENDENTE" || order.status === "ACEITO") && (

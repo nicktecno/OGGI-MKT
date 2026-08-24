@@ -93,6 +93,8 @@ export type OrderStatus =
   | "PENDENTE"
   | "ACEITO"
   | "EM_PREPARACAO"
+  /** Ambulante entregou e aguarda o cliente confirmar o recebimento */
+  | "AGUARDANDO_CONFIRMACAO"
   | "PRONTO"
   | "CANCELADO"
   | "NINGUEM_ACEITOU";
@@ -129,7 +131,10 @@ export interface Order {
   status: OrderStatus;
   rejectionCount: number;
   ambulanteAttempts: AmbulnanteAttempt[];
+  /** Momento em que o ambulante marcou o pedido como entregue */
   entregueEm?: string;
+  /** Momento em que o cliente confirmou o recebimento */
+  confirmadoPeloClienteEm?: string;
   totalPrice: number;
   /** Forma de pagamento escolhida (paga direto ao ambulante) */
   pagamento?: OrderPayment;
@@ -140,6 +145,21 @@ export interface Order {
   etaMinutos?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// ============ VENDA FORA DA PLATAFORMA ============
+// Venda feita diretamente na praia (sem pedido pelo app). Serve para dar
+// baixa no estoque do ambulante e contabilizar o faturamento do dia.
+export interface VendaExterna {
+  id: string;
+  ambulanteId: string;
+  productId: string;
+  productName: string;
+  quantidade: number;
+  precoUnitario: number;
+  total: number;
+  pagamento: PaymentMethod;
+  createdAt: string;
 }
 
 // ============ TENTATIVA DE ACEITAÇÃO ============
@@ -155,7 +175,10 @@ export interface AmbulnanteAttempt {
 }
 
 // ============ NOTIFICAÇÃO ============
-export type NotificationType = "NOVO_PEDIDO" | "PEDIDO_EXPIRADO" | "PEDIDO_CANCELADO";
+export type NotificationType =
+  | "NOVO_PEDIDO"
+  | "PEDIDO_EXPIRADO"
+  | "PEDIDO_CANCELADO";
 
 export interface Notification {
   id: string;
@@ -203,8 +226,15 @@ export interface WebSocketEvents {
   // Servidor -> Cliente
   "servidor:novo-pedido": Order;
   "servidor:pedido-aceito": { orderId: string; ambulanteId: string };
-  "servidor:pedido-rejeitado": { orderId: string; proximoAmbulante?: Ambulante };
+  "servidor:pedido-rejeitado": {
+    orderId: string;
+    proximoAmbulante?: Ambulante;
+  };
   "servidor:pedido-pronto": { orderId: string };
   "servidor:notificacao": Notification;
-  "servidor:localizacao-ambulante": { ambulanteId: string; latitude: number; longitude: number };
+  "servidor:localizacao-ambulante": {
+    ambulanteId: string;
+    latitude: number;
+    longitude: number;
+  };
 }

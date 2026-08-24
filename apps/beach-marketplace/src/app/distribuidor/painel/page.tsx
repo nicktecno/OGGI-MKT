@@ -11,6 +11,9 @@ import {
   Users,
   LogOut,
   Store,
+  ChevronDown,
+  ChevronUp,
+  Navigation,
 } from "lucide-react";
 import {
   MOCK_DISTRIBUIDORES,
@@ -19,9 +22,18 @@ import {
   getAmbulantesByDistribuidor,
 } from "@/lib/beach-marketplace/mock-data";
 import { PontoReferencia } from "@/lib/beach-marketplace/types";
+import { OrderLocationMap } from "@/components/beach-marketplace/order-location-map";
+import { calculateDistance } from "@/lib/beach-marketplace/geolocation";
 
 // Distribuidor logado (mock)
 const DISTRIBUIDOR_LOGADO = MOCK_DISTRIBUIDORES[0];
+
+function ultimaAtualizacao(dateStr: string): string {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (mins < 1) return "agora mesmo";
+  if (mins < 60) return `há ${mins}min`;
+  return `há ${Math.floor(mins / 60)}h`;
+}
 
 export default function DistribuidorPainelPage() {
   const [pontos, setPontos] = useState<PontoReferencia[]>(
@@ -30,6 +42,7 @@ export default function DistribuidorPainelPage() {
   const [beachId, setBeachId] = useState(DISTRIBUIDOR_LOGADO.beachIds[0]);
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [ambulanteAberto, setAmbulanteAberto] = useState<string | null>(null);
 
   const ambulantes = getAmbulantesByDistribuidor(DISTRIBUIDOR_LOGADO.id);
 
@@ -186,32 +199,70 @@ export default function DistribuidorPainelPage() {
             </p>
           </div>
           <div className="divide-y divide-border">
-            {ambulantes.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 p-4">
-                <div className="relative w-9 h-9 rounded-full overflow-hidden bg-secondary flex-shrink-0">
-                  <Image
-                    src={a.fotoPerfil ?? "/loslos/logo-white.png"}
-                    alt={a.nome}
-                    fill
-                    className="object-cover"
-                    sizes="36px"
-                  />
+            {ambulantes.map((a) => {
+              const praia = getBeachById(a.beachId);
+              const distanciaDaPraia = praia
+                ? calculateDistance(a.latitude, a.longitude, praia.latitude, praia.longitude)
+                : null;
+              const aberto = ambulanteAberto === a.id;
+              return (
+                <div key={a.id}>
+                  <div className="flex items-center gap-3 p-4">
+                    <div className="relative w-9 h-9 rounded-full overflow-hidden bg-secondary flex-shrink-0">
+                      <Image
+                        src={a.fotoPerfil ?? "/loslos/logo-white.png"}
+                        alt={a.nome}
+                        fill
+                        className="object-cover"
+                        sizes="36px"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{a.nome}</p>
+                      <p className="text-xs text-muted-foreground">{a.telefone}</p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 text-loslos-teal" />
+                        {praia?.name ?? a.beachId}
+                        {distanciaDaPraia != null && ` · ${Math.round(distanciaDaPraia)}m do centro`}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        a.status === "DISPONIVEL"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {a.status === "DISPONIVEL" ? "Disponível" : "Indisponível"}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setAmbulanteAberto((id) => (id === a.id ? null : a.id))}
+                    className="w-full flex items-center justify-between px-4 pb-3 text-xs font-semibold text-loslos-teal hover:underline"
+                  >
+                    <span className="flex items-center gap-1">
+                      <Navigation className="w-3.5 h-3.5" />
+                      {aberto ? "Ocultar localização" : "Ver localização"}
+                    </span>
+                    <span className="flex items-center gap-1 font-normal text-muted-foreground">
+                      <span suppressHydrationWarning>{ultimaAtualizacao(a.lastLocationAt)}</span>
+                      {aberto ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </span>
+                  </button>
+
+                  {aberto && (
+                    <div className="px-4 pb-2">
+                      <OrderLocationMap
+                        lat={a.latitude}
+                        lon={a.longitude}
+                        label={`Localização de ${a.nome}`}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{a.nome}</p>
-                  <p className="text-xs text-muted-foreground">{a.telefone}</p>
-                </div>
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    a.status === "DISPONIVEL"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-secondary text-muted-foreground"
-                  }`}
-                >
-                  {a.status === "DISPONIVEL" ? "Disponível" : "Indisponível"}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </main>

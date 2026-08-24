@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, ChevronRight, AlertCircle, LogOut, Banknote, Phone, Boxes } from "lucide-react";
+import { IceCream, MapPin, Bell, CheckCircle, XCircle, Clock, Package, User, ChevronRight, AlertCircle, LogOut, Banknote, Phone, Boxes, ShoppingBag, Hourglass } from "lucide-react";
 import { MOCK_ORDERS, MOCK_AMBULANTES, MOCK_PRODUCTS, getBeachById, getProductById, getDistribuidorById } from "@/lib/beach-marketplace/mock-data";
-import { Order, OrderStatus, OrderItem, PaymentMethod } from "@/lib/beach-marketplace/types";
+import { Order, OrderStatus, OrderItem, PaymentMethod, VendaExterna } from "@/lib/beach-marketplace/types";
 import { formatBrl } from "@/lib/utils";
 import { OrderLocationMap } from "@/components/beach-marketplace/order-location-map";
 
@@ -32,6 +32,7 @@ function statusLabel(status: OrderStatus): string {
     PENDENTE: "Pendente",
     ACEITO: "Aceito",
     EM_PREPARACAO: "Em Preparação",
+    AGUARDANDO_CONFIRMACAO: "Aguardando confirmação",
     PRONTO: "Entregue",
     CANCELADO: "Cancelado",
     NINGUEM_ACEITOU: "Não Atendido",
@@ -44,6 +45,7 @@ function statusColor(status: OrderStatus): string {
     PENDENTE: "bg-yellow-100 text-yellow-700",
     ACEITO: "bg-blue-100 text-blue-700",
     EM_PREPARACAO: "bg-purple-100 text-purple-700",
+    AGUARDANDO_CONFIRMACAO: "bg-amber-100 text-amber-700",
     PRONTO: "bg-green-100 text-green-700",
     CANCELADO: "bg-red-100 text-red-700",
     NINGUEM_ACEITOU: "bg-gray-100 text-gray-700",
@@ -68,6 +70,11 @@ export default function PainelAmbulantePage() {
     Object.fromEntries(MOCK_PRODUCTS.map((p) => [p.id, 6]))
   );
   const [showStock, setShowStock] = useState(false);
+  const [showVendaExterna, setShowVendaExterna] = useState(false);
+  const [vendaProdutoId, setVendaProdutoId] = useState(MOCK_PRODUCTS[0]?.id ?? "");
+  const [vendaQtd, setVendaQtd] = useState(1);
+  const [vendaPagamento, setVendaPagamento] = useState<PaymentMethod>("DINHEIRO");
+  const [vendasExternas, setVendasExternas] = useState<VendaExterna[]>([]);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
@@ -78,12 +85,19 @@ export default function PainelAmbulantePage() {
 
   const minhaOrders = orders.filter((o) => o.ambulanteId === AMBULANTE_LOGADO.id);
   const pedidosPendentes = orders.filter((o) => o.status === "PENDENTE" && !o.ambulanteId);
-  const pedidosAtivos = minhaOrders.filter((o) => o.status === "ACEITO" || o.status === "EM_PREPARACAO");
+  const pedidosAtivos = minhaOrders.filter(
+    (o) => o.status === "ACEITO" || o.status === "EM_PREPARACAO" || o.status === "AGUARDANDO_CONFIRMACAO"
+  );
   const pedidosHistorico = minhaOrders.filter((o) => o.status === "PRONTO" || o.status === "CANCELADO");
 
-  const ganhoHoje = pedidosHistorico
-    .filter((o) => o.status === "PRONTO")
-    .reduce((sum, o) => sum + o.totalPrice, 0);
+  const vendaProduto = MOCK_PRODUCTS.find((p) => p.id === vendaProdutoId);
+  const estoqueVendaProduto = vendaProduto ? skuStock[vendaProduto.id] ?? 0 : 0;
+  const totalVendasExternas = vendasExternas.reduce((sum, v) => sum + v.total, 0);
+
+  const ganhoHoje =
+    pedidosHistorico
+      .filter((o) => o.status === "PRONTO")
+      .reduce((sum, o) => sum + o.totalPrice, 0) + totalVendasExternas;
 
   function aceitarPedido(orderId: string) {
     const order = orders.find((o) => o.id === orderId);
@@ -124,10 +138,32 @@ export default function PainelAmbulantePage() {
     setOrders((prev) =>
       prev.map((o) =>
         o.id === orderId
-          ? { ...o, status: "PRONTO", entregueEm: new Date().toISOString() }
+          ? { ...o, status: "AGUARDANDO_CONFIRMACAO", entregueEm: new Date().toISOString() }
           : o
       )
     );
+  }
+
+  /** Dá baixa no estoque de um produto vendido diretamente na praia, sem pedido pelo app. */
+  function registrarVendaExterna() {
+    if (!vendaProduto || vendaQtd < 1 || vendaQtd > estoqueVendaProduto) return;
+    const venda: VendaExterna = {
+      id: `venda-${Date.now()}`,
+      ambulanteId: AMBULANTE_LOGADO.id,
+      productId: vendaProduto.id,
+      productName: vendaProduto.name,
+      quantidade: vendaQtd,
+      precoUnitario: vendaProduto.price,
+      total: vendaProduto.price * vendaQtd,
+      pagamento: vendaPagamento,
+      createdAt: new Date().toISOString(),
+    };
+    setSkuStock((prev) => ({
+      ...prev,
+      [vendaProduto.id]: Math.max(0, (prev[vendaProduto.id] ?? 0) - vendaQtd),
+    }));
+    setVendasExternas((prev) => [venda, ...prev]);
+    setVendaQtd(1);
   }
 
   const beach = getBeachById(AMBULANTE_LOGADO.beachId);
@@ -211,6 +247,112 @@ export default function PainelAmbulantePage() {
             <p className="text-xs text-muted-foreground mt-1">Estoque (gerenciar)</p>
           </button>
         </div>
+
+        {/* Venda fora da plataforma */}
+        <button
+          onClick={() => setShowVendaExterna((v) => !v)}
+          className="w-full flex items-center justify-between bg-card rounded-xl shadow-sm p-4 hover:bg-secondary/50 transition"
+        >
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-loslos-teal" />
+            <span className="font-semibold text-foreground text-sm">Venda fora da plataforma</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {vendasExternas.length > 0 ? `${vendasExternas.length} venda(s) · ${formatBrl(totalVendasExternas)}` : "Dar baixa"}
+          </span>
+        </button>
+
+        {showVendaExterna && (
+          <div className="bg-card rounded-xl shadow-sm p-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Registre as vendas feitas direto na praia (sem pedido pelo app) para dar baixa no estoque.
+            </p>
+
+            <select
+              className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-loslos-teal"
+              value={vendaProdutoId}
+              onChange={(e) => {
+                setVendaProdutoId(e.target.value);
+                setVendaQtd(1);
+              }}
+            >
+              {MOCK_PRODUCTS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} — {formatBrl(p.price)} (estoque: {skuStock[p.id] ?? 0})
+                </option>
+              ))}
+            </select>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Quantidade</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setVendaQtd((q) => Math.max(1, q - 1))}
+                  className="w-7 h-7 rounded-full bg-secondary text-foreground font-bold flex items-center justify-center hover:bg-secondary/70"
+                  aria-label="Diminuir quantidade"
+                >
+                  &minus;
+                </button>
+                <span className="w-8 text-center font-bold text-foreground">{vendaQtd}</span>
+                <button
+                  onClick={() => setVendaQtd((q) => Math.min(estoqueVendaProduto, q + 1))}
+                  disabled={vendaQtd >= estoqueVendaProduto}
+                  className="w-7 h-7 rounded-full bg-primary/10 text-loslos-teal font-bold flex items-center justify-center hover:bg-primary/20 disabled:opacity-40"
+                  aria-label="Aumentar quantidade"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {(["DINHEIRO", "PIX", "CARTAO"] as PaymentMethod[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setVendaPagamento(m)}
+                  className={`flex-1 text-xs px-2 py-2 rounded-lg border transition ${
+                    vendaPagamento === m
+                      ? "border-loslos-teal bg-primary/10 text-loslos-teal font-semibold"
+                      : "border-border text-muted-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {pagamentoLabel(m)}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={registrarVendaExterna}
+              disabled={estoqueVendaProduto < 1 || vendaQtd > estoqueVendaProduto}
+              className="w-full bg-loslos-teal-dark text-white font-bold h-11 rounded-xl hover:bg-loslos-teal transition disabled:opacity-50"
+            >
+              {estoqueVendaProduto < 1
+                ? "Sem estoque"
+                : `Dar baixa — ${formatBrl((vendaProduto?.price ?? 0) * vendaQtd)}`}
+            </button>
+
+            {vendasExternas.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Vendas registradas hoje</p>
+                <div className="max-h-40 overflow-y-auto divide-y divide-border">
+                  {vendasExternas.map((v) => (
+                    <div key={v.id} className="flex items-center justify-between py-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="text-foreground truncate">
+                          {v.quantidade}x {v.productName}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {pagamentoLabel(v.pagamento)} · <span suppressHydrationWarning>{timeAgo(v.createdAt)}</span>
+                        </p>
+                      </div>
+                      <span className="font-semibold text-loslos-teal">{formatBrl(v.total)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Início da jornada — estoque por SKU */}
         {showStock && (
@@ -458,13 +600,22 @@ export default function PainelAmbulantePage() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        onClick={() => marcarEntregue(order.id)}
-                        className="w-full bg-loslos-teal-dark text-white py-2 rounded-lg text-sm font-semibold hover:bg-loslos-teal transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Marcar como entregue
-                      </button>
+                      {order.status === "AGUARDANDO_CONFIRMACAO" ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2">
+                          <Hourglass className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <p className="text-xs text-amber-800">
+                            Entrega registrada. Aguardando o cliente confirmar o recebimento.
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => marcarEntregue(order.id)}
+                          className="w-full bg-loslos-teal-dark text-white py-2 rounded-lg text-sm font-semibold hover:bg-loslos-teal transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Marcar como entregue
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
@@ -487,6 +638,12 @@ export default function PainelAmbulantePage() {
                           {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ")}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5" suppressHydrationWarning>{timeAgo(order.createdAt)}</p>
+                        {order.confirmadoPeloClienteEm && (
+                          <p className="text-[11px] text-green-700 mt-0.5 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Recebimento confirmado pelo cliente
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-foreground">{formatBrl(order.totalPrice)}</p>
